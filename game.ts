@@ -61,8 +61,14 @@ class Game {
             paused: false
         };
 
+        this.resizeCanvas();
         this.setupEventListeners();
         this.loadMap();
+    }
+
+    private resizeCanvas(): void {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
 
     private async loadMap(): Promise<void> {
@@ -77,6 +83,9 @@ class Game {
                 resources: feature.properties.resources,
                 coordinates: feature.geometry.coordinates
             }));
+
+            // Scale provinces to fit the screen
+            this.scaleProvinces();
 
             // Create initial tribe in Northern Plains
             this.state.tribes.push({
@@ -95,8 +104,57 @@ class Game {
         }
     }
 
+    private scaleProvinces(): void {
+        if (this.state.provinces.length === 0) return;
+
+        // Find bounds of all provinces
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        for (const province of this.state.provinces) {
+            for (const coord of province.coordinates[0]) {
+                minX = Math.min(minX, coord[0]);
+                minY = Math.min(minY, coord[1]);
+                maxX = Math.max(maxX, coord[0]);
+                maxY = Math.max(maxY, coord[1]);
+            }
+        }
+
+        const sourceWidth = maxX - minX;
+        const sourceHeight = maxY - minY;
+        
+        // Add padding
+        const padding = 50;
+        const targetWidth = this.canvas.width - padding * 2;
+        const targetHeight = this.canvas.height - padding * 2;
+        
+        // Calculate scale to fit while maintaining aspect ratio
+        const scaleX = targetWidth / sourceWidth;
+        const scaleY = targetHeight / sourceHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate offsets to center the map
+        const scaledWidth = sourceWidth * scale;
+        const scaledHeight = sourceHeight * scale;
+        const offsetX = padding + (targetWidth - scaledWidth) / 2;
+        const offsetY = padding + (targetHeight - scaledHeight) / 2;
+
+        // Scale all province coordinates
+        for (const province of this.state.provinces) {
+            province.coordinates[0] = province.coordinates[0].map(coord => [
+                (coord[0] - minX) * scale + offsetX,
+                (coord[1] - minY) * scale + offsetY
+            ]);
+        }
+    }
+
     private setupEventListeners(): void {
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
+        
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.scaleProvinces();
+            this.render();
+        });
         
         document.getElementById('pauseBtn')?.addEventListener('click', () => {
             this.state.paused = !this.state.paused;
@@ -252,8 +310,12 @@ class Game {
     }
 
     private render(): void {
-        // Clear canvas
-        this.ctx.fillStyle = '#2d5016';
+        // Clear canvas with gradient background
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, '#87CEEB'); // Sky blue at top
+        gradient.addColorStop(0.7, '#8B7355'); // Brown in middle
+        gradient.addColorStop(1, '#5C4033'); // Dark brown at bottom
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Draw provinces
