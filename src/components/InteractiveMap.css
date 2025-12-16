@@ -1,0 +1,206 @@
+.map-container {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.lock-button {
+  background-color: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.lock-button:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lock-button.locked {
+  background-color: #ff6b6b;
+  color: white;
+  border-color: #c92a2a;
+}
+
+.lock-button.locked:hover {
+  background-color: #ff8787;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600px;
+  font-size: 20px;
+  color: #666;
+}
+
+.parcel-tooltip {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.parcel-info-panel {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  width: 320px;
+  max-height: 520px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 32px;
+  font-weight: 300;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.panel-content {
+  padding: 16px;
+}
+
+.info-section {
+  margin-bottom: 20px;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.info-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-section p {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+}
+
+.info-section code {
+  background-color: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.resources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resource-item {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+  line-height: 1.4;
+}
+
+/* Scrollbar styling for info panel */
+.parcel-info-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.parcel-info-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.parcel-info-panel::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.parcel-info-panel::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

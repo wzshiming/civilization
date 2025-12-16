@@ -1,0 +1,137 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "parcel-1",
+      "properties": {
+        "name": "Northern Plains",
+        "owner": "Kingdom of Avalon",
+        "population": 12500,
+        "resources": ["grain", "cattle"],
+        "description": "Fertile plains ideal for agriculture and livestock",
+        "color": "#90EE90"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 52],
+          [2, 52],
+          [2, 54],
+          [0, 54],
+          [0, 52]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "parcel-2",
+      "properties": {
+        "name": "Mountain Fortress",
+        "owner": "Dwarven Clans",
+        "population": 8000,
+        "resources": ["iron", "stone", "gold"],
+        "description": "Mountainous region rich in minerals and defensive positions",
+        "color": "#A9A9A9"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2, 52],
+          [4, 52],
+          [4, 54],
+          [2, 54],
+          [2, 52]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "parcel-3",
+      "properties": {
+        "name": "Coastal Harbor",
+        "owner": "Maritime Republic",
+        "population": 15000,
+        "resources": ["fish", "trade goods", "ships"],
+        "description": "Strategic coastal location with bustling ports",
+        "color": "#87CEEB"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 50],
+          [2, 50],
+          [2, 52],
+          [0, 52],
+          [0, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "parcel-4",
+      "properties": {
+        "name": "Ancient Forest",
+        "owner": "Elven Council",
+        "population": 6000,
+        "resources": ["timber", "herbs", "magic crystals"],
+        "description": "Dense forest with ancient trees and mystical properties",
+        "color": "#228B22"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2, 50],
+          [4, 50],
+          [4, 52],
+          [2, 52],
+          [2, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "parcel-5",
+      "properties": {
+        "name": "Desert Oasis",
+        "owner": "Nomadic Tribes",
+        "population": 4500,
+        "resources": ["water", "dates", "camels"],
+        "description": "Rare water source in vast desert lands",
+        "color": "#F4A460"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [4, 50],
+          [6, 50],
+          [6, 52],
+          [4, 52],
+          [4, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "parcel-6",
+      "properties": {
+        "name": "Volcanic Region",
+        "owner": "Fire Cult",
+        "population": 3000,
+        "resources": ["obsidian", "sulfur", "geothermal energy"],
+        "description": "Dangerous volcanic landscape with unique resources",
+        "color": "#DC143C"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [4, 52],
+          [6, 52],
+          [6, 54],
+          [4, 54],
+          [4, 52]
+        ]]
+      }
+    }
+  ]
+}
