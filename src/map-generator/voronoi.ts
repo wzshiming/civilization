@@ -29,15 +29,29 @@ function getLatitudeFactor(y: number, height: number): number {
  * Calculate minimum distance based on latitude for spherical projection
  * Sites near poles should be further apart in x-direction to create larger cells
  * At the poles, cells should converge into very large blocks
+ * The scaling factor is dependent on map size: larger maps have more aggressive scaling
  */
-function getMinDistanceForLatitude(y: number, height: number, baseDistance: number): number {
+function getMinDistanceForLatitude(y: number, height: number, width: number, baseDistance: number): number {
   const latFactor = getLatitudeFactor(y, height);
-  // Use aggressive exponential scaling to make cells much larger near poles
+  
+  // Calculate map size factor (normalized area)
+  // Reference size: 1200 x 800 = 960,000
+  const referenceArea = 960000;
+  const actualArea = width * height;
+  const sizeFactor = Math.sqrt(actualArea / referenceArea);
+  
+  // Scale the maximum multiplier based on map size
+  // Small maps (e.g., 600x400): maxScale ≈ 3x at poles
+  // Medium maps (e.g., 1200x800): maxScale = 6x at poles
+  // Large maps (e.g., 2400x1600): maxScale ≈ 12x at poles
+  const baseMaxScale = 6;
+  const maxScale = baseMaxScale * sizeFactor;
+  
+  // Use exponential scaling to make cells much larger near poles
   // At equator (latFactor=0): scale = 1
-  // At mid-latitudes (latFactor=0.5): scale ≈ 2.5x
-  // At poles (latFactor=1): scale = 6x
-  // This causes cells to merge into very large blocks at poles
-  const xScale = Math.pow(6, latFactor);
+  // At mid-latitudes (latFactor=0.5): scale varies with map size
+  // At poles (latFactor=1): scale = maxScale
+  const xScale = Math.pow(maxScale, latFactor);
   return baseDistance * xScale;
 }
 
@@ -106,6 +120,11 @@ export function generateVoronoi(
   const sites: Point[] = [];
   const baseMinDistance = Math.sqrt((width * height) / numSites) * 0.7;
 
+  // Calculate map size factor for scaling the polar effect
+  const referenceArea = 960000; // 1200 x 800
+  const actualArea = width * height;
+  const sizeFactor = Math.sqrt(actualArea / referenceArea);
+
   // Try to place sites with minimum spacing (considering wrapping and latitude)
   // Use density weighting to place fewer sites near poles
   let attempts = 0;
@@ -122,10 +141,13 @@ export function generateVoronoi(
         y: random.randomFloat(0, height),
       };
       
-      // Calculate placement probability based on latitude
+      // Calculate placement probability based on latitude and map size
       // Sites near poles should be much less likely to be placed
+      // Larger maps have more aggressive reduction (fewer sites at poles)
       const latFactor = getLatitudeFactor(candidate.y, height);
-      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+      const baseReduction = 0.85; // Base reduction factor
+      const scaledReduction = Math.min(0.95, baseReduction * sizeFactor); // Scale with map size, cap at 95%
+      const placementProbability = 1 - latFactor * scaledReduction;
       
       if (random.randomFloat(0, 1) < placementProbability) {
         accepted = true;
@@ -138,7 +160,7 @@ export function generateVoronoi(
       continue;
     }
 
-    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance);
+    const minDist = getMinDistanceForLatitude(candidate!.y, height, width, baseMinDistance);
     let valid = true;
     
     for (const site of sites) {
