@@ -34,7 +34,7 @@ const SMOOTH_FACTOR = 0.15; // easing factor for smooth movement
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
-  const parcelGraphicsRef = useRef<Map<number, Graphics>>(new Map());
+  const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
   const parcelContainerRef = useRef<Container | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
   
@@ -93,7 +93,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     if (!canvasRef.current) return;
 
     let cleanup = false;
-    const localParcelGraphics = new Map<number, Graphics>();
+    const localParcelGraphics = new Map<number, Graphics[]>();
 
     // Create Pixi application
     const app = new Application();
@@ -156,10 +156,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
               onParcelClick?.(parcel);
             });
             
-            // Store only center tile graphics for updates (to avoid duplicates)
-            if (offset.x === 0 && offset.y === 0) {
-              localParcelGraphics.set(parcel.id, graphics);
+            // Store all graphics instances for each parcel (across all tiles)
+            if (!localParcelGraphics.has(parcel.id)) {
+              localParcelGraphics.set(parcel.id, []);
             }
+            localParcelGraphics.get(parcel.id)!.push(graphics);
 
             tileContainer.addChild(graphics);
           });
@@ -235,11 +236,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Update selected parcel highlighting
   useEffect(() => {
-    parcelGraphicsRef.current.forEach((graphics, parcelId) => {
+    parcelGraphicsRef.current.forEach((graphicsArray, parcelId) => {
       const parcel = worldMap.parcels.get(parcelId);
       if (parcel) {
-        graphics.clear();
-        renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        // Update all instances of this parcel across all tiles
+        graphicsArray.forEach((graphics) => {
+          graphics.clear();
+          renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        });
       }
     });
   }, [selectedParcelId, worldMap]);
