@@ -268,19 +268,29 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   // Update selected parcel highlighting (only for center copy, offset 0,0)
   useEffect(() => {
     if (isInitialized && parcelGraphicsRef.current.size > 0) {
-      parcelGraphicsRef.current.forEach((graphics, parcelId) => {
-        const parcel = worldMap.parcels.get(parcelId);
-        if (parcel && graphics && graphics.destroyed === false) {
-          try {
-            graphics.clear();
-            // Render with no offset since these are the center copies
-            renderParcel(graphics, parcel, parcelId === selectedParcelId, { x: 0, y: 0 });
-          } catch (e) {
-            // Ignore errors during highlighting update
-            console.warn('Error updating parcel highlighting:', e);
-          }
-        }
+      // Use double requestAnimationFrame to ensure we're definitely between render cycles
+      let rafId1: number;
+      const rafId2 = requestAnimationFrame(() => {
+        rafId1 = requestAnimationFrame(() => {
+          parcelGraphicsRef.current.forEach((graphics, parcelId) => {
+            const parcel = worldMap.parcels.get(parcelId);
+            if (parcel && graphics && !graphics.destroyed) {
+              try {
+                graphics.clear();
+                // Render with no offset since these are the center copies
+                renderParcel(graphics, parcel, parcelId === selectedParcelId, { x: 0, y: 0 });
+              } catch (e) {
+                // Silently ignore errors during highlighting update
+              }
+            }
+          });
+        });
       });
+      
+      return () => {
+        cancelAnimationFrame(rafId2);
+        if (rafId1) cancelAnimationFrame(rafId1);
+      };
     }
   }, [isInitialized, selectedParcelId, worldMap]);
 
