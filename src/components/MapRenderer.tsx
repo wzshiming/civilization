@@ -91,17 +91,16 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       cameraRef.current.y += mapHeight;
     }
     
-    // Smooth camera movement with easing
-    cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
-    cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
-    
     // Smooth zoom with easing
     const oldZoom = zoomRef.current;
     zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
     
+    // Check if we're actively zooming
+    const isZooming = zoomPointRef.current && Math.abs(zoomRef.current - oldZoom) > 0.001;
+    
     // Adjust camera position to zoom towards the specified point
-    if (zoomPointRef.current && Math.abs(zoomRef.current - oldZoom) > 0.001) {
-      const { x: pointX, y: pointY } = zoomPointRef.current;
+    if (isZooming) {
+      const { x: pointX, y: pointY } = zoomPointRef.current!;
       
       // Calculate the world position of the zoom point before zoom
       const worldX = (pointX - cameraRef.current.x) / oldZoom;
@@ -112,6 +111,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       cameraRef.current.y = pointY - worldY * zoomRef.current;
       targetCameraRef.current.x = cameraRef.current.x;
       targetCameraRef.current.y = cameraRef.current.y;
+    } else {
+      // Only apply smooth camera movement when not zooming
+      cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
+      cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     }
     
     // Update container position and scale
