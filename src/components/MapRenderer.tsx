@@ -30,7 +30,13 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<number, Graphics>>(new Map());
+  const containerRef = useRef<Container | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
+  
+  // Camera state for panning
+  const [camera, setCamera] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0, cameraX: 0, cameraY: 0 });
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -63,7 +69,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
         // Create container for parcels
         const parcelContainer = new Container();
+        containerRef.current = parcelContainer;
         app.stage.addChild(parcelContainer);
+        
+        // Make stage interactive for dragging
+        app.stage.eventMode = 'static';
+        app.stage.hitArea = app.screen;
 
         // Render all parcels
         worldMap.parcels.forEach((parcel) => {
@@ -112,7 +123,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         if (app && app.stage) {
           app.destroy(true, { children: true, texture: true });
         }
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();
@@ -130,6 +141,93 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     });
   }, [selectedParcelId, worldMap]);
 
+  // Update camera position
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.position.set(camera.x, camera.y);
+    }
+  }, [camera]);
+
+  // Mouse drag handlers
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Only start drag on canvas background (not on parcels)
+      if (e.target === canvas || (e.target as HTMLElement).tagName === 'CANVAS') {
+        setIsDragging(true);
+        dragStartRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+          cameraX: camera.x,
+          cameraY: camera.y,
+        };
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const dx = e.clientX - dragStartRef.current.x;
+        const dy = e.clientY - dragStartRef.current.y;
+        setCamera({
+          x: dragStartRef.current.cameraX + dx,
+          y: dragStartRef.current.cameraY + dy,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [camera.x, camera.y, isDragging]);
+
+  // WASD keyboard controls
+  useEffect(() => {
+    const MOVE_SPEED = 20; // pixels per key press
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't move if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'w':
+          setCamera(prev => ({ x: prev.x, y: prev.y + MOVE_SPEED }));
+          e.preventDefault();
+          break;
+        case 'a':
+          setCamera(prev => ({ x: prev.x + MOVE_SPEED, y: prev.y }));
+          e.preventDefault();
+          break;
+        case 's':
+          setCamera(prev => ({ x: prev.x, y: prev.y - MOVE_SPEED }));
+          e.preventDefault();
+          break;
+        case 'd':
+          setCamera(prev => ({ x: prev.x - MOVE_SPEED, y: prev.y }));
+          e.preventDefault();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   return (
     <div
       ref={canvasRef}
@@ -140,6 +238,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         overflow: 'auto',
         maxWidth: '100%',
         maxHeight: '100%',
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
     />
   );
