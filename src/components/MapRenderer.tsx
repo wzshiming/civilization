@@ -57,6 +57,13 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
   const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
+  // Helper to update container position and scale
+  const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
+    container.x = x;
+    container.y = y;
+    container.scale.set(scale);
+  }, []);
+
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
     // Update target based on keys pressed
@@ -69,10 +76,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     targetCameraRef.current.y += moveY;
     
     // Apply wrapping for circular map (toroidal topology)
-    const mapWidth = worldMap.width;
-    const mapHeight = worldMap.height;
+    const { width: mapWidth, height: mapHeight } = worldMap;
     
-    // Wrap horizontally (east-west) - keep camera within one map width
+    // Wrap horizontally and vertically
     while (targetCameraRef.current.x > mapWidth / 2) {
       targetCameraRef.current.x -= mapWidth;
       cameraRef.current.x -= mapWidth;
@@ -81,8 +87,6 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       targetCameraRef.current.x += mapWidth;
       cameraRef.current.x += mapWidth;
     }
-    
-    // Wrap vertically (north-south) - keep camera within one map height
     while (targetCameraRef.current.y > mapHeight / 2) {
       targetCameraRef.current.y -= mapHeight;
       cameraRef.current.y -= mapHeight;
@@ -96,41 +100,32 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const oldZoom = zoomRef.current;
     zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
     
-    // Check if we're actively zooming
+    // Adjust camera position when zooming to keep zoom point fixed
     const isZooming = zoomPointRef.current !== null && Math.abs(zoomRef.current - oldZoom) > ZOOM_CHANGE_THRESHOLD;
     
-    // Adjust camera position to zoom towards the specified point
     if (isZooming && zoomPointRef.current) {
       const { x: pointX, y: pointY } = zoomPointRef.current;
-      
-      // Calculate the world position of the zoom point before zoom
       const worldX = (pointX - cameraRef.current.x) / oldZoom;
       const worldY = (pointY - cameraRef.current.y) / oldZoom;
       
-      // Calculate the new camera position to keep the world point at the same screen position
       cameraRef.current.x = pointX - worldX * zoomRef.current;
       cameraRef.current.y = pointY - worldY * zoomRef.current;
       targetCameraRef.current.x = cameraRef.current.x;
       targetCameraRef.current.y = cameraRef.current.y;
     } else {
-      // Only apply smooth camera movement when not zooming
+      // Apply smooth camera movement when not zooming
       cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
       cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     }
     
-    // Update container position and scale
+    // Update containers
     if (parcelContainerRef.current) {
-      parcelContainerRef.current.x = cameraRef.current.x;
-      parcelContainerRef.current.y = cameraRef.current.y;
-      parcelContainerRef.current.scale.set(zoomRef.current);
+      updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     }
-    // Update highlight container position and scale to match
     if (highlightContainerRef.current) {
-      highlightContainerRef.current.x = cameraRef.current.x;
-      highlightContainerRef.current.y = cameraRef.current.y;
-      highlightContainerRef.current.scale.set(zoomRef.current);
+      updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     }
-  }, [worldMap.width, worldMap.height]);
+  }, [worldMap, updateContainer]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -242,6 +237,21 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       }
     })();
     
+    // Helper to adjust zoom level
+    const adjustZoom = (delta: number) => {
+      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + delta));
+    };
+
+    // Helper to set zoom point to viewport center
+    const setZoomPointToCenter = () => {
+      if (appRef.current) {
+        zoomPointRef.current = {
+          x: appRef.current.screen.width / 2,
+          y: appRef.current.screen.height / 2
+        };
+      }
+    };
+
     // Keyboard event handlers
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent default scrolling for arrow keys
@@ -252,24 +262,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Handle zoom with + and - keys
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
-        // Zoom towards center of viewport for keyboard zoom
-        if (appRef.current) {
-          zoomPointRef.current = {
-            x: appRef.current.screen.width / 2,
-            y: appRef.current.screen.height / 2
-          };
-        }
-        targetZoomRef.current = Math.min(targetZoomRef.current + ZOOM_SPEED, MAX_ZOOM);
+        setZoomPointToCenter();
+        adjustZoom(ZOOM_SPEED);
       } else if (e.key === '-' || e.key === '_') {
         e.preventDefault();
-        // Zoom towards center of viewport for keyboard zoom
-        if (appRef.current) {
-          zoomPointRef.current = {
-            x: appRef.current.screen.width / 2,
-            y: appRef.current.screen.height / 2
-          };
-        }
-        targetZoomRef.current = Math.max(targetZoomRef.current - ZOOM_SPEED, MIN_ZOOM);
+        setZoomPointToCenter();
+        adjustZoom(-ZOOM_SPEED);
       }
       
       keysRef.current.add(e.key);
@@ -283,19 +281,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       
-      // Get mouse position relative to the actual Pixi canvas, not the container
       if (!appRef.current?.canvas) return;
       
       const rect = appRef.current.canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      zoomPointRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       
-      // Zoom towards mouse position for wheel zoom
-      zoomPointRef.current = { x: mouseX, y: mouseY };
-      
-      // Zoom in/out based on wheel direction
-      const zoomDelta = e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED;
-      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + zoomDelta));
+      adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
     };
     
     window.addEventListener('keydown', handleKeyDown);
