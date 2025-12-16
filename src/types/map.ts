@@ -75,7 +75,7 @@ export interface Boundary {
   parcel2: number;
   /** Shared edge points */
   edge: Point[];
-  /** Resources that exist on this boundary (e.g., rivers) */
+  /** Resources that exist on this boundary */
   resources: Resource[];
 }
 

@@ -127,30 +127,7 @@ export function generateResources(parcels: Parcel[], random: SeededRandom): void
   }
 }
 
-/**
- * Generate resources on boundaries (e.g., rivers)
- */
-export function generateBoundaryResources(
-  rivers: Set<string>,
-  random: SeededRandom
-): Map<string, Resource[]> {
-  const boundaryResources = new Map<string, Resource[]>();
 
-  for (const edge of rivers) {
-    const resources: Resource[] = [
-      createResource(ResourceType.WATER, random),
-    ];
-
-    // Rivers can also have fish
-    if (random.chance(0.4)) {
-      resources.push(createResource(ResourceType.FISH, random));
-    }
-
-    boundaryResources.set(edge, resources);
-  }
-
-  return boundaryResources;
-}
 
 /**
  * Simulate resource changes over time
