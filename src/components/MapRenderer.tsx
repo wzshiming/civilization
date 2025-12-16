@@ -105,16 +105,34 @@ export default function MapRenderer({ mapData, onTileClick }: MapRendererProps) 
                   style={{ cursor: 'pointer' }}
                 />
                 {showResources && feature.properties.resources.length > 0 && (
-                  <text
-                    x={(coords[0][0] + coords[1][0]) / 2}
-                    y={(coords[0][1] + coords[2][1]) / 2}
-                    fontSize="6"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    pointerEvents="none"
-                  >
-                    {getResourceSymbol(feature.properties.resources[0].type)}
-                  </text>
+                  <>
+                    {feature.properties.resources.map((resource, idx) => {
+                      // Calculate center position
+                      const centerX = coords.reduce((sum, coord) => sum + coord[0], 0) / (coords.length - 1);
+                      const centerY = coords.reduce((sum, coord) => sum + coord[1], 0) / (coords.length - 1);
+                      
+                      // Offset multiple resources in a circle around center
+                      const numResources = feature.properties.resources.length;
+                      const angle = (idx / numResources) * 2 * Math.PI;
+                      const offsetRadius = numResources > 1 ? 2 : 0;
+                      const x = centerX + Math.cos(angle) * offsetRadius;
+                      const y = centerY + Math.sin(angle) * offsetRadius;
+                      
+                      return (
+                        <text
+                          key={idx}
+                          x={x}
+                          y={y}
+                          fontSize="5"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          pointerEvents="none"
+                        >
+                          {getResourceSymbol(resource.type)}
+                        </text>
+                      );
+                    })}
+                  </>
                 )}
               </g>
             );

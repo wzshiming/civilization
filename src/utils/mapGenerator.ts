@@ -130,10 +130,6 @@ function generateResources(
 ): Resource[] {
   const resources: Resource[] = [];
 
-  if (random.next() > resourceDensity) {
-    return resources;
-  }
-
   const resourceMap: Record<TerrainType, ResourceType[]> = {
     [TerrainType.OCEAN]: [ResourceType.FISH, ResourceType.OIL],
     [TerrainType.CONTINENT]: [ResourceType.STONE, ResourceType.IRON],
@@ -150,46 +146,72 @@ function generateResources(
   const availableResources = resourceMap[terrainType] || [];
   if (availableResources.length === 0) return resources;
 
-  const resourceType = availableResources[random.nextInt(0, availableResources.length - 1)];
-  const baseReserves = random.nextInt(100, 1000);
+  // Generate 1-3 resources per tile based on density
+  const maxResources = Math.min(3, availableResources.length);
+  const numResources = random.next() < resourceDensity ? random.nextInt(1, maxResources) : 0;
 
-  const isRenewable = resourceType === ResourceType.WHEAT || 
-                      resourceType === ResourceType.CATTLE || 
-                      resourceType === ResourceType.FISH || 
-                      resourceType === ResourceType.SPICES;
+  const usedResourceTypes = new Set<ResourceType>();
+  
+  for (let i = 0; i < numResources; i++) {
+    // Pick a unique resource type
+    let attempts = 0;
+    let resourceType: ResourceType;
+    do {
+      resourceType = availableResources[random.nextInt(0, availableResources.length - 1)];
+      attempts++;
+    } while (usedResourceTypes.has(resourceType) && attempts < 10);
 
-  resources.push({
-    type: resourceType,
-    reserves: baseReserves,
-    currentReserves: baseReserves,
-    regenerationRate: isRenewable ? random.nextFloat(0.5, 2.0) : 0,
-    extractionRate: 0,
-    isDiscovered: false,
-  });
+    if (usedResourceTypes.has(resourceType)) continue;
+    usedResourceTypes.add(resourceType);
+
+    const baseReserves = random.nextInt(100, 1000);
+
+    const isRenewable = resourceType === ResourceType.WHEAT || 
+                        resourceType === ResourceType.CATTLE || 
+                        resourceType === ResourceType.FISH || 
+                        resourceType === ResourceType.SPICES;
+
+    resources.push({
+      type: resourceType,
+      reserves: baseReserves,
+      currentReserves: baseReserves,
+      regenerationRate: isRenewable ? random.nextFloat(0.5, 2.0) : 0,
+      extractionRate: 0,
+      isDiscovered: false,
+    });
+  }
 
   return resources;
 }
 
 /**
- * Create a polygon for a grid cell
+ * Create a hexagonal polygon for a grid cell
  */
 function createCellPolygon(x: number, y: number, cellSize: number): Polygon {
-  const x1 = x * cellSize;
-  const y1 = y * cellSize;
-  const x2 = (x + 1) * cellSize;
-  const y2 = (y + 1) * cellSize;
+  // Hexagon dimensions
+  const width = cellSize;
+  const height = cellSize * 0.866; // sqrt(3)/2 for hex ratio
+  
+  // Offset every other row for hex grid
+  const xOffset = (y % 2) * (width / 2);
+  const centerX = x * width + xOffset + width / 2;
+  const centerY = y * height + height / 2;
+  
+  // Create hexagon points (flat-top orientation)
+  const points: [number, number][] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    const px = centerX + (width / 2) * Math.cos(angle);
+    const py = centerY + (height / 2) * Math.sin(angle);
+    points.push([px, py]);
+  }
+  
+  // Close the polygon
+  points.push(points[0]);
 
   return {
     type: 'Polygon',
-    coordinates: [
-      [
-        [x1, y1],
-        [x2, y1],
-        [x2, y2],
-        [x1, y2],
-        [x1, y1],
-      ],
-    ],
+    coordinates: [points],
   };
 }
 
