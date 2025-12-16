@@ -260,19 +260,26 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       }
       localParcelGraphics.clear();
       localHighlightGraphics.clear();
+      parcelGraphicsRef.current.clear();
+      highlightGraphicsRef.current.clear();
     };
   }, [worldMap, onParcelClick, updateCameraLoop]);
 
   // Update selected parcel highlighting
+  const prevSelectedParcelIdRef = useRef<number | null>(null);
+  
   useEffect(() => {
-    // Clear all highlights first
-    highlightGraphicsRef.current.forEach((highlightArray) => {
-      highlightArray.forEach((graphics) => {
-        graphics.clear();
-      });
-    });
+    // Clear previous selection highlight if it exists
+    if (prevSelectedParcelIdRef.current !== null) {
+      const prevHighlightArray = highlightGraphicsRef.current.get(prevSelectedParcelIdRef.current);
+      if (prevHighlightArray) {
+        prevHighlightArray.forEach((graphics) => {
+          graphics.clear();
+        });
+      }
+    }
     
-    // Draw highlight for selected parcel if any
+    // Draw highlight for new selected parcel if any
     if (selectedParcelId !== null) {
       const parcel = worldMap.parcels.get(selectedParcelId);
       const highlightArray = highlightGraphicsRef.current.get(selectedParcelId);
@@ -284,6 +291,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         });
       }
     }
+    
+    // Update previous selection reference
+    prevSelectedParcelIdRef.current = selectedParcelId;
   }, [selectedParcelId, worldMap]);
 
   return (
