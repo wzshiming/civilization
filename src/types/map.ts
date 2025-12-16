@@ -90,6 +90,8 @@ export interface WorldMap {
   height: number;
   /** Timestamp of last simulation update */
   lastUpdate: number;
+  /** Current game day (minimum time unit) */
+  gameDay: number;
 }
 
 /** Configuration for map generation */

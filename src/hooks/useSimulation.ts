@@ -8,11 +8,13 @@ import { simulateWorld } from '../map-generator';
 
 interface UseSimulationOptions {
   initialSpeed?: number;
+  initialTimeFlowRate?: number;
 }
 
 export function useSimulation(worldMap: WorldMap | null, options: UseSimulationOptions = {}) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationSpeed, setSimulationSpeed] = useState(options.initialSpeed || 1.0);
+  const [timeFlowRate, setTimeFlowRate] = useState(options.initialTimeFlowRate || 1.0);
   const [lastUpdateTime, setLastUpdateTime] = useState(() => Date.now());
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export function useSimulation(worldMap: WorldMap | null, options: UseSimulationO
       const now = Date.now();
       const deltaTime = ((now - lastUpdateTime) / 1000) * simulationSpeed;
 
-      simulateWorld(worldMap, deltaTime);
+      simulateWorld(worldMap, deltaTime, timeFlowRate);
       setLastUpdateTime(now);
 
       // Force a re-render by triggering a state update
@@ -31,7 +33,7 @@ export function useSimulation(worldMap: WorldMap | null, options: UseSimulationO
     }, 100); // Update every 100ms
 
     return () => clearInterval(interval);
-  }, [isSimulating, worldMap, simulationSpeed, lastUpdateTime]);
+  }, [isSimulating, worldMap, simulationSpeed, timeFlowRate, lastUpdateTime]);
 
   const toggleSimulation = useCallback(() => {
     setIsSimulating((prev) => !prev);
@@ -44,10 +46,16 @@ export function useSimulation(worldMap: WorldMap | null, options: UseSimulationO
     setSimulationSpeed(speed);
   }, []);
 
+  const changeTimeFlowRate = useCallback((rate: number) => {
+    setTimeFlowRate(rate);
+  }, []);
+
   return {
     isSimulating,
     simulationSpeed,
+    timeFlowRate,
     toggleSimulation,
     changeSpeed,
+    changeTimeFlowRate,
   };
 }

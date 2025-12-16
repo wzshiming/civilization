@@ -100,6 +100,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
     width,
     height,
     lastUpdate: Date.now(),
+    gameDay: 0,
   };
 }
 
@@ -137,8 +138,15 @@ function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: n
 
 /**
  * Simulate world state for a given time step
+ * @param world The world map to simulate
+ * @param deltaTime Time elapsed in real seconds
+ * @param timeFlowRate How many game days pass per real second (default 1.0)
  */
-export function simulateWorld(world: WorldMap, deltaTime: number): void {
+export function simulateWorld(world: WorldMap, deltaTime: number, timeFlowRate: number = 1.0): void {
+  // Update game days based on time flow rate
+  const gameDaysDelta = deltaTime * timeFlowRate;
+  world.gameDay += gameDaysDelta;
+
   world.parcels.forEach(parcel => {
     updateResources(parcel, deltaTime);
   });

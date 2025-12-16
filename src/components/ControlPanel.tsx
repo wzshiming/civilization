@@ -12,6 +12,9 @@ interface ControlPanelProps {
   onRegenerateMap: (config: { numParcels: number; seed?: number }) => void;
   simulationSpeed: number;
   onSpeedChange: (speed: number) => void;
+  timeFlowRate: number;
+  onTimeFlowRateChange: (rate: number) => void;
+  currentGameDay: number;
 }
 
 export function ControlPanel({
@@ -20,6 +23,9 @@ export function ControlPanel({
   onRegenerateMap,
   simulationSpeed,
   onSpeedChange,
+  timeFlowRate,
+  onTimeFlowRateChange,
+  currentGameDay,
 }: ControlPanelProps) {
   const { t } = useI18n();
   const [numParcels, setNumParcels] = useState(500);
@@ -45,6 +51,10 @@ export function ControlPanel({
           {isSimulating ? t.pause : t.start}
         </button>
 
+        <div className="time-display">
+          <label>{t.gameDay}: {Math.floor(currentGameDay)}</label>
+        </div>
+
         <div className="speed-control">
           <label>{t.speed}: {simulationSpeed.toFixed(1)}x</label>
           <input
@@ -54,6 +64,18 @@ export function ControlPanel({
             step="0.1"
             value={simulationSpeed}
             onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
+          />
+        </div>
+
+        <div className="speed-control">
+          <label>{t.timeFlowRate}: {timeFlowRate.toFixed(1)} {t.gameDaysPerSecond}</label>
+          <input
+            type="range"
+            min="0.1"
+            max="10"
+            step="0.1"
+            value={timeFlowRate}
+            onChange={(e) => onTimeFlowRateChange(parseFloat(e.target.value))}
           />
         </div>
       </div>

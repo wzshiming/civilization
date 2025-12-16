@@ -21,7 +21,7 @@ function App() {
     numParcels: 500,
   });
 
-  const { isSimulating, simulationSpeed, toggleSimulation, changeSpeed } = useSimulation(worldMap);
+  const { isSimulating, simulationSpeed, timeFlowRate, toggleSimulation, changeSpeed, changeTimeFlowRate } = useSimulation(worldMap);
 
   // Map generation effect
   useEffect(() => {
@@ -73,6 +73,9 @@ function App() {
             onRegenerateMap={handleRegenerateMap}
             simulationSpeed={simulationSpeed}
             onSpeedChange={changeSpeed}
+            timeFlowRate={timeFlowRate}
+            onTimeFlowRateChange={changeTimeFlowRate}
+            currentGameDay={worldMap?.gameDay || 0}
           />
           <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />

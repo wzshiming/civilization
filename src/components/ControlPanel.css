@@ -81,10 +81,26 @@
   background: linear-gradient(135deg, #357abd, #2a6090);
 }
 
+.time-display {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.time-display label {
+  font-size: 1.1em;
+  color: #4a9eff;
+  font-weight: 600;
+}
+
 .speed-control {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 15px;
 }
 
 .speed-control label {
