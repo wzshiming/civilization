@@ -25,7 +25,6 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
   [TerrainType.TUNDRA]: 0xb8c8d0,
   [TerrainType.MOUNTAIN]: 0x8b7355,
   [TerrainType.SNOW]: 0xf0f8ff,
-  [TerrainType.RIVER]: 0x4a9fd8,
 };
 
 // Constants for camera movement

@@ -31,8 +31,8 @@ This system implements a sophisticated procedural map generator that creates dyn
 
 **River Generation** (`rivers.ts`)
 - Identifies high-elevation parcels as river sources
-- Traces downhill paths from sources to ocean/shallow water
-- Creates elongated, continuous river segments
+- Traces downhill paths from sources to ocean
+- Creates elongated, continuous shallow water segments representing rivers
 - Rivers flow naturally from mountains to sea
 
 **Resource Generation** (`resources.ts`)
@@ -84,7 +84,7 @@ This system implements a sophisticated procedural map generator that creates dyn
 ```typescript
 // Terrain types using const assertion for type safety
 TerrainType: ocean, shallow_water, beach, grassland, forest, 
-             jungle, desert, tundra, mountain, snow, river
+             jungle, desert, tundra, mountain, snow
 
 // Resource types
 ResourceType: water, wood, stone, iron, gold, oil, coal, 
@@ -166,18 +166,19 @@ else: grassland
 
 Rivers are generated after terrain generation using a downhill flow algorithm:
 
-1. **Source Identification**: High-elevation parcels (elevation > 0.6) with sufficient moisture (> 0.3) have a ~5% chance to spawn a river source
+1. **Source Identification**: High-elevation parcels (elevation > 0.6) with sufficient moisture (> 0.3) have a ~2.5% chance to spawn a river source (creating smaller rivers)
 2. **Path Tracing**: From each source, trace a path to the ocean by:
    - Finding the lowest-elevation unvisited neighbor
    - Adding 30% randomness to create natural meandering
-   - Continuing until reaching ocean/shallow water or hitting a dead end
-3. **River Marking**: Parcels along successful paths (those reaching water) are converted to river terrain
+   - Continuing until reaching ocean/shallow water or hitting a dead end (max 25 parcels)
+3. **River Marking**: Parcels along successful paths (those reaching water) are converted to shallow water terrain
 4. **Moisture Adjustment**: River parcels have their moisture set to at least 0.9
 
 This creates realistic river systems that:
 - Flow from mountains and highlands to the sea
-- Form elongated, thin, continuous segments
+- Form elongated, thin, continuous segments as shallow water
 - Follow natural terrain gradients
+- Are half the size of the original implementation for better balance
 - Add visual and strategic variety to the map
 
 ### 4. Resource Simulation
@@ -203,7 +204,6 @@ Examples:
 - **Forests**: Wood, game, fertile soil (70% spawn chance)
 - **Oceans**: Fish, oil (40% spawn chance)
 - **Grasslands**: Fertile soil, game, stone (60% spawn chance)
-- **Rivers**: Water, fish, fertile soil (90% spawn chance)
 
 ### Resource Properties
 
@@ -225,7 +225,6 @@ Examples:
 - Tundra: Gray-blue (#b8c8d0)
 - Mountain: Brown (#8b7355)
 - Snow: White (#f0f8ff)
-- River: Light blue (#4a9fd8)
 
 ### Resource Colors
 

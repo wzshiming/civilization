@@ -38,8 +38,8 @@ function findRiverSources(parcels: Parcel[], random: SeededRandom): Parcel[] {
                    parcel.terrain !== TerrainType.SHALLOW_WATER;
     const hasMoisture = parcel.moisture > 0.3;
     
-    // Random chance to spawn a river (about 5% of eligible parcels)
-    if (isHighElevation && isLand && hasMoisture && random.chance(0.05)) {
+    // Random chance to spawn a river (about 2.5% of eligible parcels - half the original size)
+    if (isHighElevation && isLand && hasMoisture && random.chance(0.025)) {
       sources.push(parcel);
     }
   }
@@ -55,7 +55,7 @@ function traceRiverPath(parcels: Parcel[], source: Parcel, random: SeededRandom)
   const visited = new Set<number>();
   const riverPath: Parcel[] = [];
   let current = source;
-  let maxLength = 50; // Maximum river length to prevent infinite loops
+  let maxLength = 25; // Maximum river length (half the original) to create smaller rivers
   
   visited.add(current.id);
   
@@ -133,17 +133,17 @@ function findDownhillNeighbor(
 }
 
 /**
- * Mark parcels along a river path as river terrain
+ * Mark parcels along a river path as shallow water terrain
  * Only marks parcels that are not already water
  */
 function markRiverPath(riverPath: Parcel[]): void {
   for (const parcel of riverPath) {
-    // Don't convert ocean or shallow water to river
+    // Don't convert ocean or shallow water (already water)
     // Don't convert beaches to river (they're coastal)
     if (parcel.terrain !== TerrainType.OCEAN && 
         parcel.terrain !== TerrainType.SHALLOW_WATER &&
         parcel.terrain !== TerrainType.BEACH) {
-      parcel.terrain = TerrainType.RIVER;
+      parcel.terrain = TerrainType.SHALLOW_WATER;
       // Rivers should have high moisture
       parcel.moisture = Math.max(parcel.moisture, 0.9);
     }

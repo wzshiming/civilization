@@ -50,10 +50,6 @@ const RESOURCE_RULES: Record<TerrainType, { types: ResourceType[]; probability: 
     types: [ResourceType.WATER],
     probability: 0.2,
   },
-  [TerrainType.RIVER]: {
-    types: [ResourceType.WATER, ResourceType.FISH, ResourceType.FERTILE_SOIL],
-    probability: 0.9,
-  },
 };
 
 /**
