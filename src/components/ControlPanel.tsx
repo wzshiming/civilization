@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { useI18n } from '../i18n';
 import './ControlPanel.css';
 
 interface ControlPanelProps {
@@ -20,6 +21,7 @@ export function ControlPanel({
   simulationSpeed,
   onSpeedChange,
 }: ControlPanelProps) {
+  const { t } = useI18n();
   const [numParcels, setNumParcels] = useState(500);
   const [seed, setSeed] = useState('');
   const [showConfig, setShowConfig] = useState(false);
@@ -35,16 +37,16 @@ export function ControlPanel({
   return (
     <div className="control-panel">
       <div className="control-group">
-        <h3>Simulation</h3>
+        <h3>{t.simulation}</h3>
         <button
           className={`control-button ${isSimulating ? 'stop' : 'start'}`}
           onClick={onToggleSimulation}
         >
-          {isSimulating ? '⏸ Pause' : '▶ Start'}
+          {isSimulating ? t.pause : t.start}
         </button>
 
         <div className="speed-control">
-          <label>Speed: {simulationSpeed.toFixed(1)}x</label>
+          <label>{t.speed}: {simulationSpeed.toFixed(1)}x</label>
           <input
             type="range"
             min="0.1"
@@ -61,13 +63,13 @@ export function ControlPanel({
           className="control-button secondary"
           onClick={() => setShowConfig(!showConfig)}
         >
-          {showConfig ? '✕ Close Config' : '⚙ Map Config'}
+          {showConfig ? t.closeConfig : t.mapConfig}
         </button>
 
         {showConfig && (
           <div className="config-panel">
             <div className="config-field">
-              <label htmlFor="numParcels">Number of Parcels:</label>
+              <label htmlFor="numParcels">{t.numberOfParcels}</label>
               <input
                 id="numParcels"
                 type="number"
@@ -79,18 +81,18 @@ export function ControlPanel({
             </div>
 
             <div className="config-field">
-              <label htmlFor="seed">Seed (optional):</label>
+              <label htmlFor="seed">{t.seedOptional}</label>
               <input
                 id="seed"
                 type="text"
-                placeholder="Random"
+                placeholder={t.random}
                 value={seed}
                 onChange={(e) => setSeed(e.target.value)}
               />
             </div>
 
             <button className="control-button primary" onClick={handleRegenerate}>
-              🔄 Regenerate Map
+              {t.regenerateMap}
             </button>
           </div>
         )}

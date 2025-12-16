@@ -4,10 +4,13 @@ import { generateWorldMap } from './map-generator';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
 import { ControlPanel } from './components/ControlPanel';
+import { LanguageSelector } from './components/LanguageSelector';
 import { useSimulation } from './hooks/useSimulation';
+import { useI18n } from './i18n';
 import './App.css';
 
 function App() {
+  const { t } = useI18n();
   const [worldMap, setWorldMap] = useState<WorldMap | null>(() => {
     // Generate initial map on mount
     return null;
@@ -56,10 +59,11 @@ function App() {
 
   return (
     <div className="app">
+      <LanguageSelector />
       {isLoading ? (
         <div className="loading-screen">
           <div className="loading-spinner" />
-          <p>Generating world map...</p>
+          <p>{t.loadingMap}</p>
         </div>
       ) : worldMap ? (
         <>
@@ -75,7 +79,7 @@ function App() {
         </>
       ) : (
         <div className="error-screen">
-          <p>Failed to generate map</p>
+          <p>{t.mapGenerationFailed}</p>
         </div>
       )}
     </div>
