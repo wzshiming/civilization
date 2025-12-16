@@ -41,17 +41,20 @@ function getMinDistanceForLatitude(y: number, height: number, width: number, bas
   const sizeFactor = Math.sqrt(actualArea / referenceArea);
   
   // Scale the maximum multiplier based on map size
-  // Small maps (e.g., 600x400): maxScale ≈ 3x at poles
-  // Medium maps (e.g., 1200x800): maxScale = 6x at poles
-  // Large maps (e.g., 2400x1600): maxScale ≈ 12x at poles
-  const baseMaxScale = 6;
+  // The multiplier increases exponentially with both latitude and map size
+  // Small maps (e.g., 600x400): maxScale ≈ 4x at poles
+  // Medium maps (e.g., 1200x800): maxScale = 8x at poles
+  // Large maps (e.g., 2400x1600): maxScale ≈ 16x at poles
+  const baseMaxScale = 8;
   const maxScale = baseMaxScale * sizeFactor;
   
-  // Use exponential scaling to make cells much larger near poles
+  // Use exponential scaling with a steeper curve near poles
+  // This creates a more dramatic convergence effect at extreme latitudes
   // At equator (latFactor=0): scale = 1
-  // At mid-latitudes (latFactor=0.5): scale varies with map size
+  // At mid-latitudes (latFactor=0.5): scale grows quadratically
   // At poles (latFactor=1): scale = maxScale
-  const xScale = Math.pow(maxScale, latFactor);
+  // Use squared latFactor for even more dramatic effect at poles
+  const xScale = Math.pow(maxScale, latFactor * latFactor);
   return baseDistance * xScale;
 }
 
@@ -143,11 +146,13 @@ export function generateVoronoi(
       
       // Calculate placement probability based on latitude and map size
       // Sites near poles should be much less likely to be placed
+      // Use squared latFactor for more dramatic reduction at poles
       // Larger maps have more aggressive reduction (fewer sites at poles)
       const latFactor = getLatitudeFactor(candidate.y, height);
-      const baseReduction = 0.85; // Base reduction factor
-      const scaledReduction = Math.min(0.95, baseReduction * sizeFactor); // Scale with map size, cap at 95%
-      const placementProbability = 1 - latFactor * scaledReduction;
+      const baseReduction = 0.90; // Base reduction factor  
+      const scaledReduction = Math.min(0.98, baseReduction * sizeFactor); // Scale with map size, cap at 98%
+      // Square the latFactor to make rejection much more likely at extreme latitudes
+      const placementProbability = 1 - (latFactor * latFactor) * scaledReduction;
       
       if (random.randomFloat(0, 1) < placementProbability) {
         accepted = true;
