@@ -147,17 +147,17 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             const graphics = new Graphics();
             renderParcel(graphics, parcel, false);
 
-            // Make interactive only for center tile
+            // Make all tiles interactive so clicks work on wrapped tiles too
+            graphics.eventMode = 'static';
+            graphics.cursor = 'pointer';
+            graphics.on('pointerdown', (event: FederatedPointerEvent) => {
+              event.stopPropagation();
+              setSelectedParcelId(parcel.id);
+              onParcelClick?.(parcel);
+            });
+            
+            // Store only center tile graphics for updates (to avoid duplicates)
             if (offset.x === 0 && offset.y === 0) {
-              graphics.eventMode = 'static';
-              graphics.cursor = 'pointer';
-              graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-                event.stopPropagation();
-                setSelectedParcelId(parcel.id);
-                onParcelClick?.(parcel);
-              });
-              
-              // Store only center tile graphics for updates
               localParcelGraphics.set(parcel.id, graphics);
             }
 
