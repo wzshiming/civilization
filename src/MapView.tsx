@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { Province } from './types';
+import { Province, MapData } from './types';
 
 interface MapViewProps {
-  mapData: any;
+  mapData: MapData;
   provinces: Map<string, Province>;
   selectedProvinceId: string | null;
   hoveredProvinceId: string | null;

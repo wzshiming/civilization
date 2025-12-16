@@ -1,5 +1,5 @@
 // Main game logic
-import { Province, Tribe, GameState } from './types';
+import { Province, Tribe, GameState, MapData, ProvinceFeature } from './types';
 
 // Game constants
 export const RESOURCE_GENERATION_INTERVAL = 5000; // 5 seconds
@@ -11,11 +11,11 @@ export const STARTING_FOOD = 20;
 export const STARTING_FLINT = 10;
 
 // Initialize game state
-export function initializeGame(mapData: any): GameState {
+export function initializeGame(mapData: MapData): GameState {
   const provinces = new Map<string, Province>();
   
   // Parse GeoJSON features into provinces
-  mapData.features.forEach((feature: any) => {
+  mapData.features.forEach((feature: ProvinceFeature) => {
     const province: Province = {
       id: feature.properties.id,
       name: feature.properties.name,
@@ -54,16 +54,16 @@ export function initializeGame(mapData: any): GameState {
 }
 
 // Get adjacent provinces
-export function getAdjacentProvinces(provinceId: string, mapData: any): string[] {
+export function getAdjacentProvinces(provinceId: string, mapData: MapData): string[] {
   const adjacent: string[] = [];
-  const currentFeature = mapData.features.find((f: any) => f.properties.id === provinceId);
+  const currentFeature = mapData.features.find((f: ProvinceFeature) => f.properties.id === provinceId);
   
   if (!currentFeature) return adjacent;
 
   const currentCoords = currentFeature.geometry.coordinates[0];
   
   // Find provinces that share at least one edge
-  mapData.features.forEach((feature: any) => {
+  mapData.features.forEach((feature: ProvinceFeature) => {
     if (feature.properties.id === provinceId) return;
     
     const otherCoords = feature.geometry.coordinates[0];

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MapView from './MapView';
 import UIPanel from './UIPanel';
-import { GameState } from './types';
+import { GameState, MapData } from './types';
 import {
   initializeGame,
   generateResources,
@@ -13,7 +13,7 @@ import {
 } from './game';
 
 export default function App() {
-  const [mapData, setMapData] = useState<any>(null);
+  const [mapData, setMapData] = useState<MapData | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
 
   // Load map data
