@@ -2,12 +2,12 @@
  * Main map generator orchestrator
  */
 
-import type { WorldMap, Parcel, MapConfig, Boundary } from '../types/map';
+import type { WorldMap, Parcel, MapConfig, Boundary, Resource } from '../types/map';
 import { TerrainType } from '../types/map';
 import { SeededRandom } from '../utils/random';
 import { generateVoronoi, relaxVoronoi } from './voronoi';
 import { generateTerrain, generateRivers } from './terrain';
-import { generateResources, generateBoundaryResources, updateResources } from './resources';
+import { generateResources, updateResources } from './resources';
 
 /**
  * Generate a complete world map with all features
@@ -53,14 +53,14 @@ export function generateWorldMap(config: MapConfig): WorldMap {
   // Step 5: Generate rivers
   console.log('Generating rivers...');
   const numRivers = Math.floor(numParcels * 0.03);
-  const rivers = generateRivers(parcels, numRivers, random);
+  generateRivers(parcels, numRivers, random);
 
   // Step 6: Generate resources
   console.log('Generating resources...');
   generateResources(parcels, random);
 
-  // Step 7: Generate boundary resources (rivers)
-  const boundaryResourceMap = generateBoundaryResources(rivers, random);
+  // Step 7: Generate boundary resources (no longer used for rivers)
+  const boundaryResourceMap = new Map<string, Resource[]>();
 
   // Step 8: Create boundaries
   console.log('Creating boundaries...');

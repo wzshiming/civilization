@@ -129,15 +129,13 @@ export function generateTerrain(
 
 /**
  * Add rivers by converting parcels to shallow water terrain
- * Rivers flow from high elevation to low elevation
+ * Rivers flow from high elevation to low elevation continuously to the sea
  */
 export function generateRivers(
   parcels: Parcel[],
   numRivers: number,
   random: SeededRandom
-): Set<string> {
-  const rivers = new Set<string>();
-  
+): void {
   // Find high elevation land parcels as river sources
   const sources = parcels.filter(
     p => p.elevation > 0.6 && p.elevation < 0.8 && p.terrain !== TerrainType.OCEAN
@@ -147,7 +145,7 @@ export function generateRivers(
     let current = random.pick(sources);
     const visited = new Set<number>();
     let steps = 0;
-    const maxSteps = 100;
+    const maxSteps = 200; // Increased to allow longer rivers
 
     while (steps < maxSteps) {
       visited.add(current.id);
@@ -168,8 +166,13 @@ export function generateRivers(
         }
       }
 
-      // Stop if we reached water or no lower neighbor
-      if (lowest.id === current.id || lowest.terrain === TerrainType.OCEAN) {
+      // Stop only if no lower neighbor (dead end) or reached ocean
+      if (lowest.id === current.id) {
+        break;
+      }
+      
+      // If we reached ocean, stop (river connects to sea)
+      if (lowest.terrain === TerrainType.OCEAN) {
         break;
       }
 
@@ -177,6 +180,4 @@ export function generateRivers(
       steps++;
     }
   }
-
-  return rivers;
 }
