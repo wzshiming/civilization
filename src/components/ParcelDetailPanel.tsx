@@ -7,16 +7,18 @@ import { useI18n } from '../i18n';
 import './ParcelDetailPanel.css';
 
 interface ParcelDetailPanelProps {
-  parcel: Parcel | null;
+  parcels: Parcel[];
   onClose: () => void;
 }
 
-export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
+export function ParcelDetailPanel({ parcels, onClose }: ParcelDetailPanelProps) {
   const { t } = useI18n();
   
-  if (!parcel) {
+  if (!parcels || parcels.length === 0) {
     return null;
   }
+
+  const parcel = parcels[0];
 
   const formatTerrainType = (type: TerrainType): string => {
     return t.terrainTypes[type] || type;
@@ -29,7 +31,11 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
   return (
     <div className="parcel-detail-panel">
       <div className="panel-header">
-        <h2>{t.parcel} #{parcel.id}</h2>
+        <h2>
+          {parcels.length === 1 
+            ? `${t.parcel} #${parcel.id}` 
+            : `${parcels.length} ${t.parcels || 'Parcels'} ${t.selected || 'Selected'}`}
+        </h2>
         <button className="close-button" onClick={onClose}>
           ✕
         </button>

@@ -24,6 +24,8 @@ export const zhCN: TranslationKeys = {
   
   // Parcel Detail Panel
   parcel: '地块',
+  parcels: '地块',
+  selected: '已选择',
   terrain: '地形',
   type: '类型：',
   elevation: '海拔：',

@@ -23,6 +23,8 @@ export const en = {
   
   // Parcel Detail Panel
   parcel: 'Parcel',
+  parcels: 'Parcels',
+  selected: 'Selected',
   terrain: 'Terrain',
   type: 'Type:',
   elevation: 'Elevation:',

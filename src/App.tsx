@@ -15,7 +15,7 @@ function App() {
     // Generate initial map on mount
     return null;
   });
-  const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
+  const [selectedParcels, setSelectedParcels] = useState<Parcel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mapConfig, setMapConfig] = useState<{ numParcels: number; seed?: number }>({
     numParcels: 500,
@@ -43,18 +43,22 @@ function App() {
   const handleRegenerateMap = useCallback(
     (config: { numParcels: number; seed?: number }) => {
       setIsLoading(true);
-      setSelectedParcel(null);
+      setSelectedParcels([]);
       setMapConfig(config);
     },
     []
   );
 
   const handleParcelClick = useCallback((parcel: Parcel) => {
-    setSelectedParcel(parcel);
+    setSelectedParcels([parcel]);
+  }, []);
+
+  const handleParcelsSelect = useCallback((parcels: Parcel[]) => {
+    setSelectedParcels(parcels);
   }, []);
 
   const handleClosePanel = useCallback(() => {
-    setSelectedParcel(null);
+    setSelectedParcels([]);
   }, []);
 
   return (
@@ -74,8 +78,12 @@ function App() {
             simulationSpeed={simulationSpeed}
             onSpeedChange={changeSpeed}
           />
-          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
-          <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
+          <MapRenderer 
+            worldMap={worldMap} 
+            onParcelClick={handleParcelClick}
+            onParcelsSelect={handleParcelsSelect}
+          />
+          <ParcelDetailPanel parcels={selectedParcels} onClose={handleClosePanel} />
         </>
       ) : (
         <div className="error-screen">

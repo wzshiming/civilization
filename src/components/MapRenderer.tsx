@@ -10,6 +10,7 @@ import { TerrainType } from '../types/map';
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
+  onParcelsSelect?: (parcels: Parcel[]) => void;
 }
 
 // Color scheme for different terrain types
@@ -26,11 +27,14 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
   [TerrainType.SNOW]: 0xf0f8ff,
 };
 
-export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
+export function MapRenderer({ worldMap, onParcelClick, onParcelsSelect }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<number, Graphics>>(new Map());
-  const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
+  const [selectedParcelIds, setSelectedParcelIds] = useState<Set<number>>(new Set());
+  const selectedParcelIdsRef = useRef<Set<number>>(new Set());
+  const isDraggingRef = useRef<boolean>(false);
+  const dragStartedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -73,14 +77,59 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           // Make interactive
           graphics.eventMode = 'static';
           graphics.cursor = 'pointer';
+          
           graphics.on('pointerdown', (event: FederatedPointerEvent) => {
             event.stopPropagation();
-            setSelectedParcelId(parcel.id);
+            isDraggingRef.current = true;
+            dragStartedRef.current = false;
+            const newSet = new Set([parcel.id]);
+            selectedParcelIdsRef.current = newSet;
+            setSelectedParcelIds(newSet);
             onParcelClick?.(parcel);
+          });
+
+          graphics.on('pointerover', () => {
+            if (isDraggingRef.current) {
+              dragStartedRef.current = true;
+              const newSet = new Set(selectedParcelIdsRef.current);
+              newSet.add(parcel.id);
+              selectedParcelIdsRef.current = newSet;
+              setSelectedParcelIds(newSet);
+            }
           });
 
           parcelContainer.addChild(graphics);
           localParcelGraphics.set(parcel.id, graphics);
+        });
+
+        // Add global pointer up handler for drag end
+        app.stage.eventMode = 'static';
+        app.stage.on('pointerup', () => {
+          if (isDraggingRef.current && dragStartedRef.current) {
+            // Drag selection completed
+            const selectedParcels: Parcel[] = [];
+            selectedParcelIdsRef.current.forEach((id) => {
+              const parcel = worldMap.parcels.get(id);
+              if (parcel) selectedParcels.push(parcel);
+            });
+            onParcelsSelect?.(selectedParcels);
+          }
+          isDraggingRef.current = false;
+          dragStartedRef.current = false;
+        });
+        
+        app.stage.on('pointerupoutside', () => {
+          if (isDraggingRef.current && dragStartedRef.current) {
+            // Drag selection completed
+            const selectedParcels: Parcel[] = [];
+            selectedParcelIdsRef.current.forEach((id) => {
+              const parcel = worldMap.parcels.get(id);
+              if (parcel) selectedParcels.push(parcel);
+            });
+            onParcelsSelect?.(selectedParcels);
+          }
+          isDraggingRef.current = false;
+          dragStartedRef.current = false;
         });
 
         // Store in ref for use in other effect
@@ -112,12 +161,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         if (app && app.stage) {
           app.destroy(true, { children: true, texture: true });
         }
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();
     };
-  }, [worldMap, onParcelClick]);
+  }, [worldMap, onParcelClick, onParcelsSelect, selectedParcelIds]);
 
   // Update selected parcel highlighting
   useEffect(() => {
@@ -125,10 +174,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       const parcel = worldMap.parcels.get(parcelId);
       if (parcel) {
         graphics.clear();
-        renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        renderParcel(graphics, parcel, selectedParcelIds.has(parcelId));
       }
     });
-  }, [selectedParcelId, worldMap]);
+  }, [selectedParcelIds, worldMap]);
 
   return (
     <div
