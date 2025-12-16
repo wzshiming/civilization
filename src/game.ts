@@ -1,5 +1,15 @@
 import mapData from './map.json';
 
+// Game balance constants
+const INITIAL_POPULATION = 100;
+const INITIAL_FOOD = 50;
+const INITIAL_FLINT = 10;
+const EXPLORATION_FOOD_COST = 10;
+const EXPLORATION_POPULATION_COST = 5;
+const FOOD_GENERATION_RATE = 2; // per province
+const RESOURCE_GENERATION_INTERVAL = 5000; // milliseconds
+const NEIGHBOR_DETECTION_THRESHOLD = 5; // pixels
+
 // Type definitions
 interface Province {
   id: string;
@@ -75,9 +85,9 @@ function initializeTribe() {
   
   gameState.tribe = {
     provinceId: randomProvince.id,
-    population: 100,
-    food: 50,
-    flint: 10,
+    population: INITIAL_POPULATION,
+    food: INITIAL_FOOD,
+    flint: INITIAL_FLINT,
   };
   
   randomProvince.controlled = true;
@@ -94,7 +104,7 @@ function areNeighbors(province1: Province, province2: Province): boolean {
       const dx = coord1[0] - coord2[0];
       const dy = coord1[1] - coord2[1];
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 5) {
+      if (distance < NEIGHBOR_DETECTION_THRESHOLD) {
         return true;
       }
     }
@@ -103,6 +113,8 @@ function areNeighbors(province1: Province, province2: Province): boolean {
 }
 
 // Get neighbors of a province (helper function for potential future use)
+// @ts-ignore - keeping for potential future features
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getNeighbors(provinceId: string): Province[] {
   const province = gameState.provinces.get(provinceId);
   if (!province) return [];
@@ -111,8 +123,6 @@ function getNeighbors(provinceId: string): Province[] {
     (p) => p.id !== provinceId && areNeighbors(province, p)
   );
 }
-// Suppress unused warning - keeping for potential future features
-void getNeighbors;
 
 // Point in polygon test
 function isPointInPolygon(x: number, y: number, coordinates: number[][]): boolean {
@@ -238,7 +248,7 @@ function updateUI() {
     
     <div class="info-text">
       Click on a neighboring province to explore and expand your territory. 
-      Exploration costs 10 food and sends 5 population to the new land.
+      Exploration costs ${EXPLORATION_FOOD_COST} food and sends ${EXPLORATION_POPULATION_COST} population to the new land.
     </div>
   `;
 }
@@ -268,22 +278,22 @@ function exploreProvince(targetProvince: Province) {
   }
   
   // Check resources
-  if (gameState.tribe.food < 10) {
-    console.log('Not enough food to explore! Need 10 food.');
+  if (gameState.tribe.food < EXPLORATION_FOOD_COST) {
+    console.log(`Not enough food to explore! Need ${EXPLORATION_FOOD_COST} food.`);
     return;
   }
   
-  if (gameState.tribe.population < 5) {
-    console.log('Not enough population to explore! Need 5 population.');
+  if (gameState.tribe.population < EXPLORATION_POPULATION_COST) {
+    console.log(`Not enough population to explore! Need ${EXPLORATION_POPULATION_COST} population.`);
     return;
   }
   
   // Perform exploration
-  gameState.tribe.food -= 10;
-  gameState.tribe.population -= 5;
+  gameState.tribe.food -= EXPLORATION_FOOD_COST;
+  gameState.tribe.population -= EXPLORATION_POPULATION_COST;
   targetProvince.controlled = true;
   
-  console.log(`Explored ${targetProvince.name}! Population sent: 5, Food consumed: 10`);
+  console.log(`Explored ${targetProvince.name}! Population sent: ${EXPLORATION_POPULATION_COST}, Food consumed: ${EXPLORATION_FOOD_COST}`);
   
   updateUI();
   render();
@@ -348,8 +358,8 @@ function autoGenerateResources() {
     (p) => p.controlled
   ).length;
   
-  // Each controlled province generates 2 food
-  const foodGenerated = controlledProvinces * 2;
+  // Each controlled province generates food
+  const foodGenerated = controlledProvinces * FOOD_GENERATION_RATE;
   gameState.tribe.food += foodGenerated;
   
   console.log(`Resources generated! +${foodGenerated} food from ${controlledProvinces} provinces`);
@@ -363,7 +373,7 @@ function init() {
   initializeTribe();
   
   // Set up resource generation timer
-  setInterval(autoGenerateResources, 5000);
+  setInterval(autoGenerateResources, RESOURCE_GENERATION_INTERVAL);
   
   console.log('Game initialized!');
   console.log(`Total provinces: ${gameState.provinces.size}`);
