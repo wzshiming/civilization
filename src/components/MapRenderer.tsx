@@ -70,6 +70,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
         let containerStart = { x: 0, y: 0 };
+        const dragThreshold = 5; // pixels to move before considering it a drag
+        let hasDragged = false;
 
         // Enable dragging on the stage background
         app.stage.eventMode = 'static';
@@ -77,14 +79,25 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         
         app.stage.on('pointerdown', (event: FederatedPointerEvent) => {
           isDragging = true;
+          hasDragged = false;
           dragStart = { x: event.global.x, y: event.global.y };
           containerStart = { x: parcelContainer.x, y: parcelContainer.y };
         });
 
         app.stage.on('pointermove', (event: FederatedPointerEvent) => {
           if (isDragging) {
-            parcelContainer.x = containerStart.x + (event.global.x - dragStart.x);
-            parcelContainer.y = containerStart.y + (event.global.y - dragStart.y);
+            const dx = event.global.x - dragStart.x;
+            const dy = event.global.y - dragStart.y;
+            
+            // Check if we've moved enough to be considered a drag
+            if (!hasDragged && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
+              hasDragged = true;
+            }
+            
+            if (hasDragged) {
+              parcelContainer.x = containerStart.x + dx;
+              parcelContainer.y = containerStart.y + dy;
+            }
           }
         });
 
@@ -135,10 +148,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             // Make interactive
             graphics.eventMode = 'static';
             graphics.cursor = 'pointer';
+            
+            let clickStartPos = { x: 0, y: 0 };
             graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-              event.stopPropagation();
-              setSelectedParcelId(parcel.id);
-              onParcelClick?.(parcel);
+              clickStartPos = { x: event.global.x, y: event.global.y };
+            });
+            
+            graphics.on('pointerup', (event: FederatedPointerEvent) => {
+              // Only trigger click if we didn't drag
+              const dx = event.global.x - clickStartPos.x;
+              const dy = event.global.y - clickStartPos.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < dragThreshold) {
+                event.stopPropagation();
+                setSelectedParcelId(parcel.id);
+                onParcelClick?.(parcel);
+              }
             });
 
             tileContainer.addChild(graphics);
@@ -152,9 +178,36 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           // Render boundaries (for rivers) in this tile
           const boundaryGraphics = new Graphics();
           worldMap.boundaries.forEach((boundary) => {
-            if (boundary.resources.length > 0) {
-              // Draw river
-              if (boundary.edge.length >= 2) {
+            if (boundary.resources.length > 0 && boundary.edge.length >= 2) {
+              // Check if boundary wraps around (has points on opposite edges)
+              const minX = Math.min(...boundary.edge.map(p => p.x));
+              const maxX = Math.max(...boundary.edge.map(p => p.x));
+              const wraps = maxX - minX > worldMap.width * 0.5;
+              
+              if (wraps) {
+                // Split the boundary into left and right pieces
+                const leftEdge = boundary.edge.filter(p => p.x > worldMap.width * 0.5);
+                const rightEdge = boundary.edge.filter(p => p.x <= worldMap.width * 0.5);
+                
+                // Draw left piece
+                if (leftEdge.length >= 2) {
+                  boundaryGraphics.moveTo(leftEdge[0].x, leftEdge[0].y);
+                  for (let i = 1; i < leftEdge.length; i++) {
+                    boundaryGraphics.lineTo(leftEdge[i].x, leftEdge[i].y);
+                  }
+                  boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
+                }
+                
+                // Draw right piece
+                if (rightEdge.length >= 2) {
+                  boundaryGraphics.moveTo(rightEdge[0].x, rightEdge[0].y);
+                  for (let i = 1; i < rightEdge.length; i++) {
+                    boundaryGraphics.lineTo(rightEdge[i].x, rightEdge[i].y);
+                  }
+                  boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
+                }
+              } else {
+                // Normal boundary - draw as is
                 boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
                 for (let i = 1; i < boundary.edge.length; i++) {
                   boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
