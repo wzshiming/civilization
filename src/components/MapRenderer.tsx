@@ -63,44 +63,111 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
         // Create container for parcels
         const parcelContainer = new Container();
+        parcelContainer.eventMode = 'static';
         app.stage.addChild(parcelContainer);
 
-        // Render all parcels
-        worldMap.parcels.forEach((parcel) => {
-          const graphics = new Graphics();
-          renderParcel(graphics, parcel, false);
+        // Add pan and zoom functionality
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let containerStart = { x: 0, y: 0 };
 
-          // Make interactive
-          graphics.eventMode = 'static';
-          graphics.cursor = 'pointer';
-          graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-            event.stopPropagation();
-            setSelectedParcelId(parcel.id);
-            onParcelClick?.(parcel);
+        // Enable dragging on the stage background
+        app.stage.eventMode = 'static';
+        app.stage.hitArea = app.screen;
+        
+        app.stage.on('pointerdown', (event: FederatedPointerEvent) => {
+          isDragging = true;
+          dragStart = { x: event.global.x, y: event.global.y };
+          containerStart = { x: parcelContainer.x, y: parcelContainer.y };
+        });
+
+        app.stage.on('pointermove', (event: FederatedPointerEvent) => {
+          if (isDragging) {
+            parcelContainer.x = containerStart.x + (event.global.x - dragStart.x);
+            parcelContainer.y = containerStart.y + (event.global.y - dragStart.y);
+          }
+        });
+
+        app.stage.on('pointerup', () => {
+          isDragging = false;
+        });
+
+        app.stage.on('pointerupoutside', () => {
+          isDragging = false;
+        });
+
+        // Add zoom with mouse wheel
+        app.canvas.addEventListener('wheel', (event: WheelEvent) => {
+          event.preventDefault();
+          
+          const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+          const newScale = Math.max(0.5, Math.min(3, parcelContainer.scale.x * zoomFactor));
+          
+          // Zoom towards mouse position
+          const mouseX = event.offsetX;
+          const mouseY = event.offsetY;
+          
+          const worldPos = {
+            x: (mouseX - parcelContainer.x) / parcelContainer.scale.x,
+            y: (mouseY - parcelContainer.y) / parcelContainer.scale.y,
+          };
+          
+          parcelContainer.scale.set(newScale);
+          
+          parcelContainer.x = mouseX - worldPos.x * newScale;
+          parcelContainer.y = mouseY - worldPos.y * newScale;
+        });
+
+        // Render parcels with repetitive tiling (left, center, right for horizontal wrapping)
+        const tiledContainers: Container[] = [];
+        
+        for (let tileX = -1; tileX <= 1; tileX++) {
+          const tileContainer = new Container();
+          tileContainer.x = tileX * worldMap.width;
+          parcelContainer.addChild(tileContainer);
+          tiledContainers.push(tileContainer);
+
+          // Render all parcels in this tile
+          worldMap.parcels.forEach((parcel) => {
+            const graphics = new Graphics();
+            renderParcel(graphics, parcel, false, worldMap.width);
+
+            // Make interactive
+            graphics.eventMode = 'static';
+            graphics.cursor = 'pointer';
+            graphics.on('pointerdown', (event: FederatedPointerEvent) => {
+              event.stopPropagation();
+              setSelectedParcelId(parcel.id);
+              onParcelClick?.(parcel);
+            });
+
+            tileContainer.addChild(graphics);
+            
+            // Store only center tile graphics for selection updates
+            if (tileX === 0) {
+              localParcelGraphics.set(parcel.id, graphics);
+            }
           });
 
-          parcelContainer.addChild(graphics);
-          localParcelGraphics.set(parcel.id, graphics);
-        });
+          // Render boundaries (for rivers) in this tile
+          const boundaryGraphics = new Graphics();
+          worldMap.boundaries.forEach((boundary) => {
+            if (boundary.resources.length > 0) {
+              // Draw river
+              if (boundary.edge.length >= 2) {
+                boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
+                for (let i = 1; i < boundary.edge.length; i++) {
+                  boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
+                }
+                boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
+              }
+            }
+          });
+          tileContainer.addChild(boundaryGraphics);
+        }
 
         // Store in ref for use in other effect
         parcelGraphicsRef.current = localParcelGraphics;
-
-        // Render boundaries (for rivers)
-        const boundaryGraphics = new Graphics();
-        worldMap.boundaries.forEach((boundary) => {
-          if (boundary.resources.length > 0) {
-            // Draw river
-            if (boundary.edge.length >= 2) {
-              boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
-              for (let i = 1; i < boundary.edge.length; i++) {
-                boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
-              }
-              boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
-            }
-          }
-        });
-        parcelContainer.addChild(boundaryGraphics);
       } catch (error) {
         console.error('Failed to initialize Pixi application:', error);
       }
@@ -125,7 +192,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       const parcel = worldMap.parcels.get(parcelId);
       if (parcel) {
         graphics.clear();
-        renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        renderParcel(graphics, parcel, parcelId === selectedParcelId, worldMap.width);
       }
     });
   }, [selectedParcelId, worldMap]);
@@ -146,21 +213,65 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 }
 
 /**
- * Render a single parcel
+ * Render a single parcel, handling wrapping for circular maps
  */
-function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): void {
+function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean, worldWidth?: number): void {
   if (parcel.vertices.length < 3) return;
 
   const color = TERRAIN_COLORS[parcel.terrain];
-
-  // Fill the polygon
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
-  graphics.fill({ color, alpha: 1 });
-
-  // Draw border
   const borderColor = isSelected ? 0xffff00 : 0x000000;
   const borderWidth = isSelected ? 3 : 0.5;
   const borderAlpha = isSelected ? 1 : 0.3;
+
+  // Check if polygon wraps around the boundary
+  if (worldWidth) {
+    const minX = Math.min(...parcel.vertices.map(v => v.x));
+    const maxX = Math.max(...parcel.vertices.map(v => v.x));
+    
+    // If vertices span more than half the map width, the polygon wraps
+    if (maxX - minX > worldWidth * 0.5) {
+      // Split into left and right pieces
+      const leftVertices = parcel.vertices.filter(v => v.x > worldWidth * 0.5);
+      const rightVertices = parcel.vertices.filter(v => v.x <= worldWidth * 0.5);
+      
+      // Render left piece (shifted to appear on right side for tiling)
+      if (leftVertices.length >= 3) {
+        graphics.poly(leftVertices.map(v => [v.x, v.y]).flat());
+        graphics.fill({ color, alpha: 1 });
+        graphics.poly(leftVertices.map(v => [v.x, v.y]).flat());
+        graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
+      }
+      
+      // Render right piece (shifted to appear on left side for tiling)
+      if (rightVertices.length >= 3) {
+        graphics.poly(rightVertices.map(v => [v.x, v.y]).flat());
+        graphics.fill({ color, alpha: 1 });
+        graphics.poly(rightVertices.map(v => [v.x, v.y]).flat());
+        graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
+      }
+      
+      // Draw resources at center (adjust for wrapping)
+      if (parcel.resources.length > 0) {
+        const centerX = parcel.center.x;
+        const centerY = parcel.center.y;
+        const radius = 3;
+
+        parcel.resources.forEach((resource, index) => {
+          const angle = (index / parcel.resources.length) * Math.PI * 2;
+          const offsetX = Math.cos(angle) * 8;
+          const offsetY = Math.sin(angle) * 8;
+
+          graphics.circle(centerX + offsetX, centerY + offsetY, radius);
+          graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
+        });
+      }
+      return;
+    }
+  }
+
+  // Normal polygon rendering (no wrapping)
+  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.fill({ color, alpha: 1 });
 
   graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
   graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
