@@ -2,6 +2,7 @@
  * Simplified Chinese translations (简体中文)
  */
 
+import type { TerrainType, ResourceType } from '../../types/map';
 import type { TranslationKeys } from './en';
 
 export const zhCN: TranslationKeys = {
@@ -46,7 +47,7 @@ export const zhCN: TranslationKeys = {
     tundra: '冻土',
     mountain: '山地',
     snow: '雪地',
-  },
+  } as Record<TerrainType, string>,
   
   // Resource types
   resourceTypes: {
@@ -60,7 +61,7 @@ export const zhCN: TranslationKeys = {
     fertile_soil: '肥沃土壤',
     fish: '鱼',
     game: '猎物',
-  },
+  } as Record<ResourceType, string>,
   
   // Language selector
   language: '语言',

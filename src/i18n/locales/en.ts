@@ -2,6 +2,8 @@
  * English translations
  */
 
+import type { TerrainType, ResourceType } from '../../types/map';
+
 export const en = {
   // App level
   loadingMap: 'Generating world map...',
@@ -44,7 +46,7 @@ export const en = {
     tundra: 'Tundra',
     mountain: 'Mountain',
     snow: 'Snow',
-  },
+  } as Record<TerrainType, string>,
   
   // Resource types
   resourceTypes: {
@@ -58,7 +60,7 @@ export const en = {
     fertile_soil: 'Fertile Soil',
     fish: 'Fish',
     game: 'Game',
-  },
+  } as Record<ResourceType, string>,
   
   // Language selector
   language: 'Language',
