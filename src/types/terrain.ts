@@ -73,9 +73,6 @@ export type TerrainTile = Feature<Polygon, TerrainProperties>;
 export interface MapGeneratorConfig {
   width: number;
   height: number;
-  continentCount: number;
-  islandCount: number;
-  mountainDensity: number;
   riverCount: number;
   resourceDensity: number;
   seed?: number;

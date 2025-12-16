@@ -153,8 +153,10 @@ function generateResources(
   const resourceType = availableResources[random.nextInt(0, availableResources.length - 1)];
   const baseReserves = random.nextInt(100, 1000);
 
-  const renewableResources = [ResourceType.WHEAT, ResourceType.CATTLE, ResourceType.FISH, ResourceType.SPICES];
-  const isRenewable = renewableResources.some(r => r === resourceType);
+  const isRenewable = resourceType === ResourceType.WHEAT || 
+                      resourceType === ResourceType.CATTLE || 
+                      resourceType === ResourceType.FISH || 
+                      resourceType === ResourceType.SPICES;
 
   resources.push({
     type: resourceType,

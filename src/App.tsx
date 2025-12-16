@@ -10,9 +10,6 @@ function App() {
     generateMap({
       width: 50,
       height: 40,
-      continentCount: 3,
-      islandCount: 8,
-      mountainDensity: 0.15,
       riverCount: 5,
       resourceDensity: 0.3,
       seed: Date.now(),
@@ -28,9 +25,6 @@ function App() {
       const newMap = generateMap({
         width: 50,
         height: 40,
-        continentCount: 3,
-        islandCount: 8,
-        mountainDensity: 0.15,
         riverCount: 5,
         resourceDensity: 0.3,
         seed: Date.now(),

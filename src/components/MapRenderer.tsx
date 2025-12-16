@@ -35,7 +35,7 @@ function getResourceSymbol(resourceType: ResourceType): string {
   const symbolMap: Record<ResourceType, string> = {
     [ResourceType.GOLD]: '🪙',
     [ResourceType.IRON]: '⚒️',
-    [ResourceType.COAL]: '🪨',
+    [ResourceType.COAL]: '⚫',
     [ResourceType.OIL]: '🛢️',
     [ResourceType.WHEAT]: '🌾',
     [ResourceType.CATTLE]: '🐄',
