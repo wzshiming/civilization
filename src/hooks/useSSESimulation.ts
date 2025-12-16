@@ -19,8 +19,14 @@ export function useSSESimulation(
   const [simulationSpeed, setSimulationSpeed] = useState(options.initialSpeed || 1.0);
   const [isConnected, setIsConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const worldMapRef = useRef<WorldMap | null>(worldMap);
   const forceUpdateRef = useRef<number>(0);
   const [, setForceUpdate] = useState(0);
+
+  // Keep worldMapRef in sync with worldMap
+  useEffect(() => {
+    worldMapRef.current = worldMap;
+  }, [worldMap]);
 
   // Set up SSE connection
   useEffect(() => {
@@ -46,10 +52,11 @@ export function useSSESimulation(
 
     eventSource.addEventListener('resource-update', (event) => {
       const updates = JSON.parse(event.data) as Array<{ id: number; resources: Resource[] }>;
-      if (worldMap && worldMap.parcels) {
+      const currentMap = worldMapRef.current;
+      if (currentMap && currentMap.parcels) {
         // Update resources for each parcel
         updates.forEach((update) => {
-          const parcel = worldMap.parcels.get(update.id);
+          const parcel = currentMap.parcels.get(update.id);
           if (parcel) {
             parcel.resources = update.resources;
           }
@@ -93,7 +100,7 @@ export function useSSESimulation(
       console.log('Closing SSE connection');
       eventSource.close();
     };
-  }, [worldMap, setWorldMap]);
+  }, [setWorldMap]); // Only reconnect if setWorldMap changes
 
   const toggleSimulation = useCallback(async () => {
     try {
