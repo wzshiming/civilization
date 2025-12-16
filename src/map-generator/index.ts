@@ -76,8 +76,8 @@ export function generateWorldMap(config: MapConfig): WorldMap {
       const neighbor = parcels.find(p => p.id === neighborId);
       if (!neighbor) continue;
 
-      // Find shared edge points
-      const sharedEdge = findSharedEdge(parcel.vertices, neighbor.vertices);
+      // Find shared edge points (considering wrapping)
+      const sharedEdge = findSharedEdge(parcel.vertices, neighbor.vertices, width);
 
       boundaries.push({
         parcel1: parcel.id,
@@ -104,22 +104,27 @@ export function generateWorldMap(config: MapConfig): WorldMap {
 }
 
 /**
- * Find shared edge points between two polygons
+ * Find shared edge points between two polygons with wrapping support
  */
-function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: number; y: number }[]): { x: number; y: number }[] {
+function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: number; y: number }[], width: number): { x: number; y: number }[] {
   const threshold = 1.0; // Distance threshold for matching vertices
   const shared: { x: number; y: number }[] = [];
 
   for (const v1 of vertices1) {
     for (const v2 of vertices2) {
-      const dx = v1.x - v2.x;
+      // Calculate distance considering wrapping
+      const dx1 = Math.abs(v1.x - v2.x);
+      const dx2 = width - dx1; // Wrapped distance
+      const dx = Math.min(dx1, dx2);
       const dy = v1.y - v2.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < threshold) {
         // Check if we already have this point
         const exists = shared.some(p => {
-          const pdx = p.x - v1.x;
+          const pdx1 = Math.abs(p.x - v1.x);
+          const pdx2 = width - pdx1;
+          const pdx = Math.min(pdx1, pdx2);
           const pdy = p.y - v1.y;
           return Math.sqrt(pdx * pdx + pdy * pdy) < threshold;
         });

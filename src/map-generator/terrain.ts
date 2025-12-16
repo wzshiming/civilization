@@ -67,7 +67,7 @@ export function determineTerrainType(
  */
 export function generateTerrain(
   parcels: Parcel[],
-  width: number,
+  _width: number,
   height: number,
   random: SeededRandom
 ): void {
@@ -82,15 +82,15 @@ export function generateTerrain(
     const y = parcel.center.y;
 
     // Generate base elevation with multiple octaves
+    // Use wrapping-aware noise for x-axis (longitude)
     let elevation = elevationNoise.octaveNoise(x * scale, y * scale, 6, 0.5);
     
-    // Add distance from center for continent formation
-    const dx = (x - width / 2) / width;
-    const dy = (y - height / 2) / height;
-    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+    // For spherical projection: reduce elevation toward poles (top/bottom edges)
+    // but maintain some land at poles (no distance-from-center penalty)
+    const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
     
-    // Islands/continents are in the center, oceans at edges
-    elevation = elevation * (1 - distanceFromCenter * 1.2);
+    // Slight reduction at extreme latitudes to create more ocean at poles
+    elevation = elevation * (1 - latitude * 0.3);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -107,12 +107,12 @@ export function generateTerrain(
       moisture = Math.max(moisture, 0.7);
     }
 
-    // Generate temperature
+    // Generate temperature based on latitude (spherical projection)
     let temperature = temperatureNoise.octaveNoise(x * scale * 0.8, y * scale * 0.8, 3, 0.5);
     
-    // Temperature varies with latitude
-    const latitude = Math.abs(y - height / 2) / (height / 2);
-    temperature = temperature * (1 - latitude * 0.7);
+    // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
+    // latitude: 0 at equator (warm), 1 at poles (cold)
+    temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;
