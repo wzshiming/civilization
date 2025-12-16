@@ -1,0 +1,159 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_1",
+        "name": "Northern Plains",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [100, 50], [200, 50], [220, 120], [180, 150], [100, 140], [100, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_2",
+        "name": "Eastern Valley",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [220, 120], [320, 80], [380, 140], [340, 200], [260, 180], [220, 120]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_3",
+        "name": "Southern Highlands",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [100, 140], [180, 150], [220, 200], [200, 280], [120, 300], [80, 240], [100, 140]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_4",
+        "name": "Western Forest",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [50, 180], [80, 240], [60, 320], [20, 340], [10, 280], [30, 220], [50, 180]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_5",
+        "name": "Central Meadows",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [220, 200], [260, 180], [340, 200], [360, 260], [300, 300], [220, 280], [220, 200]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_6",
+        "name": "Eastern Coast",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [380, 140], [460, 120], [500, 180], [480, 240], [420, 260], [360, 260], [340, 200], [380, 140]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_7",
+        "name": "Southern Peninsula",
+        "terrain": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [200, 280], [220, 280], [300, 300], [320, 360], [280, 400], [200, 420], [160, 380], [180, 320], [200, 280]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_1",
+        "name": "Northern Sea",
+        "terrain": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 0], [600, 0], [600, 50], [500, 50], [460, 80], [380, 60], [320, 80], [200, 50], [100, 50], [50, 80], [0, 60], [0, 0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_2",
+        "name": "Western Sea",
+        "terrain": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 60], [50, 80], [100, 50], [100, 140], [80, 240], [50, 180], [30, 220], [10, 280], [0, 300], [0, 60]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_3",
+        "name": "Eastern Sea",
+        "terrain": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [460, 120], [600, 80], [600, 280], [520, 260], [480, 240], [500, 180], [460, 120]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "water_4",
+        "name": "Southern Sea",
+        "terrain": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 300], [10, 280], [20, 340], [60, 320], [80, 380], [120, 420], [160, 380], [200, 420], [280, 400], [320, 360], [380, 380], [420, 420], [360, 480], [280, 500], [200, 500], [120, 480], [60, 460], [20, 420], [0, 380], [0, 300]
+        ]]
+      }
+    }
+  ]
+}
