@@ -318,13 +318,14 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
   const color = TERRAIN_COLORS[parcel.terrain];
+  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
 
   // Fill the polygon
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.poly(vertices);
   graphics.fill({ color, alpha: 1 });
 
   // Draw border (subtle border for all parcels)
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.poly(vertices);
   graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.3 });
 
   // Draw resource indicators
@@ -351,8 +352,10 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
 function renderHighlight(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
+  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
+
   // Draw bright yellow border on top of everything
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.poly(vertices);
   graphics.stroke({ width: 3, color: 0xffff00, alpha: 1 });
 }
 
