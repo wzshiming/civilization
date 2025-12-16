@@ -70,16 +70,22 @@ function App() {
 
   // Load initial map on mount
   useEffect(() => {
-    getCurrentMap().then((response: any) => {
-      if (response.success && response.map) {
-        const parcels = new Map(response.map.parcels.map((p: Parcel) => [p.id, p]));
-        setWorldMap({
-          ...response.map,
-          parcels,
-        });
-      }
-      setIsLoading(false);
-    });
+    getCurrentMap()
+      .then((response) => {
+        if (response.success && response.map) {
+          const parcels = new Map(response.map.parcels.map((p: Parcel) => [p.id, p]));
+          setWorldMap({
+            ...response.map,
+            parcels,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading initial map:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const handleRegenerateMap = useCallback(

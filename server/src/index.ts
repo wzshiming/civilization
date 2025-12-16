@@ -5,7 +5,7 @@
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import type { WorldMap, Parcel } from './types/map.js';
+import type { WorldMap } from './types/map.js';
 import { generateWorldMap, simulateWorld } from './map-generator/index.js';
 
 const app = express();
@@ -28,22 +28,30 @@ const sseClients = new Set<Response>();
 /**
  * Send SSE event to all connected clients
  */
-function broadcastSSE(event: string, data: any) {
-  const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  sseClients.forEach(client => {
-    try {
-      client.write(message);
-    } catch (error) {
-      console.error('Error sending SSE:', error);
-      sseClients.delete(client);
-    }
-  });
+function broadcastSSE(event: string, data: unknown) {
+  try {
+    const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    sseClients.forEach(client => {
+      try {
+        client.write(message);
+      } catch (error) {
+        console.error('Error sending SSE:', error);
+        try {
+          sseClients.delete(client);
+        } catch (deleteError) {
+          console.error('Error removing SSE client:', deleteError);
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error broadcasting SSE:', error);
+  }
 }
 
 /**
  * Convert Map to plain object for JSON serialization
  */
-function serializeWorldMap(map: WorldMap): any {
+function serializeWorldMap(map: WorldMap) {
   return {
     parcels: Array.from(map.parcels.values()),
     boundaries: map.boundaries,
@@ -197,18 +205,26 @@ app.get('/api/events', (req: Request, res: Response) => {
   console.log(`SSE client connected. Total clients: ${sseClients.size}`);
   
   // Send initial state
-  if (currentMap) {
-    const message = `event: map\ndata: ${JSON.stringify(serializeWorldMap(currentMap))}\n\n`;
-    res.write(message);
+  try {
+    if (currentMap) {
+      const message = `event: map\ndata: ${JSON.stringify(serializeWorldMap(currentMap))}\n\n`;
+      res.write(message);
+    }
+    
+    const simulationMessage = `event: simulation\ndata: ${JSON.stringify({ isSimulating, speed: simulationSpeed })}\n\n`;
+    res.write(simulationMessage);
+  } catch (error) {
+    console.error('Error sending initial SSE state:', error);
   }
-  
-  const simulationMessage = `event: simulation\ndata: ${JSON.stringify({ isSimulating, speed: simulationSpeed })}\n\n`;
-  res.write(simulationMessage);
   
   // Handle client disconnect
   req.on('close', () => {
-    sseClients.delete(res);
-    console.log(`SSE client disconnected. Total clients: ${sseClients.size}`);
+    try {
+      sseClients.delete(res);
+      console.log(`SSE client disconnected. Total clients: ${sseClients.size}`);
+    } catch (error) {
+      console.error('Error handling SSE client disconnect:', error);
+    }
   });
 });
 
@@ -232,12 +248,17 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   
   // Generate initial map
-  console.log('Generating initial map...');
-  currentMap = generateWorldMap({
-    width: 1200,
-    height: 800,
-    numParcels: 500,
-    seed: Date.now(),
-  });
-  console.log('Initial map generated successfully');
+  try {
+    console.log('Generating initial map...');
+    currentMap = generateWorldMap({
+      width: 1200,
+      height: 800,
+      numParcels: 500,
+      seed: Date.now(),
+    });
+    console.log('Initial map generated successfully');
+  } catch (error) {
+    console.error('Error generating initial map:', error);
+    console.log('Server will continue without initial map');
+  }
 });

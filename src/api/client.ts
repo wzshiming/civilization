@@ -11,7 +11,7 @@ export interface MapGenerationRequest {
   seed?: number;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -108,10 +108,10 @@ export async function setSimulationSpeed(speed: number): Promise<ApiResponse> {
  * Connect to SSE stream for real-time updates
  */
 export function connectSSE(callbacks: {
-  onMap?: (map: any) => void;
-  onUpdate?: (update: any) => void;
-  onSimulation?: (state: any) => void;
-  onError?: (error: any) => void;
+  onMap?: (map: unknown) => void;
+  onUpdate?: (update: unknown) => void;
+  onSimulation?: (state: unknown) => void;
+  onError?: (error: unknown) => void;
 }): EventSource {
   const eventSource = new EventSource(`${API_BASE_URL}/api/events`);
   
