@@ -9,11 +9,13 @@ import { SeededRandom } from '../utils/random';
 
 /**
  * Assign terrain type based on elevation, moisture, and temperature
+ * With special handling for polar regions
  */
 export function determineTerrainType(
   elevation: number,
   moisture: number,
-  temperature: number
+  temperature: number,
+  latitude?: number
 ): TerrainType {
   // Deep ocean
   if (elevation < 0.3) {
@@ -30,6 +32,12 @@ export function determineTerrainType(
     return TerrainType.BEACH;
   }
 
+  // Polar regions (latitude > 0.8) should always be tundra on land
+  // This creates massive tundra landmasses at the poles
+  if (latitude !== undefined && latitude > 0.8) {
+    return TerrainType.TUNDRA;
+  }
+
   // High elevation terrains
   if (elevation > 0.75) {
     if (temperature < 0.3) {
@@ -38,8 +46,8 @@ export function determineTerrainType(
     return TerrainType.MOUNTAIN;
   }
 
-  // Cold regions
-  if (temperature < 0.25) {
+  // Cold regions - expanded threshold for more tundra near poles
+  if (temperature < 0.3) {
     return TerrainType.TUNDRA;
   }
 
@@ -84,12 +92,13 @@ export function generateTerrain(
     // Generate base elevation with multiple octaves
     let elevation = elevationNoise.octaveNoise(x * scale, y * scale, 6, 0.5);
     
-    // For spherical projection: reduce elevation toward poles (top/bottom edges)
-    // but maintain some land at poles (no distance-from-center penalty)
-    const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
+    // For spherical projection: latitude affects terrain
+    // latitude: 0 at equator, 1 at poles
+    const latitude = Math.abs(y - height / 2) / (height / 2);
     
-    // Slight reduction at extreme latitudes to create more ocean at poles
-    elevation = elevation * (1 - latitude * 0.3);
+    // Moderate reduction at extreme latitudes
+    // This ensures some land exists at poles for the massive tundra landmasses
+    elevation = elevation * (1 - latitude * 0.2);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -109,9 +118,10 @@ export function generateTerrain(
     // Generate temperature based on latitude (spherical projection)
     let temperature = temperatureNoise.octaveNoise(x * scale * 0.8, y * scale * 0.8, 3, 0.5);
     
-    // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
+    // Temperature varies very strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
-    temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
+    // Use more aggressive latitude effect to ensure cold poles
+    temperature = temperature * (1 - latitude * 1.2) + (1 - latitude) * 0.6;
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;
@@ -123,7 +133,7 @@ export function generateTerrain(
     parcel.elevation = elevation;
     parcel.moisture = moisture;
     parcel.temperature = temperature;
-    parcel.terrain = determineTerrainType(elevation, moisture, temperature);
+    parcel.terrain = determineTerrainType(elevation, moisture, temperature, latitude);
   }
 }
 

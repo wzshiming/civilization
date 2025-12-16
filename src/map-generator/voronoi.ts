@@ -27,17 +27,25 @@ function getLatitudeFactor(y: number, height: number): number {
 
 /**
  * Calculate minimum distance based on latitude for spherical projection
- * Sites near poles should be further apart in x-direction to create larger cells
+ * Sites near poles should be further apart to create much larger cells
  * At the poles, cells should converge into very large blocks
+ * The effect scales with map size - larger maps have more dramatic polar convergence
  */
-function getMinDistanceForLatitude(y: number, height: number, baseDistance: number): number {
+function getMinDistanceForLatitude(y: number, height: number, baseDistance: number, mapSize: number): number {
   const latFactor = getLatitudeFactor(y, height);
-  // Use aggressive exponential scaling to make cells much larger near poles
+  
+  // Scale factor increases with map size to make effect more pronounced on larger maps
+  // For small maps (height ~600): sizeFactor ≈ 1.5
+  // For large maps (height ~1200): sizeFactor ≈ 2.5
+  const sizeFactor = 1 + (mapSize / 1000);
+  
+  // Use very aggressive exponential scaling to make cells much larger near poles
   // At equator (latFactor=0): scale = 1
-  // At mid-latitudes (latFactor=0.5): scale ≈ 2.5x
-  // At poles (latFactor=1): scale = 6x
-  // This causes cells to merge into very large blocks at poles
-  const xScale = Math.pow(6, latFactor);
+  // At mid-latitudes (latFactor=0.5): scale ≈ 4-8x depending on map size
+  // At poles (latFactor=1): scale = 10-25x depending on map size
+  // This causes cells to merge into massive blocks at poles
+  const baseScale = 10 * sizeFactor;
+  const xScale = Math.pow(baseScale, latFactor);
   return baseDistance * xScale;
 }
 
@@ -107,9 +115,10 @@ export function generateVoronoi(
   const baseMinDistance = Math.sqrt((width * height) / numSites) * 0.7;
 
   // Try to place sites with minimum spacing (considering wrapping and latitude)
-  // Use density weighting to place fewer sites near poles
+  // Use density weighting to place much fewer sites near poles
   let attempts = 0;
   const maxAttempts = numSites * 50;
+  const mapSize = Math.sqrt(width * height); // Overall map scale factor
 
   while (sites.length < numSites && attempts < maxAttempts) {
     let candidate: Point;
@@ -123,9 +132,12 @@ export function generateVoronoi(
       };
       
       // Calculate placement probability based on latitude
-      // Sites near poles should be much less likely to be placed
+      // Sites near poles should be MUCH less likely to be placed, creating huge landmasses
+      // At the very poles, almost no sites should be placed (single massive cells)
       const latFactor = getLatitudeFactor(candidate.y, height);
-      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+      // Use cubic function to make reduction more extreme near poles
+      const polarReduction = Math.pow(latFactor, 2.5);
+      const placementProbability = 1 - polarReduction * 0.95; // Only 5% at poles, 100% at equator
       
       if (random.randomFloat(0, 1) < placementProbability) {
         accepted = true;
@@ -138,7 +150,7 @@ export function generateVoronoi(
       continue;
     }
 
-    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance);
+    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance, mapSize);
     let valid = true;
     
     for (const site of sites) {
