@@ -101,6 +101,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     let cleanup = false;
     const localParcelGraphics = new Map<number, Graphics[]>();
+    const localHighlightGraphics = new Map<number, Graphics[]>();
 
     // Create Pixi application
     const app = new Application();
@@ -146,8 +147,6 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           { x: -1, y: 1 },          // bottom-left
           { x: 1, y: 1 },           // bottom-right
         ];
-        
-        const localHighlightGraphics = new Map<number, Graphics[]>();
         
         tileOffsets.forEach((offset) => {
           const tileContainer = new Container();
@@ -260,6 +259,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();
+      localHighlightGraphics.clear();
     };
   }, [worldMap, onParcelClick, updateCameraLoop]);
 
