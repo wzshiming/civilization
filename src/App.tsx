@@ -1,48 +1,50 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { WorldMap, Parcel } from './types/map';
-import { generateWorldMap } from './map-generator';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
 import { ControlPanel } from './components/ControlPanel';
 import { LanguageSelector } from './components/LanguageSelector';
-import { useSimulation } from './hooks/useSimulation';
+import { useSSESimulation } from './hooks/useSSESimulation';
+import { api } from './api/client';
 import { useI18n } from './i18n';
 import './App.css';
 
 function App() {
   const { t } = useI18n();
-  const [worldMap, setWorldMap] = useState<WorldMap | null>(() => {
-    // Generate initial map on mount
-    return null;
-  });
+  const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mapConfig, setMapConfig] = useState<{ numParcels: number; seed?: number }>({
     numParcels: 500,
   });
 
-  const { isSimulating, simulationSpeed, toggleSimulation, changeSpeed } = useSimulation(worldMap);
+  const { isSimulating, simulationSpeed, isConnected, toggleSimulation, changeSpeed } =
+    useSSESimulation(worldMap, setWorldMap);
 
-  // Map generation effect
+  // Map generation effect - now using backend API
   useEffect(() => {
-    // Use setTimeout to allow UI to update
-    const timer = setTimeout(() => {
-      const map = generateWorldMap({
-        width: 1200,
-        height: 800,
-        numParcels: mapConfig.numParcels,
-        seed: mapConfig.seed,
-      });
-      setWorldMap(map);
-      setIsLoading(false);
-    }, 100);
+    const generateMap = async () => {
+      try {
+        setIsLoading(true);
+        const map = await api.generateMap({
+          width: 1200,
+          height: 800,
+          numParcels: mapConfig.numParcels,
+          seed: mapConfig.seed,
+        });
+        setWorldMap(map);
+      } catch (error) {
+        console.error('Error generating map:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    generateMap();
   }, [mapConfig]);
 
   const handleRegenerateMap = useCallback(
     (config: { numParcels: number; seed?: number }) => {
-      setIsLoading(true);
       setSelectedParcel(null);
       setMapConfig(config);
     },
@@ -60,6 +62,11 @@ function App() {
   return (
     <div className="app">
       <LanguageSelector />
+      {!isConnected && (
+        <div className="connection-status">
+          <p>⚠️ Connecting to backend server...</p>
+        </div>
+      )}
       {isLoading ? (
         <div className="loading-screen">
           <div className="loading-spinner" />

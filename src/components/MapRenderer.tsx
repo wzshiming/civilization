@@ -112,7 +112,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         if (app && app.stage) {
           app.destroy(true, { children: true, texture: true });
         }
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();

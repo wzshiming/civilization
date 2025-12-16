@@ -14,6 +14,13 @@ dist-ssr
 package-lock.json
 yarn.lock
 
+# Backend build artifacts
+backend/dist
+
+# TypeScript compilation artifacts
+src/**/*.js
+src/**/*.d.ts
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
