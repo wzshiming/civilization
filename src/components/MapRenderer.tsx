@@ -31,6 +31,13 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
 const MOVE_SPEED = 5; // pixels per frame
 const SMOOTH_FACTOR = 0.15; // easing factor for smooth movement
 
+// Constants for zoom
+const MIN_ZOOM = 1.0; // minimum zoom level (current level)
+const MAX_ZOOM = 4.0; // maximum zoom level (4x zoom in)
+const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
+const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
+const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -44,6 +51,18 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const cameraRef = useRef({ x: 0, y: 0 }); // current position
   const targetCameraRef = useRef({ x: 0, y: 0 }); // target position
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
+  
+  // Zoom state
+  const zoomRef = useRef(MIN_ZOOM); // current zoom level
+  const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
+  const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
+
+  // Helper to update container position and scale
+  const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
+    container.x = x;
+    container.y = y;
+    container.scale.set(scale);
+  }, []);
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
@@ -57,10 +76,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     targetCameraRef.current.y += moveY;
     
     // Apply wrapping for circular map (toroidal topology)
-    const mapWidth = worldMap.width;
-    const mapHeight = worldMap.height;
+    const { width: mapWidth, height: mapHeight } = worldMap;
     
-    // Wrap horizontally (east-west) - keep camera within one map width
+    // Wrap horizontally and vertically
     while (targetCameraRef.current.x > mapWidth / 2) {
       targetCameraRef.current.x -= mapWidth;
       cameraRef.current.x -= mapWidth;
@@ -69,8 +87,6 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       targetCameraRef.current.x += mapWidth;
       cameraRef.current.x += mapWidth;
     }
-    
-    // Wrap vertically (north-south) - keep camera within one map height
     while (targetCameraRef.current.y > mapHeight / 2) {
       targetCameraRef.current.y -= mapHeight;
       cameraRef.current.y -= mapHeight;
@@ -80,21 +96,36 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       cameraRef.current.y += mapHeight;
     }
     
-    // Smooth camera movement with easing
-    cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
-    cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
+    // Smooth zoom with easing
+    const oldZoom = zoomRef.current;
+    zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
     
-    // Update container position
+    // Adjust camera position when zooming to keep zoom point fixed
+    const isZooming = zoomPointRef.current !== null && Math.abs(zoomRef.current - oldZoom) > ZOOM_CHANGE_THRESHOLD;
+    
+    if (isZooming && zoomPointRef.current) {
+      const { x: pointX, y: pointY } = zoomPointRef.current;
+      const worldX = (pointX - cameraRef.current.x) / oldZoom;
+      const worldY = (pointY - cameraRef.current.y) / oldZoom;
+      
+      cameraRef.current.x = pointX - worldX * zoomRef.current;
+      cameraRef.current.y = pointY - worldY * zoomRef.current;
+      targetCameraRef.current.x = cameraRef.current.x;
+      targetCameraRef.current.y = cameraRef.current.y;
+    } else {
+      // Apply smooth camera movement when not zooming
+      cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
+      cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
+    }
+    
+    // Update containers
     if (parcelContainerRef.current) {
-      parcelContainerRef.current.x = cameraRef.current.x;
-      parcelContainerRef.current.y = cameraRef.current.y;
+      updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     }
-    // Update highlight container position to match
     if (highlightContainerRef.current) {
-      highlightContainerRef.current.x = cameraRef.current.x;
-      highlightContainerRef.current.y = cameraRef.current.y;
+      updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     }
-  }, [worldMap.width, worldMap.height]);
+  }, [worldMap, updateContainer]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -206,12 +237,39 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       }
     })();
     
+    // Helper to adjust zoom level
+    const adjustZoom = (delta: number) => {
+      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + delta));
+    };
+
+    // Helper to set zoom point to viewport center
+    const setZoomPointToCenter = () => {
+      if (appRef.current) {
+        zoomPointRef.current = {
+          x: appRef.current.screen.width / 2,
+          y: appRef.current.screen.height / 2
+        };
+      }
+    };
+
     // Keyboard event handlers
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent default scrolling for arrow keys
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
+      
+      // Handle zoom with + and - keys
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        setZoomPointToCenter();
+        adjustZoom(ZOOM_SPEED);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        setZoomPointToCenter();
+        adjustZoom(-ZOOM_SPEED);
+      }
+      
       keysRef.current.add(e.key);
     };
     
@@ -219,8 +277,26 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       keysRef.current.delete(e.key);
     };
     
+    // Mouse wheel event handler for zoom
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      
+      if (!appRef.current?.canvas) return;
+      
+      const rect = appRef.current.canvas.getBoundingClientRect();
+      zoomPointRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      
+      adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
+    };
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
+    // Capture canvas element for cleanup
+    const canvasElement = canvasRef.current;
+    if (canvasElement) {
+      canvasElement.addEventListener('wheel', handleWheel, { passive: false });
+    }
 
     return () => {
       cleanup = true;
@@ -228,6 +304,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Cleanup keyboard listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      
+      // Cleanup wheel listener
+      if (canvasElement) {
+        canvasElement.removeEventListener('wheel', handleWheel);
+      }
       
       try {
         if (app) {

@@ -77,7 +77,7 @@ function App() {
           <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
           <div className="map-controls-hint">
-            <strong>💡 Tip:</strong> Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move the map
+            <strong>💡 Tip:</strong> Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move the map, <strong>Mouse Wheel</strong> or <strong>+/-</strong> to zoom
           </div>
         </>
       ) : (
