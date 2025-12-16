@@ -63,7 +63,7 @@ export function determineTerrainType(
 }
 
 /**
- * Generate terrain properties for all parcels
+ * Generate terrain properties for all parcels with wrapping support
  */
 export function generateTerrain(
   parcels: Parcel[],
@@ -81,23 +81,26 @@ export function generateTerrain(
     const x = parcel.center.x;
     const y = parcel.center.y;
 
-    // Generate base elevation with multiple octaves
-    let elevation = elevationNoise.octaveNoise(x * scale, y * scale, 6, 0.5);
+    // For wrapping map, use cylindrical coordinates for x
+    // Convert x to angle (0 to 2π) for seamless horizontal wrapping
+    const angle = (x / width) * 2 * Math.PI;
+    const noiseX = Math.cos(angle) * width / (2 * Math.PI);
+    const noiseZ = Math.sin(angle) * width / (2 * Math.PI);
+
+    // Generate base elevation with multiple octaves using wrapped coordinates
+    let elevation = elevationNoise.octaveNoise3D(noiseX * scale, y * scale, noiseZ * scale, 6, 0.5);
     
-    // Add distance from center for continent formation
-    const dx = (x - width / 2) / width;
-    const dy = (y - height / 2) / height;
-    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-    
-    // Islands/continents are in the center, oceans at edges
-    elevation = elevation * (1 - distanceFromCenter * 1.2);
+    // For spherical projection, distance from equator affects elevation
+    // More ocean near poles (top/bottom edges)
+    const latitude = Math.abs(y - height / 2) / (height / 2);
+    elevation = elevation * (1 - latitude * 0.8);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
     elevation = Math.max(0, Math.min(1, elevation));
 
-    // Generate moisture
-    let moisture = moistureNoise.octaveNoise(x * scale * 1.5, y * scale * 1.5, 4, 0.5);
+    // Generate moisture using wrapped coordinates
+    let moisture = moistureNoise.octaveNoise3D(noiseX * scale * 1.5, y * scale * 1.5, noiseZ * scale * 1.5, 4, 0.5);
     moisture = (moisture + 1) / 2;
     
     // Moisture is higher near water
@@ -107,11 +110,10 @@ export function generateTerrain(
       moisture = Math.max(moisture, 0.7);
     }
 
-    // Generate temperature
-    let temperature = temperatureNoise.octaveNoise(x * scale * 0.8, y * scale * 0.8, 3, 0.5);
+    // Generate temperature using wrapped coordinates
+    let temperature = temperatureNoise.octaveNoise3D(noiseX * scale * 0.8, y * scale * 0.8, noiseZ * scale * 0.8, 3, 0.5);
     
-    // Temperature varies with latitude
-    const latitude = Math.abs(y - height / 2) / (height / 2);
+    // Temperature varies with latitude - colder at poles
     temperature = temperature * (1 - latitude * 0.7);
     
     // Higher elevations are colder
