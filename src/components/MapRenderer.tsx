@@ -234,21 +234,18 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean, w
       const leftVertices = parcel.vertices.filter(v => v.x > worldWidth * 0.5);
       const rightVertices = parcel.vertices.filter(v => v.x <= worldWidth * 0.5);
       
-      // Render left piece (shifted to appear on right side for tiling)
-      if (leftVertices.length >= 3) {
-        graphics.poly(leftVertices.map(v => [v.x, v.y]).flat());
+      // Helper to render a polygon piece
+      const renderPolygonPiece = (vertices: { x: number; y: number }[]) => {
+        if (vertices.length < 3) return;
+        const points = vertices.map(v => [v.x, v.y]).flat();
+        graphics.poly(points);
         graphics.fill({ color, alpha: 1 });
-        graphics.poly(leftVertices.map(v => [v.x, v.y]).flat());
+        graphics.poly(points);
         graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
-      }
+      };
       
-      // Render right piece (shifted to appear on left side for tiling)
-      if (rightVertices.length >= 3) {
-        graphics.poly(rightVertices.map(v => [v.x, v.y]).flat());
-        graphics.fill({ color, alpha: 1 });
-        graphics.poly(rightVertices.map(v => [v.x, v.y]).flat());
-        graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
-      }
+      renderPolygonPiece(leftVertices);
+      renderPolygonPiece(rightVertices);
       
       // Draw resources at center (adjust for wrapping)
       if (parcel.resources.length > 0) {
@@ -270,10 +267,10 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean, w
   }
 
   // Normal polygon rendering (no wrapping)
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  const points = parcel.vertices.map(v => [v.x, v.y]).flat();
+  graphics.poly(points);
   graphics.fill({ color, alpha: 1 });
-
-  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.poly(points);
   graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
 
   // Draw resource indicators
