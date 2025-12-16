@@ -65,4 +65,8 @@ export const zhCN: TranslationKeys = {
   
   // Language selector
   language: '语言',
+  
+  // Map controls
+  tip: '提示',
+  mapControlsHint: '使用 WASD 或方向键移动地图，鼠标滚轮缩放',
 };

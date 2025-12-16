@@ -31,6 +31,11 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
 const MOVE_SPEED = 5; // pixels per frame
 const SMOOTH_FACTOR = 0.15; // easing factor for smooth movement
 
+// Constants for zoom
+const MIN_ZOOM = 1.0; // minimum zoom level (current default view)
+const MAX_ZOOM = 3.0; // maximum zoom level
+const ZOOM_SPEED = 0.1; // zoom increment per wheel event
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -44,14 +49,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const cameraRef = useRef({ x: 0, y: 0 }); // current position
   const targetCameraRef = useRef({ x: 0, y: 0 }); // target position
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
+  
+  // Zoom state
+  const zoomRef = useRef(MIN_ZOOM); // current zoom level
+  const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
+    // Smooth zoom transition
+    zoomRef.current += (targetZoomRef.current - zoomRef.current) * SMOOTH_FACTOR;
+    
     // Update target based on keys pressed
-    const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
-                  (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
-    const moveY = (keysRef.current.has('s') || keysRef.current.has('S') || keysRef.current.has('ArrowDown') ? -MOVE_SPEED : 0) +
-                  (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? MOVE_SPEED : 0);
+    // Adjust movement speed based on zoom level (inversely proportional)
+    const adjustedMoveSpeed = MOVE_SPEED / zoomRef.current;
+    const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -adjustedMoveSpeed : 0) +
+                  (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? adjustedMoveSpeed : 0);
+    const moveY = (keysRef.current.has('s') || keysRef.current.has('S') || keysRef.current.has('ArrowDown') ? -adjustedMoveSpeed : 0) +
+                  (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? adjustedMoveSpeed : 0);
     
     targetCameraRef.current.x += moveX;
     targetCameraRef.current.y += moveY;
@@ -84,15 +98,17 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
     cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     
-    // Update container position
+    // Update container position and scale
     if (parcelContainerRef.current) {
       parcelContainerRef.current.x = cameraRef.current.x;
       parcelContainerRef.current.y = cameraRef.current.y;
+      parcelContainerRef.current.scale.set(zoomRef.current);
     }
-    // Update highlight container position to match
+    // Update highlight container position and scale to match
     if (highlightContainerRef.current) {
       highlightContainerRef.current.x = cameraRef.current.x;
       highlightContainerRef.current.y = cameraRef.current.y;
+      highlightContainerRef.current.scale.set(zoomRef.current);
     }
   }, [worldMap.width, worldMap.height]);
 
@@ -106,6 +122,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     // Create Pixi application
     const app = new Application();
     appRef.current = app;
+
+    // Store canvas container ref for cleanup
+    const canvasContainer = canvasRef.current;
 
     (async () => {
       try {
@@ -122,8 +141,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           return;
         }
 
-        if (canvasRef.current) {
-          canvasRef.current.appendChild(app.canvas);
+        if (canvasContainer) {
+          canvasContainer.appendChild(app.canvas);
         }
 
         // Create main container for all map tiles (terrain layer)
@@ -219,8 +238,24 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       keysRef.current.delete(e.key);
     };
     
+    // Mouse wheel event handler for zoom
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      
+      // Determine zoom direction
+      const delta = e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED;
+      
+      // Update target zoom, clamped to min/max
+      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + delta));
+    };
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
+    // Add wheel event listener to canvas container
+    if (canvasContainer) {
+      canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
+    }
 
     return () => {
       cleanup = true;
@@ -228,6 +263,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Cleanup keyboard listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      
+      // Cleanup wheel listener
+      if (canvasContainer) {
+        canvasContainer.removeEventListener('wheel', handleWheel);
+      }
       
       try {
         if (app) {

@@ -64,6 +64,10 @@ export const en = {
   
   // Language selector
   language: 'Language',
+  
+  // Map controls
+  tip: 'Tip',
+  mapControlsHint: 'Use WASD or Arrow Keys to move the map, Mouse Wheel to zoom',
 };
 
 export type TranslationKeys = typeof en;
