@@ -31,6 +31,12 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
 const MOVE_SPEED = 5; // pixels per frame
 const SMOOTH_FACTOR = 0.15; // easing factor for smooth movement
 
+// Constants for zoom
+const MIN_ZOOM = 1.0; // minimum zoom level (current level)
+const MAX_ZOOM = 4.0; // maximum zoom level (4x zoom in)
+const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
+const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -44,6 +50,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const cameraRef = useRef({ x: 0, y: 0 }); // current position
   const targetCameraRef = useRef({ x: 0, y: 0 }); // target position
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
+  
+  // Zoom state
+  const zoomRef = useRef(MIN_ZOOM); // current zoom level
+  const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
@@ -84,15 +94,20 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
     cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     
-    // Update container position
+    // Smooth zoom with easing
+    zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
+    
+    // Update container position and scale
     if (parcelContainerRef.current) {
       parcelContainerRef.current.x = cameraRef.current.x;
       parcelContainerRef.current.y = cameraRef.current.y;
+      parcelContainerRef.current.scale.set(zoomRef.current);
     }
-    // Update highlight container position to match
+    // Update highlight container position and scale to match
     if (highlightContainerRef.current) {
       highlightContainerRef.current.x = cameraRef.current.x;
       highlightContainerRef.current.y = cameraRef.current.y;
+      highlightContainerRef.current.scale.set(zoomRef.current);
     }
   }, [worldMap.width, worldMap.height]);
 
@@ -212,6 +227,16 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
+      
+      // Handle zoom with + and - keys
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        targetZoomRef.current = Math.min(targetZoomRef.current + ZOOM_SPEED, MAX_ZOOM);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        targetZoomRef.current = Math.max(targetZoomRef.current - ZOOM_SPEED, MIN_ZOOM);
+      }
+      
       keysRef.current.add(e.key);
     };
     
@@ -219,8 +244,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       keysRef.current.delete(e.key);
     };
     
+    // Mouse wheel event handler for zoom
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      
+      // Zoom in/out based on wheel direction
+      const zoomDelta = e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED;
+      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + zoomDelta));
+    };
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
+    // Capture canvas element for cleanup
+    const canvasElement = canvasRef.current;
+    if (canvasElement) {
+      canvasElement.addEventListener('wheel', handleWheel, { passive: false });
+    }
 
     return () => {
       cleanup = true;
@@ -228,6 +268,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Cleanup keyboard listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      
+      // Cleanup wheel listener
+      if (canvasElement) {
+        canvasElement.removeEventListener('wheel', handleWheel);
+      }
       
       try {
         if (app) {
