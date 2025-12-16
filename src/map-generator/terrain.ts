@@ -82,7 +82,6 @@ export function generateTerrain(
     const y = parcel.center.y;
 
     // Generate base elevation with multiple octaves
-    // Use wrapping-aware noise for x-axis (longitude)
     let elevation = elevationNoise.octaveNoise(x * scale, y * scale, 6, 0.5);
     
     // For spherical projection: reduce elevation toward poles (top/bottom edges)

@@ -49,6 +49,46 @@ function wrappedDistance(p1: Point, p2: Point, width: number): number {
 }
 
 /**
+ * Transform vertex coordinates from extended space back to original space
+ */
+function transformVertex(x: number, y: number, width: number, height: number): Point {
+  return {
+    x: x - width,
+    y: Math.max(0, Math.min(height, y)),
+  };
+}
+
+/**
+ * Create mirror sites for wrapping support
+ * Returns all sites (original + mirrors) and mapping array
+ */
+function createMirrorSites(sites: Point[], width: number): { allSites: Point[], siteMapping: number[] } {
+  const numOriginal = sites.length;
+  const allSites: Point[] = [];
+  const siteMapping: number[] = [];
+  
+  // Add original sites shifted to center of extended space
+  for (let i = 0; i < numOriginal; i++) {
+    allSites.push({ x: sites[i].x + width, y: sites[i].y });
+    siteMapping.push(i);
+  }
+  
+  // Add left mirror sites
+  for (let i = 0; i < numOriginal; i++) {
+    allSites.push({ x: sites[i].x, y: sites[i].y });
+    siteMapping.push(i);
+  }
+  
+  // Add right mirror sites
+  for (let i = 0; i < numOriginal; i++) {
+    allSites.push({ x: sites[i].x + width * 2, y: sites[i].y });
+    siteMapping.push(i);
+  }
+  
+  return { allSites, siteMapping };
+}
+
+/**
  * Generate Voronoi diagram from a set of points with spherical projection
  */
 export function generateVoronoi(
@@ -97,29 +137,9 @@ export function generateVoronoi(
   }
 
   // Create Delaunay triangulation with extended bounds for wrapping
-  // Extend the bounds to 3x width to capture wrap-around edges
   const extendedWidth = width * 3;
+  const { allSites, siteMapping } = createMirrorSites(sites, width);
   const numOriginal = sites.length;
-  const allSites: Point[] = [];
-  const siteMapping: number[] = [];
-  
-  // Add original sites
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x + width, y: sites[i].y }); // Shift to center
-    siteMapping.push(i);
-  }
-  
-  // Add left mirror sites
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x, y: sites[i].y }); // Left copy
-    siteMapping.push(i);
-  }
-  
-  // Add right mirror sites
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x + width * 2, y: sites[i].y }); // Right copy
-    siteMapping.push(i);
-  }
 
   const points = new Float64Array(allSites.length * 2);
   allSites.forEach((site, i) => {
@@ -137,11 +157,10 @@ export function generateVoronoi(
     const cellPolygon = voronoi.cellPolygon(i);
     if (!cellPolygon) continue;
 
-    // Shift vertices back to original coordinate space (subtract width offset)
-    const vertices: Point[] = cellPolygon.map(([x, y]: [number, number]) => ({
-      x: x - width,
-      y: Math.max(0, Math.min(height, y)),
-    }));
+    // Transform vertices back to original coordinate space
+    const vertices: Point[] = cellPolygon.map(([x, y]: [number, number]) => 
+      transformVertex(x, y, width, height)
+    );
 
     // Find neighbors (map back to original site indices)
     const neighborSet = new Set<number>();
@@ -211,25 +230,8 @@ export function relaxVoronoi(
 
     // Generate new Voronoi from centroids with extended bounds
     const extendedWidth = width * 3;
+    const { allSites, siteMapping } = createMirrorSites(newSites, width);
     const numOriginal = newSites.length;
-    const allSites: Point[] = [];
-    const siteMapping: number[] = [];
-    
-    // Add sites in three copies (left, center, right)
-    for (let i = 0; i < numOriginal; i++) {
-      allSites.push({ x: newSites[i].x + width, y: newSites[i].y }); // Center
-      siteMapping.push(i);
-    }
-    
-    for (let i = 0; i < numOriginal; i++) {
-      allSites.push({ x: newSites[i].x, y: newSites[i].y }); // Left
-      siteMapping.push(i);
-    }
-    
-    for (let i = 0; i < numOriginal; i++) {
-      allSites.push({ x: newSites[i].x + width * 2, y: newSites[i].y }); // Right
-      siteMapping.push(i);
-    }
 
     const points = new Float64Array(allSites.length * 2);
     allSites.forEach((site, i) => {
@@ -245,11 +247,10 @@ export function relaxVoronoi(
       const cellPolygon = voronoi.cellPolygon(i);
       if (!cellPolygon) continue;
 
-      // Shift vertices back to original coordinate space
-      const vertices: Point[] = cellPolygon.map(([x, y]: [number, number]) => ({
-        x: x - width,
-        y: Math.max(0, Math.min(height, y)),
-      }));
+      // Transform vertices back to original coordinate space
+      const vertices: Point[] = cellPolygon.map(([x, y]: [number, number]) => 
+        transformVertex(x, y, width, height)
+      );
       
       const neighborSet = new Set<number>();
       for (const neighbor of voronoi.neighbors(i)) {
