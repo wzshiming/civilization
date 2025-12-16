@@ -1,8 +1,9 @@
 /**
  * Map renderer using Pixi.js for high-performance polygon rendering
+ * with WASD movement, smooth scrolling, and viewport culling
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
 import type { WorldMap, Parcel } from '../types/map';
 import { TerrainType } from '../types/map';
@@ -26,17 +27,73 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
   [TerrainType.SNOW]: 0xf0f8ff,
 };
 
+// Constants for camera movement
+const MOVE_SPEED = 5; // pixels per frame
+const SMOOTH_FACTOR = 0.15; // easing factor for smooth movement
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
-  const parcelGraphicsRef = useRef<Map<number, Graphics>>(new Map());
+  const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
+  const parcelContainerRef = useRef<Container | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
+  
+  // Camera state
+  const cameraRef = useRef({ x: 0, y: 0 }); // current position
+  const targetCameraRef = useRef({ x: 0, y: 0 }); // target position
+  const keysRef = useRef<Set<string>>(new Set()); // pressed keys
+
+  // Camera movement update function for Pixi ticker
+  const updateCameraLoop = useCallback(() => {
+    // Update target based on keys pressed
+    const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
+                  (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
+    const moveY = (keysRef.current.has('s') || keysRef.current.has('S') || keysRef.current.has('ArrowDown') ? -MOVE_SPEED : 0) +
+                  (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? MOVE_SPEED : 0);
+    
+    targetCameraRef.current.x += moveX;
+    targetCameraRef.current.y += moveY;
+    
+    // Apply wrapping for circular map (toroidal topology)
+    const mapWidth = worldMap.width;
+    const mapHeight = worldMap.height;
+    
+    // Wrap horizontally (east-west) - keep camera within one map width
+    while (targetCameraRef.current.x > mapWidth / 2) {
+      targetCameraRef.current.x -= mapWidth;
+      cameraRef.current.x -= mapWidth;
+    }
+    while (targetCameraRef.current.x < -mapWidth / 2) {
+      targetCameraRef.current.x += mapWidth;
+      cameraRef.current.x += mapWidth;
+    }
+    
+    // Wrap vertically (north-south) - keep camera within one map height
+    while (targetCameraRef.current.y > mapHeight / 2) {
+      targetCameraRef.current.y -= mapHeight;
+      cameraRef.current.y -= mapHeight;
+    }
+    while (targetCameraRef.current.y < -mapHeight / 2) {
+      targetCameraRef.current.y += mapHeight;
+      cameraRef.current.y += mapHeight;
+    }
+    
+    // Smooth camera movement with easing
+    cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
+    cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
+    
+    // Update container position
+    if (parcelContainerRef.current) {
+      parcelContainerRef.current.x = cameraRef.current.x;
+      parcelContainerRef.current.y = cameraRef.current.y;
+    }
+  }, [worldMap.width, worldMap.height]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     let cleanup = false;
-    const localParcelGraphics = new Map<number, Graphics>();
+    const localParcelGraphics = new Map<number, Graphics[]>();
 
     // Create Pixi application
     const app = new Application();
@@ -61,71 +118,132 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           canvasRef.current.appendChild(app.canvas);
         }
 
-        // Create container for parcels
-        const parcelContainer = new Container();
-        app.stage.addChild(parcelContainer);
+        // Create main container for all map tiles
+        const mainContainer = new Container();
+        app.stage.addChild(mainContainer);
+        
+        // Create 9 containers for toroidal wrapping (3x3 grid)
+        // Center, and 8 surrounding tiles
+        const tileOffsets = [
+          { x: 0, y: 0 },           // center
+          { x: -1, y: 0 },          // left
+          { x: 1, y: 0 },           // right
+          { x: 0, y: -1 },          // top
+          { x: 0, y: 1 },           // bottom
+          { x: -1, y: -1 },         // top-left
+          { x: 1, y: -1 },          // top-right
+          { x: -1, y: 1 },          // bottom-left
+          { x: 1, y: 1 },           // bottom-right
+        ];
+        
+        tileOffsets.forEach((offset) => {
+          const tileContainer = new Container();
+          tileContainer.x = offset.x * worldMap.width;
+          tileContainer.y = offset.y * worldMap.height;
+          mainContainer.addChild(tileContainer);
+          
+          // Render all parcels in this tile
+          worldMap.parcels.forEach((parcel) => {
+            const graphics = new Graphics();
+            renderParcel(graphics, parcel, false);
 
-        // Render all parcels
-        worldMap.parcels.forEach((parcel) => {
-          const graphics = new Graphics();
-          renderParcel(graphics, parcel, false);
+            // Make all tiles interactive so clicks work on wrapped tiles too
+            graphics.eventMode = 'static';
+            graphics.cursor = 'pointer';
+            graphics.on('pointerdown', (event: FederatedPointerEvent) => {
+              event.stopPropagation();
+              setSelectedParcelId(parcel.id);
+              onParcelClick?.(parcel);
+            });
+            
+            // Store all graphics instances for each parcel (across all tiles)
+            if (!localParcelGraphics.has(parcel.id)) {
+              localParcelGraphics.set(parcel.id, []);
+            }
+            localParcelGraphics.get(parcel.id)!.push(graphics);
 
-          // Make interactive
-          graphics.eventMode = 'static';
-          graphics.cursor = 'pointer';
-          graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-            event.stopPropagation();
-            setSelectedParcelId(parcel.id);
-            onParcelClick?.(parcel);
+            tileContainer.addChild(graphics);
           });
-
-          parcelContainer.addChild(graphics);
-          localParcelGraphics.set(parcel.id, graphics);
+          
+          // Render boundaries (for rivers) in this tile
+          const boundaryGraphics = new Graphics();
+          worldMap.boundaries.forEach((boundary) => {
+            if (boundary.resources.length > 0) {
+              // Draw river
+              if (boundary.edge.length >= 2) {
+                boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
+                for (let i = 1; i < boundary.edge.length; i++) {
+                  boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
+                }
+                boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
+              }
+            }
+          });
+          tileContainer.addChild(boundaryGraphics);
         });
+        
+        parcelContainerRef.current = mainContainer;
 
         // Store in ref for use in other effect
         parcelGraphicsRef.current = localParcelGraphics;
-
-        // Render boundaries (for rivers)
-        const boundaryGraphics = new Graphics();
-        worldMap.boundaries.forEach((boundary) => {
-          if (boundary.resources.length > 0) {
-            // Draw river
-            if (boundary.edge.length >= 2) {
-              boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
-              for (let i = 1; i < boundary.edge.length; i++) {
-                boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
-              }
-              boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
-            }
-          }
-        });
-        parcelContainer.addChild(boundaryGraphics);
+        
+        // Use Pixi's ticker for camera updates
+        app.ticker.add(updateCameraLoop);
       } catch (error) {
         console.error('Failed to initialize Pixi application:', error);
       }
     })();
+    
+    // Keyboard event handlers
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent default scrolling for arrow keys
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+      }
+      keysRef.current.add(e.key);
+    };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysRef.current.delete(e.key);
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       cleanup = true;
+      
+      // Cleanup keyboard listeners
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      
       try {
-        if (app && app.stage) {
-          app.destroy(true, { children: true, texture: true });
+        if (app) {
+          // Remove ticker before destroying
+          if (app.ticker) {
+            app.ticker.remove(updateCameraLoop);
+          }
+          if (app.stage) {
+            app.destroy(true, { children: true, texture: true });
+          }
         }
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();
     };
-  }, [worldMap, onParcelClick]);
+  }, [worldMap, onParcelClick, updateCameraLoop]);
 
   // Update selected parcel highlighting
   useEffect(() => {
-    parcelGraphicsRef.current.forEach((graphics, parcelId) => {
+    parcelGraphicsRef.current.forEach((graphicsArray, parcelId) => {
       const parcel = worldMap.parcels.get(parcelId);
       if (parcel) {
-        graphics.clear();
-        renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        // Update all instances of this parcel across all tiles
+        graphicsArray.forEach((graphics) => {
+          graphics.clear();
+          renderParcel(graphics, parcel, parcelId === selectedParcelId);
+        });
       }
     });
   }, [selectedParcelId, worldMap]);
@@ -201,3 +319,5 @@ function getResourceColor(type: string): number {
   };
   return colors[type] || 0xffffff;
 }
+
+
