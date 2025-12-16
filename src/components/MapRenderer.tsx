@@ -36,6 +36,7 @@ const MIN_ZOOM = 1.0; // minimum zoom level (current level)
 const MAX_ZOOM = 4.0; // maximum zoom level (4x zoom in)
 const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
+const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -96,11 +97,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
     
     // Check if we're actively zooming
-    const isZooming = zoomPointRef.current && Math.abs(zoomRef.current - oldZoom) > 0.001;
+    const isZooming = zoomPointRef.current !== null && Math.abs(zoomRef.current - oldZoom) > ZOOM_CHANGE_THRESHOLD;
     
     // Adjust camera position to zoom towards the specified point
-    if (isZooming) {
-      const { x: pointX, y: pointY } = zoomPointRef.current!;
+    if (isZooming && zoomPointRef.current) {
+      const { x: pointX, y: pointY } = zoomPointRef.current;
       
       // Calculate the world position of the zoom point before zoom
       const worldX = (pointX - cameraRef.current.x) / oldZoom;
