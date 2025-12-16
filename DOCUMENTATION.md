@@ -2,52 +2,75 @@
 
 ## Overview
 
-This system implements a sophisticated procedural map generator that creates dynamic, interactive maps with diverse terrains and simulated resource systems. The implementation fulfills all requirements specified in the issue.
+This system implements a sophisticated procedural map generator with a **separated backend and frontend architecture**. The backend (Go) handles all simulation and map generation logic, while the frontend (React/TypeScript) serves only as a display layer. Communication happens via **Server-Sent Events (SSE)** for real-time updates.
 
 ## Architecture
 
 ### Technology Stack
 
-- **Frontend Framework**: React 19 with TypeScript
-- **Rendering Engine**: Pixi.js 8 for high-performance 2D graphics
-- **Spatial Algorithm**: D3-Delaunay for Voronoi diagram generation
-- **Build Tool**: Vite 7
-- **Styling**: CSS Modules for component-specific styles
+#### Backend
+- **Go 1.21+**: Server and simulation engine
+- **Perlin Noise Library**: Procedural terrain generation
+- **HTTP/SSE**: Real-time communication with frontend
+- **Standard Library**: HTTP server, JSON encoding
+
+#### Frontend
+- **React 19 with TypeScript**: UI display (read-only)
+- **Pixi.js 8**: High-performance 2D graphics rendering
+- **Vite 7**: Build tool with API proxy support
+- **Server-Sent Events**: Real-time updates from backend
 
 ### Core Components
 
-#### 1. Map Generation (`src/map-generator/`)
+#### 1. Backend Server (`main.go`)
 
-**Voronoi Generation** (`voronoi.ts`)
-- Uses Delaunay triangulation to generate irregular Voronoi cells
-- Implements Lloyd's relaxation algorithm for more uniform cell distribution
-- Poisson disk sampling for initial site placement with minimum spacing
-- Returns polygonal parcels with vertex coordinates and neighbor information
-
-**Terrain Generation** (`terrain.ts`)
-- Multi-octave Simplex noise for realistic elevation, moisture, and temperature
-- Distance-from-center calculation for continent/island formation
+**Map Generation**
+- Perlin noise-based terrain generation with elevation, moisture, and temperature
+- Hexagonal parcel layout with randomized positions
+- Neighbor calculation for parcel adjacency
 - Terrain type determination based on environmental parameters
+- Resource placement based on terrain type
 
-**Resource Generation** (`resources.ts`)
-- Terrain-specific resource spawn rules
-- Support for multiple simultaneous resources per parcel (1-3 resources)
-- Dynamic resource properties: type, current reserve, maximum capacity, change rate
+**Simulation Engine**
+- 100ms tick rate for resource updates
+- Configurable simulation speed (multiplier)
+- Real-time resource regeneration/depletion
+- Thread-safe world state management with mutex locks
 
-**Main Orchestrator** (`index.ts`)
-- Coordinates all generation steps in sequence
-- Manages parcel and boundary data structures
-- Implements simulation tick for resource updates
-- Provides clean API for map generation and simulation
+**SSE Communication**
+- Real-time world state streaming to all connected clients
+- Automatic client connection/disconnection handling
+- Efficient JSON serialization of world state
+- Simulation state broadcasts (running/paused, speed)
 
-#### 2. Rendering System (`src/components/MapRenderer.tsx`)
+**HTTP API Endpoints**
+- `GET /api/sse` - Server-Sent Events stream
+- `POST /api/generate` - Generate new map
+- `POST /api/toggle-simulation` - Start/stop simulation
+- `POST /api/set-speed` - Adjust simulation speed
+- `GET /` - Serve static frontend files
 
+#### 2. Frontend (Display Only)
+
+**Data Management** (`src/hooks/useBackend.ts`)
+- SSE connection management
+- Automatic reconnection on disconnect
+- World state synchronization from backend
+- API calls for user actions (no local state modification)
+
+**Rendering System** (`src/components/MapRenderer.tsx`)
 - Pixi.js Application with WebGL/Canvas fallback
 - Polygon rendering using modern Graphics API
 - Interactive parcel selection with pointer events
 - Color-coded terrain visualization
 - Resource indicators as small colored circles
 - Efficient render loop with cleanup on unmount
+
+**Control Panel** (`src/components/ControlPanel.tsx`)
+- Simulation control buttons (requests sent to backend)
+- Speed control slider (updates backend setting)
+- Map configuration form (triggers backend generation)
+- **Note**: All controls trigger backend API calls, no local state changes
 
 #### 3. User Interface
 
