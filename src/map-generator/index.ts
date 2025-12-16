@@ -8,6 +8,7 @@ import { SeededRandom } from '../utils/random';
 import { generateVoronoi, relaxVoronoi } from './voronoi';
 import { generateTerrain } from './terrain';
 import { generateResources, updateResources } from './resources';
+import { generateRivers } from './rivers';
 
 /**
  * Generate a complete world map with all features
@@ -50,11 +51,15 @@ export function generateWorldMap(config: MapConfig): WorldMap {
   console.log('Generating terrain...');
   generateTerrain(parcels, width, height, random);
 
-  // Step 5: Generate resources
+  // Step 5: Generate rivers
+  console.log('Generating rivers...');
+  generateRivers(parcels, random);
+
+  // Step 6: Generate resources
   console.log('Generating resources...');
   generateResources(parcels, random);
 
-  // Step 6: Create boundaries
+  // Step 7: Create boundaries
   console.log('Creating boundaries...');
   const boundaries: Boundary[] = [];
   const processedEdges = new Set<string>();
@@ -80,7 +85,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
     }
   }
 
-  // Step 7: Create world map
+  // Step 8: Create world map
   const parcelMap = new Map<number, Parcel>();
   parcels.forEach(parcel => parcelMap.set(parcel.id, parcel));
 

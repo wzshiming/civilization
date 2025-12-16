@@ -14,6 +14,7 @@ export const TerrainType = {
   TUNDRA: 'tundra',
   MOUNTAIN: 'mountain',
   SNOW: 'snow',
+  RIVER: 'river',
 } as const;
 
 export type TerrainType = typeof TerrainType[keyof typeof TerrainType];

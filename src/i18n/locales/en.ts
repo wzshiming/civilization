@@ -46,6 +46,7 @@ export const en = {
     tundra: 'Tundra',
     mountain: 'Mountain',
     snow: 'Snow',
+    river: 'River',
   } as Record<TerrainType, string>,
   
   // Resource types

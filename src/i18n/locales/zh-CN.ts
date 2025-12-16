@@ -47,6 +47,7 @@ export const zhCN: TranslationKeys = {
     tundra: '冻土',
     mountain: '山地',
     snow: '雪地',
+    river: '河流',
   } as Record<TerrainType, string>,
   
   // Resource types

@@ -29,6 +29,12 @@ This system implements a sophisticated procedural map generator that creates dyn
 - Distance-from-center calculation for continent/island formation
 - Terrain type determination based on environmental parameters
 
+**River Generation** (`rivers.ts`)
+- Identifies high-elevation parcels as river sources
+- Traces downhill paths from sources to ocean/shallow water
+- Creates elongated, continuous river segments
+- Rivers flow naturally from mountains to sea
+
 **Resource Generation** (`resources.ts`)
 - Terrain-specific resource spawn rules
 - Support for multiple simultaneous resources per parcel (1-3 resources)
@@ -78,7 +84,7 @@ This system implements a sophisticated procedural map generator that creates dyn
 ```typescript
 // Terrain types using const assertion for type safety
 TerrainType: ocean, shallow_water, beach, grassland, forest, 
-             jungle, desert, tundra, mountain, snow
+             jungle, desert, tundra, mountain, snow, river
 
 // Resource types
 ResourceType: water, wood, stone, iron, gold, oil, coal, 
@@ -156,7 +162,25 @@ if moisture > 0.5: forest
 else: grassland
 ```
 
-### 3. Resource Simulation
+### 3. River Generation
+
+Rivers are generated after terrain generation using a downhill flow algorithm:
+
+1. **Source Identification**: High-elevation parcels (elevation > 0.6) with sufficient moisture (> 0.3) have a ~5% chance to spawn a river source
+2. **Path Tracing**: From each source, trace a path to the ocean by:
+   - Finding the lowest-elevation unvisited neighbor
+   - Adding 30% randomness to create natural meandering
+   - Continuing until reaching ocean/shallow water or hitting a dead end
+3. **River Marking**: Parcels along successful paths (those reaching water) are converted to river terrain
+4. **Moisture Adjustment**: River parcels have their moisture set to at least 0.9
+
+This creates realistic river systems that:
+- Flow from mountains and highlands to the sea
+- Form elongated, thin, continuous segments
+- Follow natural terrain gradients
+- Add visual and strategic variety to the map
+
+### 4. Resource Simulation
 
 Each simulation tick (100ms interval):
 ```
@@ -179,6 +203,7 @@ Examples:
 - **Forests**: Wood, game, fertile soil (70% spawn chance)
 - **Oceans**: Fish, oil (40% spawn chance)
 - **Grasslands**: Fertile soil, game, stone (60% spawn chance)
+- **Rivers**: Water, fish, fertile soil (90% spawn chance)
 
 ### Resource Properties
 
@@ -200,6 +225,7 @@ Examples:
 - Tundra: Gray-blue (#b8c8d0)
 - Mountain: Brown (#8b7355)
 - Snow: White (#f0f8ff)
+- River: Light blue (#4a9fd8)
 
 ### Resource Colors
 
