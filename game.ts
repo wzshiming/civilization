@@ -6,6 +6,7 @@ interface Province {
     terrain: string;
     resources: string[];
     coordinates: number[][][];
+    originalCoordinates?: number[][][]; // Store original coordinates for proper rescaling
 }
 
 interface Tribe {
@@ -41,6 +42,7 @@ class Game {
     private state: GameState;
     private lastUpdate: number = 0;
     private updateInterval: number = GAME_CONFIG.UPDATE_INTERVAL;
+    private originalProvinceData: Map<number, number[][][]> = new Map();
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -84,6 +86,11 @@ class Game {
                 coordinates: feature.geometry.coordinates
             }));
 
+            // Store original coordinates for each province
+            for (const province of this.state.provinces) {
+                this.originalProvinceData.set(province.id, JSON.parse(JSON.stringify(province.coordinates)));
+            }
+
             // Scale provinces to fit the screen
             this.scaleProvinces();
 
@@ -105,17 +112,27 @@ class Game {
     }
 
     private scaleProvinces(): void {
-        if (this.state.provinces.length === 0) return;
+        if (this.state.provinces.length === 0 || this.originalProvinceData.size === 0) return;
 
-        // Find bounds of all provinces
+        // Restore original coordinates first
+        for (const province of this.state.provinces) {
+            const original = this.originalProvinceData.get(province.id);
+            if (original) {
+                province.coordinates = JSON.parse(JSON.stringify(original));
+            }
+        }
+
+        // Find bounds of all provinces from original coordinates
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         
         for (const province of this.state.provinces) {
-            for (const coord of province.coordinates[0]) {
-                minX = Math.min(minX, coord[0]);
-                minY = Math.min(minY, coord[1]);
-                maxX = Math.max(maxX, coord[0]);
-                maxY = Math.max(maxY, coord[1]);
+            for (const ring of province.coordinates) {
+                for (const coord of ring) {
+                    minX = Math.min(minX, coord[0]);
+                    minY = Math.min(minY, coord[1]);
+                    maxX = Math.max(maxX, coord[0]);
+                    maxY = Math.max(maxY, coord[1]);
+                }
             }
         }
 
@@ -138,12 +155,14 @@ class Game {
         const offsetX = padding + (targetWidth - scaledWidth) / 2;
         const offsetY = padding + (targetHeight - scaledHeight) / 2;
 
-        // Scale all province coordinates
+        // Scale all province coordinates (including all rings for proper GeoJSON support)
         for (const province of this.state.provinces) {
-            province.coordinates[0] = province.coordinates[0].map(coord => [
-                (coord[0] - minX) * scale + offsetX,
-                (coord[1] - minY) * scale + offsetY
-            ]);
+            province.coordinates = province.coordinates.map(ring =>
+                ring.map(coord => [
+                    (coord[0] - minX) * scale + offsetX,
+                    (coord[1] - minY) * scale + offsetY
+                ])
+            );
         }
     }
 
@@ -338,16 +357,18 @@ class Game {
     }
 
     private drawProvince(province: Province): void {
-        const coords = province.coordinates[0];
-        
+        // Draw all rings (exterior and holes) for proper GeoJSON support
         this.ctx.beginPath();
-        this.ctx.moveTo(coords[0][0], coords[0][1]);
         
-        for (let i = 1; i < coords.length; i++) {
-            this.ctx.lineTo(coords[i][0], coords[i][1]);
+        for (const ring of province.coordinates) {
+            if (ring.length === 0) continue;
+            
+            this.ctx.moveTo(ring[0][0], ring[0][1]);
+            for (let i = 1; i < ring.length; i++) {
+                this.ctx.lineTo(ring[i][0], ring[i][1]);
+            }
+            this.ctx.closePath();
         }
-        
-        this.ctx.closePath();
 
         // Fill based on terrain
         this.ctx.fillStyle = this.getTerrainColor(province.terrain);
@@ -358,8 +379,8 @@ class Game {
         this.ctx.lineWidth = 1;
         this.ctx.stroke();
 
-        // Label
-        const center = this.getPolygonCenter(coords);
+        // Label (use first ring for center calculation)
+        const center = this.getPolygonCenter(province.coordinates[0]);
         this.ctx.fillStyle = '#000';
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
@@ -411,16 +432,18 @@ class Game {
     }
 
     private highlightProvince(province: Province): void {
-        const coords = province.coordinates[0];
-        
+        // Highlight all rings for proper GeoJSON support
         this.ctx.beginPath();
-        this.ctx.moveTo(coords[0][0], coords[0][1]);
         
-        for (let i = 1; i < coords.length; i++) {
-            this.ctx.lineTo(coords[i][0], coords[i][1]);
+        for (const ring of province.coordinates) {
+            if (ring.length === 0) continue;
+            
+            this.ctx.moveTo(ring[0][0], ring[0][1]);
+            for (let i = 1; i < ring.length; i++) {
+                this.ctx.lineTo(ring[i][0], ring[i][1]);
+            }
+            this.ctx.closePath();
         }
-        
-        this.ctx.closePath();
         
         this.ctx.strokeStyle = '#FFD700';
         this.ctx.lineWidth = 3;
