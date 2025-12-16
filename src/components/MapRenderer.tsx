@@ -3,7 +3,7 @@
  * with WASD movement, smooth scrolling, and viewport culling
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
 import type { WorldMap, Parcel } from '../types/map';
 import { TerrainType } from '../types/map';
@@ -44,7 +44,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
 
   // Camera movement update function for Pixi ticker
-  const updateCameraLoop = () => {
+  const updateCameraLoop = useCallback(() => {
     // Update target based on keys pressed
     const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
                   (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
@@ -87,7 +87,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       parcelContainerRef.current.x = cameraRef.current.x;
       parcelContainerRef.current.y = cameraRef.current.y;
     }
-  };
+  }, [worldMap.width, worldMap.height]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -226,12 +226,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             app.destroy(true, { children: true, texture: true });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
       localParcelGraphics.clear();
     };
-  }, [worldMap, onParcelClick]);
+  }, [worldMap, onParcelClick, updateCameraLoop]);
 
   // Update selected parcel highlighting
   useEffect(() => {
