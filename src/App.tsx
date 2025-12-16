@@ -1,53 +1,121 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { WorldMap, Parcel } from './types/map';
-import { generateWorldMap } from './map-generator';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
 import { ControlPanel } from './components/ControlPanel';
 import { LanguageSelector } from './components/LanguageSelector';
-import { useSimulation } from './hooks/useSimulation';
 import { useI18n } from './i18n';
+import { connectSSE, getCurrentMap, generateMap, startSimulation, stopSimulation, setSimulationSpeed } from './api/client';
 import './App.css';
 
 function App() {
   const { t } = useI18n();
-  const [worldMap, setWorldMap] = useState<WorldMap | null>(() => {
-    // Generate initial map on mount
-    return null;
-  });
+  const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapConfig, setMapConfig] = useState<{ numParcels: number; seed?: number }>({
-    numParcels: 500,
-  });
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationSpeed, setSimulationSpeedState] = useState(1.0);
 
-  const { isSimulating, simulationSpeed, toggleSimulation, changeSpeed } = useSimulation(worldMap);
-
-  // Map generation effect
+  // Connect to SSE stream for real-time updates
   useEffect(() => {
-    // Use setTimeout to allow UI to update
-    const timer = setTimeout(() => {
-      const map = generateWorldMap({
-        width: 1200,
-        height: 800,
-        numParcels: mapConfig.numParcels,
-        seed: mapConfig.seed,
-      });
-      setWorldMap(map);
-      setIsLoading(false);
-    }, 100);
+    const eventSource = connectSSE({
+      onMap: (mapData) => {
+        console.log('Received map from backend');
+        // Convert parcels array back to Map
+        const parcels = new Map(mapData.parcels.map((p: Parcel) => [p.id, p]));
+        setWorldMap({
+          ...mapData,
+          parcels,
+        });
+        setIsLoading(false);
+      },
+      onUpdate: (update) => {
+        console.log('Received update from backend');
+        // Update parcels with new data
+        setWorldMap((prevMap) => {
+          if (!prevMap) return null;
+          const newParcels = new Map(prevMap.parcels);
+          update.parcels.forEach((parcel: Parcel) => {
+            newParcels.set(parcel.id, parcel);
+          });
+          return {
+            ...prevMap,
+            parcels: newParcels,
+            lastUpdate: update.lastUpdate,
+          };
+        });
+        
+        // Update selected parcel if it exists
+        setSelectedParcel((prevSelected) => {
+          if (!prevSelected) return null;
+          const updatedParcel = update.parcels.find((p: Parcel) => p.id === prevSelected.id);
+          return updatedParcel || prevSelected;
+        });
+      },
+      onSimulation: (state) => {
+        console.log('Received simulation state:', state);
+        setIsSimulating(state.isSimulating);
+        setSimulationSpeedState(state.speed);
+      },
+      onError: (error) => {
+        console.error('SSE error:', error);
+      },
+    });
 
-    return () => clearTimeout(timer);
-  }, [mapConfig]);
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  // Load initial map on mount
+  useEffect(() => {
+    getCurrentMap().then((response: any) => {
+      if (response.success && response.map) {
+        const parcels = new Map(response.map.parcels.map((p: Parcel) => [p.id, p]));
+        setWorldMap({
+          ...response.map,
+          parcels,
+        });
+      }
+      setIsLoading(false);
+    });
+  }, []);
 
   const handleRegenerateMap = useCallback(
-    (config: { numParcels: number; seed?: number }) => {
+    async (config: { numParcels: number; seed?: number }) => {
       setIsLoading(true);
       setSelectedParcel(null);
-      setMapConfig(config);
+      
+      const response = await generateMap({
+        width: 1200,
+        height: 800,
+        numParcels: config.numParcels,
+        seed: config.seed,
+      });
+      
+      if (!response.success) {
+        console.error('Failed to generate map:', response.error);
+        setIsLoading(false);
+      }
+      // Map will be updated via SSE
     },
     []
   );
+
+  const handleToggleSimulation = useCallback(async () => {
+    if (isSimulating) {
+      await stopSimulation();
+    } else {
+      await startSimulation();
+    }
+    // State will be updated via SSE
+  }, [isSimulating]);
+
+  const handleSpeedChange = useCallback(async (speed: number) => {
+    await setSimulationSpeed(speed);
+    // State will be updated via SSE
+  }, []);
 
   const handleParcelClick = useCallback((parcel: Parcel) => {
     setSelectedParcel(parcel);
@@ -69,10 +137,10 @@ function App() {
         <>
           <ControlPanel
             isSimulating={isSimulating}
-            onToggleSimulation={toggleSimulation}
+            onToggleSimulation={handleToggleSimulation}
             onRegenerateMap={handleRegenerateMap}
             simulationSpeed={simulationSpeed}
-            onSpeedChange={changeSpeed}
+            onSpeedChange={handleSpeedChange}
           />
           <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />

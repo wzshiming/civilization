@@ -15,6 +15,10 @@ package-lock.json
 yarn.lock
 tmp
 
+# Server build output
+server/dist
+server/node_modules
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
