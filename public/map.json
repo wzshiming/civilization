@@ -1,0 +1,149 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_1",
+        "name": "Northern Plains",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 55],
+          [-5, 55],
+          [-5, 50],
+          [-10, 50],
+          [-10, 55]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_2",
+        "name": "Eastern Valley",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-5, 55],
+          [0, 55],
+          [0, 50],
+          [-5, 50],
+          [-5, 55]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_3",
+        "name": "Western Highlands",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 50],
+          [-5, 50],
+          [-5, 45],
+          [-10, 45],
+          [-10, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_4",
+        "name": "Central Plateau",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-5, 50],
+          [0, 50],
+          [0, 45],
+          [-5, 45],
+          [-5, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_5",
+        "name": "Southern Grasslands",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 45],
+          [-5, 45],
+          [-5, 40],
+          [-10, 40],
+          [-10, 45]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_6",
+        "name": "Eastern Coast",
+        "type": "land"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-5, 45],
+          [0, 45],
+          [0, 40],
+          [-5, 40],
+          [-5, 45]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_7",
+        "name": "Northern Sea",
+        "type": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 55],
+          [5, 55],
+          [5, 50],
+          [0, 50],
+          [0, 55]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "province_8",
+        "name": "Southern Sea",
+        "type": "water"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [0, 50],
+          [5, 50],
+          [5, 45],
+          [0, 45],
+          [0, 50]
+        ]]
+      }
+    }
+  ]
+}
