@@ -46,7 +46,8 @@ export default function App() {
     }, RESOURCE_GENERATION_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [gameState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!gameState]); // Only re-run when gameState changes from null to non-null
 
   const handleProvinceClick = useCallback(
     (provinceId: string) => {

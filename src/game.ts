@@ -37,6 +37,11 @@ export function initializeGame(mapData: MapData): GameState {
 
   // Find a random land province for the starting location
   const landProvinces = Array.from(provinces.values()).filter(p => p.type === 'land');
+  
+  if (landProvinces.length === 0) {
+    throw new Error('No land provinces available for starting location');
+  }
+  
   const startingProvince = landProvinces[Math.floor(Math.random() * landProvinces.length)];
   
   // Assign starting province to tribe
