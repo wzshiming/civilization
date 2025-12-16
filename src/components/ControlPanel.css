@@ -1,0 +1,140 @@
+.control-panel {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 20px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  min-width: 250px;
+  z-index: 1000;
+}
+
+.control-group {
+  margin-bottom: 20px;
+}
+
+.control-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-group h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1em;
+  color: #4a9eff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+.control-button {
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+
+.control-button:last-child {
+  margin-bottom: 0;
+}
+
+.control-button.start {
+  background: linear-gradient(135deg, #4a9eff, #357abd);
+  color: white;
+}
+
+.control-button.start:hover {
+  background: linear-gradient(135deg, #357abd, #2a6090);
+}
+
+.control-button.stop {
+  background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+  color: white;
+}
+
+.control-button.stop:hover {
+  background: linear-gradient(135deg, #c92a2a, #a61e1e);
+}
+
+.control-button.secondary {
+  background: rgba(100, 100, 100, 0.5);
+  color: white;
+  border: 1px solid #666;
+}
+
+.control-button.secondary:hover {
+  background: rgba(120, 120, 120, 0.6);
+}
+
+.control-button.primary {
+  background: linear-gradient(135deg, #4a9eff, #357abd);
+  color: white;
+}
+
+.control-button.primary:hover {
+  background: linear-gradient(135deg, #357abd, #2a6090);
+}
+
+.speed-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.speed-control label {
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.speed-control input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.config-panel {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #444;
+}
+
+.config-field {
+  margin-bottom: 15px;
+}
+
+.config-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.config-field input {
+  width: 100%;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.95em;
+}
+
+.config-field input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.config-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.config-field input[type="number"]::-webkit-outer-spin-button,
+.config-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
