@@ -54,6 +54,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   // Zoom state
   const zoomRef = useRef(MIN_ZOOM); // current zoom level
   const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
+  const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
@@ -95,7 +96,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     
     // Smooth zoom with easing
+    const oldZoom = zoomRef.current;
     zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
+    
+    // Adjust camera position to zoom towards the specified point
+    if (zoomPointRef.current && Math.abs(zoomRef.current - oldZoom) > 0.001) {
+      const { x: pointX, y: pointY } = zoomPointRef.current;
+      
+      // Calculate the world position of the zoom point before zoom
+      const worldX = (pointX - cameraRef.current.x) / oldZoom;
+      const worldY = (pointY - cameraRef.current.y) / oldZoom;
+      
+      // Calculate the new camera position to keep the world point at the same screen position
+      cameraRef.current.x = pointX - worldX * zoomRef.current;
+      cameraRef.current.y = pointY - worldY * zoomRef.current;
+      targetCameraRef.current.x = cameraRef.current.x;
+      targetCameraRef.current.y = cameraRef.current.y;
+    }
     
     // Update container position and scale
     if (parcelContainerRef.current) {
@@ -231,9 +248,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Handle zoom with + and - keys
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
+        // Zoom towards center of viewport for keyboard zoom
+        if (appRef.current) {
+          zoomPointRef.current = {
+            x: appRef.current.screen.width / 2,
+            y: appRef.current.screen.height / 2
+          };
+        }
         targetZoomRef.current = Math.min(targetZoomRef.current + ZOOM_SPEED, MAX_ZOOM);
       } else if (e.key === '-' || e.key === '_') {
         e.preventDefault();
+        // Zoom towards center of viewport for keyboard zoom
+        if (appRef.current) {
+          zoomPointRef.current = {
+            x: appRef.current.screen.width / 2,
+            y: appRef.current.screen.height / 2
+          };
+        }
         targetZoomRef.current = Math.max(targetZoomRef.current - ZOOM_SPEED, MIN_ZOOM);
       }
       
@@ -247,6 +278,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     // Mouse wheel event handler for zoom
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
+      
+      // Get mouse position relative to canvas
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Zoom towards mouse position for wheel zoom
+      zoomPointRef.current = { x: mouseX, y: mouseY };
       
       // Zoom in/out based on wheel direction
       const zoomDelta = e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED;
