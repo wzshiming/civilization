@@ -128,7 +128,7 @@ export function generateTerrain(
 }
 
 /**
- * Add rivers between parcels
+ * Add rivers by converting parcels to shallow water terrain
  * Rivers flow from high elevation to low elevation
  */
 export function generateRivers(
@@ -152,6 +152,11 @@ export function generateRivers(
     while (steps < maxSteps) {
       visited.add(current.id);
       
+      // Convert current parcel to shallow water if it's not ocean
+      if (current.terrain !== TerrainType.OCEAN && current.terrain !== TerrainType.SHALLOW_WATER) {
+        current.terrain = TerrainType.SHALLOW_WATER;
+      }
+      
       // Find lowest neighbor
       let lowest = current;
       for (const neighborId of current.neighbors) {
@@ -167,10 +172,6 @@ export function generateRivers(
       if (lowest.id === current.id || lowest.terrain === TerrainType.OCEAN) {
         break;
       }
-
-      // Add river edge
-      const edge = [current.id, lowest.id].sort().join('-');
-      rivers.add(edge);
 
       current = lowest;
       steps++;

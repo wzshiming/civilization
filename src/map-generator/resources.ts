@@ -128,29 +128,21 @@ export function generateResources(parcels: Parcel[], random: SeededRandom): void
 }
 
 /**
- * Generate resources on boundaries (e.g., rivers)
+ * Generate resources on boundaries (no longer used for rivers)
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export function generateBoundaryResources(
-  rivers: Set<string>,
-  random: SeededRandom
+  _rivers: Set<string>,
+  _random: SeededRandom
 ): Map<string, Resource[]> {
   const boundaryResources = new Map<string, Resource[]>();
 
-  for (const edge of rivers) {
-    const resources: Resource[] = [
-      createResource(ResourceType.WATER, random),
-    ];
-
-    // Rivers can also have fish
-    if (random.chance(0.4)) {
-      resources.push(createResource(ResourceType.FISH, random));
-    }
-
-    boundaryResources.set(edge, resources);
-  }
+  // Rivers are now implemented as shallow water terrain parcels
+  // No boundary resources needed
 
   return boundaryResources;
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
  * Simulate resource changes over time
