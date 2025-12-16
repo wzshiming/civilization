@@ -22,6 +22,7 @@ const clients = new Set<Response>();
 
 // Helper to broadcast updates via SSE
 function broadcastUpdate(event: string, data: unknown) {
+  // Stringify once for all clients for better performance
   const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   clients.forEach((client) => {
     try {
@@ -146,10 +147,14 @@ app.post('/api/simulation/stop', (req: Request, res: Response) => {
   res.json({ success: true, isSimulating: false });
 });
 
+// Simulation speed constants
+const MIN_SIMULATION_SPEED = 0.1;
+const MAX_SIMULATION_SPEED = 5.0;
+
 // Change simulation speed
 app.post('/api/simulation/speed', (req: Request, res: Response) => {
   const speed = parseFloat(req.body.speed);
-  if (isNaN(speed) || speed < 0.1 || speed > 5.0) {
+  if (isNaN(speed) || speed < MIN_SIMULATION_SPEED || speed > MAX_SIMULATION_SPEED) {
     res.status(400).json({ success: false, error: 'Invalid speed value' });
     return;
   }

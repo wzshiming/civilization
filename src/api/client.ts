@@ -5,7 +5,8 @@
 import type { WorldMap, Parcel, Boundary } from '../types/map';
 
 // Use relative URL in development (proxied by Vite) or configured URL in production
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// Empty string means relative URLs, which works with Vite's proxy in dev mode
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 export interface SerializedMap {
   parcels: Array<Parcel & { id: number }>;
