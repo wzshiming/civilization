@@ -279,8 +279,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       
-      // Get mouse position relative to canvas
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      // Get mouse position relative to the actual Pixi canvas, not the container
+      const canvas = app.canvas;
+      if (!canvas) return;
+      
+      const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       
