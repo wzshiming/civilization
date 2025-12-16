@@ -11,15 +11,31 @@ interface MapViewProps {
   onProvinceHover: (provinceId: string | null) => void;
 }
 
+// Calculate the center point of a province from its GeoJSON coordinates
+function getProvinceCenter(coordinates: number[][][]): [number, number] {
+  const coords = coordinates[0]; // Get the outer ring of the polygon
+  let totalLng = 0;
+  let totalLat = 0;
+  
+  coords.forEach(([lng, lat]) => {
+    totalLng += lng;
+    totalLat += lat;
+  });
+  
+  return [totalLng / coords.length, totalLat / coords.length];
+}
+
 export default function MapView({
   mapData,
   provinces,
+  selectedProvinceId,
   hoveredProvinceId,
   onProvinceClick,
   onProvinceHover,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -29,6 +45,18 @@ export default function MapView({
     // For this prototype, we'll use the map without authentication
     // which will show a warning but still work for local development
     
+    // Find the starting province to center the map on it
+    let initialCenter: [number, number] = [-7.5, 47.5];
+    let initialZoom = 5;
+    
+    if (selectedProvinceId) {
+      const startingFeature = mapData.features.find(f => f.properties.id === selectedProvinceId);
+      if (startingFeature) {
+        initialCenter = getProvinceCenter(startingFeature.geometry.coordinates);
+        initialZoom = 7; // Zoom in closer to the starting province
+      }
+    }
+    
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: {
@@ -36,8 +64,8 @@ export default function MapView({
         sources: {},
         layers: [],
       },
-      center: [-7.5, 47.5],
-      zoom: 5,
+      center: initialCenter,
+      zoom: initialZoom,
     });
 
     map.current.on('load', () => {
@@ -162,6 +190,28 @@ export default function MapView({
       ]);
     }
   }, [hoveredProvinceId]);
+
+  // Fly to selected province when it changes (except on initial load)
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!selectedProvinceId) return;
+    
+    // Skip the initial selection to avoid double animation
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      return;
+    }
+
+    const feature = mapData.features.find(f => f.properties.id === selectedProvinceId);
+    if (feature) {
+      const center = getProvinceCenter(feature.geometry.coordinates);
+      map.current.flyTo({
+        center,
+        zoom: 7,
+        duration: 1000, // 1 second animation
+      });
+    }
+  }, [selectedProvinceId, mapData]);
 
   return (
     <div
