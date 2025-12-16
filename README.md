@@ -178,6 +178,26 @@ Potential features for future development:
 - Large map files may impact initial load time
 - No persistence - game state is lost on page refresh
 
+## 🔧 Troubleshooting
+
+### Map not visible
+
+If you don't see the map rendering:
+
+1. **Check WebGL support**: Mapbox GL JS requires WebGL. Verify your browser supports WebGL at https://get.webgl.org/
+2. **Disable ad blockers**: Some ad blockers may interfere with Mapbox CSS loading
+3. **Try a different browser**: Use Chrome, Firefox, Safari, or Edge (latest versions)
+4. **Check console**: Open browser DevTools (F12) and look for specific error messages
+5. **Clear cache**: Hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to clear cached resources
+
+The map area should show:
+- Light gray background (#e8e8e8)
+- Colored provinces (green for controlled, blue for water, gray for uncontrolled)
+- Province borders in dark color
+- Smooth animations when selecting provinces
+
+If issues persist, the game logic still works - you can interact with provinces through the UI panel even if the visual map doesn't render.
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
