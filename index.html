@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stone Age Civilization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #8B7355, #D2B48C);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: #F5DEB3;
+            border: 4px solid #654321;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #654321;
+            margin-bottom: 15px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 600px 1fr;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: #fff;
+            border: 3px solid #654321;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-panel {
+            background: #FFF8DC;
+            border: 2px solid #8B7355;
+            border-radius: 5px;
+            padding: 12px;
+        }
+
+        .info-panel h2 {
+            font-size: 16px;
+            color: #654321;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #D2B48C;
+            padding-bottom: 4px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            font-size: 13px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #654321;
+        }
+
+        .info-value {
+            color: #8B4513;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        button {
+            background: #8B7355;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #654321;
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        #message {
+            text-align: center;
+            font-weight: bold;
+            color: #8B4513;
+            min-height: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .instructions {
+            background: #FFF8DC;
+            border: 2px solid #8B7355;
+            border-radius: 5px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #654321;
+        }
+
+        .instructions h3 {
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .instructions ul {
+            margin-left: 18px;
+        }
+
+        .instructions li {
+            margin: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .game-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🗿 Stone Age Civilization 🗿</h1>
+        
+        <div class="game-layout">
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="600" height="300"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <div class="info-panel">
+                    <h2>Game Status</h2>
+                    <div class="info-item">
+                        <span class="info-label">Year:</span>
+                        <span class="info-value" id="year">10000 BC</span>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h2>Your Tribe</h2>
+                    <div class="info-item">
+                        <span class="info-label">Population:</span>
+                        <span class="info-value" id="population">25</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Food:</span>
+                        <span class="info-value" id="food">50</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Age:</span>
+                        <span class="info-value" id="age">Stone Age</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Technology:</span>
+                        <span class="info-value" id="tech">fire, stone_tools</span>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h2>Selected Province</h2>
+                    <div class="info-item">
+                        <span class="info-label">Name:</span>
+                        <span class="info-value" id="provinceName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Terrain:</span>
+                        <span class="info-value" id="provinceTerrain">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Resources:</span>
+                        <span class="info-value" id="provinceResources">-</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="pauseBtn">Pause</button>
+                    <button id="gatherBtn">Gather Food</button>
+                    <button id="researchBtn">Research Tech</button>
+                </div>
+
+                <div id="message"></div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📜 How to Play:</h3>
+            <ul>
+                <li><strong>Click provinces</strong> to select and view their details</li>
+                <li><strong>Gather Food:</strong> Collect resources from your province</li>
+                <li><strong>Research Tech:</strong> Advance your civilization (requires 30+ population)</li>
+                <li><strong>Manage Resources:</strong> Keep your population fed to grow</li>
+                <li><strong>Goal:</strong> Grow your tribe and advance from Stone Age to Bronze Age!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module" src="dist/game.js"></script>
+</body>
+</html>

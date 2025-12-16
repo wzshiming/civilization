@@ -1,0 +1,138 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "name": "Northern Plains",
+        "terrain": "grassland",
+        "resources": ["wheat", "deer"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [100, 50],
+          [250, 50],
+          [250, 150],
+          [100, 150],
+          [100, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "name": "Eastern Forest",
+        "terrain": "forest",
+        "resources": ["wood", "berries"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [250, 50],
+          [400, 50],
+          [400, 150],
+          [250, 150],
+          [250, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "name": "Southern Hills",
+        "terrain": "hills",
+        "resources": ["stone", "copper"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [100, 150],
+          [250, 150],
+          [250, 250],
+          [100, 250],
+          [100, 150]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 4,
+        "name": "Eastern Valley",
+        "terrain": "valley",
+        "resources": ["fish", "clay"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [250, 150],
+          [400, 150],
+          [400, 250],
+          [250, 250],
+          [250, 150]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 5,
+        "name": "Western Mountains",
+        "terrain": "mountains",
+        "resources": ["iron", "gold"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [50, 100],
+          [100, 50],
+          [100, 250],
+          [50, 200],
+          [50, 100]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 6,
+        "name": "Central Lake",
+        "terrain": "water",
+        "resources": ["fish", "reeds"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [180, 120],
+          [220, 120],
+          [220, 180],
+          [180, 180],
+          [180, 120]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 7,
+        "name": "Far East Plains",
+        "terrain": "grassland",
+        "resources": ["wheat", "horses"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [400, 50],
+          [550, 50],
+          [550, 250],
+          [400, 250],
+          [400, 50]
+        ]]
+      }
+    }
+  ]
+}
