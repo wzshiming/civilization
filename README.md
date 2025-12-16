@@ -44,8 +44,15 @@ A sophisticated web-based procedural map generation system featuring dynamic ter
 
 ### Prerequisites
 
-- Node.js (version 18 or higher recommended)
+- **Node.js** (version 18 or higher recommended)
+- **Go** (version 1.21 or higher)
 - npm or yarn
+
+### Architecture
+
+This application uses a **Go backend** for all simulation and map generation, with the frontend serving only as a display layer. Communication happens via **Server-Sent Events (SSE)**.
+
+See [README-BACKEND.md](./README-BACKEND.md) for detailed architecture documentation.
 
 ### Installation
 
@@ -59,36 +66,52 @@ yarn install
 
 ### Development
 
-Start the development server:
+**Option 1: Separate terminals (recommended)**
 
+Terminal 1 - Start the backend:
 ```bash
-npm run dev
-# or
-yarn dev
+npm run dev:backend
 ```
 
-The application will be available at [http://localhost:5173/](http://localhost:5173/)
+Terminal 2 - Start the frontend:
+```bash
+npm run dev
+```
+
+The frontend will be available at [http://localhost:5173/](http://localhost:5173/)
+
+**Option 2: Production mode**
+
+Build and run the server:
+```bash
+npm run build
+./civilization-server
+```
+
+The application will be available at [http://localhost:8080/](http://localhost:8080/)
 
 ### Build
 
-Build for production:
+Build for production (frontend + backend):
 
 ```bash
 npm run build
-# or
-yarn build
 ```
 
-The built files will be in the `dist` directory.
+This builds:
+- Frontend static files to `dist/` directory
+- Backend binary as `civilization-server`
 
-### Preview Production Build
-
-Preview the production build locally:
+Run the production server:
 
 ```bash
-npm run preview
-# or
-yarn preview
+./civilization-server
+```
+
+Or use:
+
+```bash
+npm start
 ```
 
 ### Linting
@@ -128,19 +151,28 @@ yarn lint
 
 ### Generating New Maps
 
+**Note:** Map generation is handled by the backend server.
+
 1. Click "⚙ Map Config" button
 2. Adjust the number of parcels (100-2000)
 3. Optionally enter a seed for reproducible maps
 4. Click "🔄 Regenerate Map"
+5. The backend will generate and stream the new map via SSE
 
 ## Technology Stack
 
-- **React 19** - UI library with hooks
+### Frontend
+- **React 19** - UI library (display only)
 - **TypeScript** - Type-safe JavaScript
 - **Vite 7** - Fast build tool and dev server
 - **Pixi.js 8** - High-performance 2D rendering engine
-- **D3-Delaunay** - Voronoi diagram generation
 - **ESLint** - Code linting
+
+### Backend
+- **Go 1.21+** - Backend server and simulation engine
+- **Perlin Noise** - Procedural terrain generation
+- **Server-Sent Events** - Real-time updates to frontend
+- **HTTP API** - REST endpoints for frontend commands
 
 ## Project Structure
 

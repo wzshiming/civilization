@@ -15,6 +15,10 @@ package-lock.json
 yarn.lock
 tmp
 
+# Go binaries
+civilization-server
+civilization-server.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

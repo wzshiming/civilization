@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:backend": "go run main.go",
+    "build": "tsc -b && vite build && go build -o civilization-server main.go",
+    "build:frontend": "tsc -b && vite build",
+    "build:backend": "go build -o civilization-server main.go",
+    "start": "go run main.go",
     "lint": "eslint .",
     "preview": "vite preview"
   },
