@@ -25,19 +25,33 @@ interface GameState {
     paused: boolean;
 }
 
+// Game balance constants
+const GAME_CONFIG = {
+    UPDATE_INTERVAL: 2000, // Real-time milliseconds between game year advances (2 seconds = 10 game years)
+    POPULATION_GROWTH_RATE: 0.05,
+    POPULATION_DECLINE_RATE: 0.1,
+    RESEARCH_POPULATION_THRESHOLD: 30,
+    RESEARCH_POPULATION_COST: 5,
+    YEARS_PER_TICK: 10
+};
+
 class Game {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private state: GameState;
     private lastUpdate: number = 0;
-    private updateInterval: number = 2000; // 2 seconds per year
+    private updateInterval: number = GAME_CONFIG.UPDATE_INTERVAL;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         if (!this.canvas) {
             throw new Error(`Canvas with id ${canvasId} not found`);
         }
-        this.ctx = this.canvas.getContext('2d')!;
+        const context = this.canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Failed to get 2D context from canvas');
+        }
+        this.ctx = context;
         
         this.state = {
             tribes: [],
@@ -146,15 +160,15 @@ class Game {
 
     private update(): void {
         // Advance year
-        this.state.year += 10;
+        this.state.year += GAME_CONFIG.YEARS_PER_TICK;
 
         // Update tribes
         for (const tribe of this.state.tribes) {
             // Population growth/decline based on food
             if (tribe.food > tribe.population * 2) {
-                tribe.population += Math.floor(tribe.population * 0.05);
+                tribe.population += Math.floor(tribe.population * GAME_CONFIG.POPULATION_GROWTH_RATE);
             } else if (tribe.food < tribe.population) {
-                tribe.population -= Math.floor(tribe.population * 0.1);
+                tribe.population -= Math.floor(tribe.population * GAME_CONFIG.POPULATION_DECLINE_RATE);
                 if (tribe.population < 1) tribe.population = 1;
             }
 
@@ -200,8 +214,8 @@ class Game {
     private researchTechnology(): void {
         const tribe = this.state.tribes[0];
         
-        if (tribe.population < 30) {
-            this.showMessage("Need at least 30 population to research!");
+        if (tribe.population < GAME_CONFIG.RESEARCH_POPULATION_THRESHOLD) {
+            this.showMessage(`Need at least ${GAME_CONFIG.RESEARCH_POPULATION_THRESHOLD} population to research!`);
             return;
         }
 
@@ -211,7 +225,7 @@ class Game {
         if (available.length > 0) {
             const newTech = available[0];
             tribe.technology.push(newTech);
-            tribe.population -= 5; // Research costs population
+            tribe.population -= GAME_CONFIG.RESEARCH_POPULATION_COST;
             
             // Advance age if enough technologies
             if (tribe.technology.length > 5 && tribe.age === 0) {
