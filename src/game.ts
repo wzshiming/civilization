@@ -2,6 +2,15 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import mapData from './map.json';
 
+// Constants
+const MAP_SCALE = 40; // Pixels per coordinate unit
+const MAP_OFFSET_X = 500; // Horizontal offset for centering
+const MAP_OFFSET_Y = 2100; // Vertical offset for centering
+const RESOURCE_GENERATION_INTERVAL = 5000; // Milliseconds between resource generation
+const EXPLORATION_COST = { population: 5, food: 20 };
+const INITIAL_TRIBE_RESOURCES = { population: 10, food: 50, flint: 20 };
+const NEW_PROVINCE_RESOURCES = { population: 5, food: 10 };
+
 // Types
 interface Resources {
   population: number;
@@ -101,9 +110,9 @@ class GameManager {
     this.ctx = null;
     this.updateCallback = null;
     this.resourceTimer = null;
-    this.scale = 40; // Pixels per coordinate unit
-    this.offsetX = 500; // Horizontal offset
-    this.offsetY = 2100; // Vertical offset
+    this.scale = MAP_SCALE;
+    this.offsetX = MAP_OFFSET_X;
+    this.offsetY = MAP_OFFSET_Y;
   }
 
   initialize(mapContainer: HTMLElement) {
@@ -143,9 +152,9 @@ class GameManager {
     if (landProvinces.length > 0) {
       const randomProvince = landProvinces[Math.floor(Math.random() * landProvinces.length)];
       randomProvince.properties.controlled = true;
-      randomProvince.properties.resources.population = 10;
-      randomProvince.properties.resources.food = 50;
-      randomProvince.properties.resources.flint = 20;
+      randomProvince.properties.resources.population = INITIAL_TRIBE_RESOURCES.population;
+      randomProvince.properties.resources.food = INITIAL_TRIBE_RESOURCES.food;
+      randomProvince.properties.resources.flint = INITIAL_TRIBE_RESOURCES.flint;
       
       console.log(`Starting tribe initialized in province: ${randomProvince.id} (${randomProvince.properties.name})`);
     }
@@ -304,14 +313,13 @@ class GameManager {
 
     // Check if we have enough resources
     const totalResources = this.state.getTotalResources();
-    const explorationCost = { population: 5, food: 20 };
 
-    if (totalResources.population < explorationCost.population) {
-      return { canExplore: false, reason: "Not enough population (need 5)" };
+    if (totalResources.population < EXPLORATION_COST.population) {
+      return { canExplore: false, reason: `Not enough population (need ${EXPLORATION_COST.population})` };
     }
 
-    if (totalResources.food < explorationCost.food) {
-      return { canExplore: false, reason: "Not enough food (need 20)" };
+    if (totalResources.food < EXPLORATION_COST.food) {
+      return { canExplore: false, reason: `Not enough food (need ${EXPLORATION_COST.food})` };
     }
 
     return { canExplore: true };
@@ -329,13 +337,12 @@ class GameManager {
     if (!targetProvince) return false;
 
     // Deduct resources from controlled provinces
-    const explorationCost = { population: 5, food: 20 };
-    this.deductResources(explorationCost);
+    this.deductResources(EXPLORATION_COST);
 
     // Take control of the province
     targetProvince.properties.controlled = true;
-    targetProvince.properties.resources.population = 5;
-    targetProvince.properties.resources.food = 10;
+    targetProvince.properties.resources.population = NEW_PROVINCE_RESOURCES.population;
+    targetProvince.properties.resources.food = NEW_PROVINCE_RESOURCES.food;
 
     // Re-render map
     this.renderProvinces();
@@ -372,10 +379,9 @@ class GameManager {
   }
 
   startResourceGeneration() {
-    // Generate resources every 5 seconds
     this.resourceTimer = setInterval(() => {
       this.generateResources();
-    }, 5000);
+    }, RESOURCE_GENERATION_INTERVAL);
   }
 
   generateResources() {
@@ -512,7 +518,7 @@ function GameUI({ gameManager }: GameUIProps) {
           className: 'action-button',
           onClick: handleExplore,
           disabled: !canExplore.canExplore
-        }, 'Explore Province (5 pop, 20 food)'),
+        }, `Explore Province (${EXPLORATION_COST.population} pop, ${EXPLORATION_COST.food} food)`),
         !canExplore.canExplore && canExplore.reason && 
           React.createElement('p', { style: { color: '#e74c3c', fontSize: '12px' } }, canExplore.reason)
       )
