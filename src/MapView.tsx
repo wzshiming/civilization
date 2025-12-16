@@ -62,7 +62,15 @@ export default function MapView({
       style: {
         version: 8,
         sources: {},
-        layers: [],
+        layers: [
+          {
+            id: 'background',
+            type: 'background',
+            paint: {
+              'background-color': '#e8e8e8'
+            }
+          }
+        ],
       },
       center: initialCenter,
       zoom: initialZoom,
