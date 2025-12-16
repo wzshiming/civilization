@@ -2,7 +2,8 @@
  * Detail panel showing information about a selected parcel
  */
 
-import type { Parcel, ResourceType } from '../types/map';
+import type { Parcel, ResourceType, TerrainType } from '../types/map';
+import { useI18n } from '../i18n';
 import './ParcelDetailPanel.css';
 
 interface ParcelDetailPanelProps {
@@ -11,14 +12,24 @@ interface ParcelDetailPanelProps {
 }
 
 export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
+  const { t } = useI18n();
+  
   if (!parcel) {
     return null;
   }
 
+  const formatTerrainType = (type: TerrainType): string => {
+    return t.terrainTypes[type] || type;
+  };
+
+  const formatResourceType = (type: ResourceType): string => {
+    return t.resourceTypes[type] || type;
+  };
+
   return (
     <div className="parcel-detail-panel">
       <div className="panel-header">
-        <h2>Parcel #{parcel.id}</h2>
+        <h2>{t.parcel} #{parcel.id}</h2>
         <button className="close-button" onClick={onClose}>
           ✕
         </button>
@@ -26,29 +37,29 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
 
       <div className="panel-content">
         <section className="terrain-section">
-          <h3>Terrain</h3>
+          <h3>{t.terrain}</h3>
           <div className="info-row">
-            <span className="label">Type:</span>
+            <span className="label">{t.type}</span>
             <span className="value">{formatTerrainType(parcel.terrain)}</span>
           </div>
           <div className="info-row">
-            <span className="label">Elevation:</span>
+            <span className="label">{t.elevation}</span>
             <span className="value">{(parcel.elevation * 100).toFixed(1)}%</span>
           </div>
           <div className="info-row">
-            <span className="label">Moisture:</span>
+            <span className="label">{t.moisture}</span>
             <span className="value">{(parcel.moisture * 100).toFixed(1)}%</span>
           </div>
           <div className="info-row">
-            <span className="label">Temperature:</span>
+            <span className="label">{t.temperature}</span>
             <span className="value">{(parcel.temperature * 100).toFixed(1)}%</span>
           </div>
         </section>
 
         <section className="resources-section">
-          <h3>Resources ({parcel.resources.length})</h3>
+          <h3>{t.resources} ({parcel.resources.length})</h3>
           {parcel.resources.length === 0 ? (
-            <p className="no-resources">No resources available</p>
+            <p className="no-resources">{t.noResources}</p>
           ) : (
             <div className="resources-list">
               {parcel.resources.map((resource, index) => (
@@ -82,15 +93,15 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
         </section>
 
         <section className="location-section">
-          <h3>Location</h3>
+          <h3>{t.location}</h3>
           <div className="info-row">
-            <span className="label">Center:</span>
+            <span className="label">{t.center}</span>
             <span className="value">
               ({parcel.center.x.toFixed(1)}, {parcel.center.y.toFixed(1)})
             </span>
           </div>
           <div className="info-row">
-            <span className="label">Neighbors:</span>
+            <span className="label">{t.neighbors}</span>
             <span className="value">{parcel.neighbors.length}</span>
           </div>
         </section>
@@ -99,16 +110,4 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
   );
 }
 
-function formatTerrainType(type: string): string {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
-function formatResourceType(type: ResourceType): string {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
