@@ -26,9 +26,11 @@ A sophisticated web-based procedural map generation system featuring dynamic ter
 - **Clear boundaries** - Parcel edges are distinct and overlap cleanly
 
 ### ⚡ Real-time Simulation
+- **Backend-driven simulation** - Simulation runs on Node.js backend server
+- **SSE real-time updates** - Server-Sent Events push resource changes to frontend
 - **Resource dynamics** - Resources regenerate or deplete over time
 - **Configurable speed** - Adjust simulation speed from 0.1x to 5x
-- **Live updates** - Watch resources change in real-time
+- **Live updates** - Watch resources change in real-time without polling
 
 ### 🎨 Modern UI
 - **React-based interface** - Clean, responsive design
@@ -61,15 +63,29 @@ yarn install
 
 ### Development
 
-Start the development server:
+The application uses a client-server architecture with SSE (Server-Sent Events) for real-time updates.
+
+**Start both frontend and backend together:**
 
 ```bash
-npm run dev
-# or
-yarn dev
+npm run dev:all
 ```
 
-The application will be available at [http://localhost:5173/](http://localhost:5173/)
+This will start:
+- Backend server on [http://localhost:3001](http://localhost:3001)
+- Frontend dev server on [http://localhost:5173](http://localhost:5173)
+
+**Or start them separately:**
+
+```bash
+# Terminal 1: Start backend server
+npm run dev:backend
+
+# Terminal 2: Start frontend dev server
+npm run dev
+```
+
+The frontend will be available at [http://localhost:5173/](http://localhost:5173/)
 
 ### Build
 
@@ -124,9 +140,10 @@ yarn lint
 ### Running the Simulation
 
 1. Click the "▶ Start" button in the control panel
-2. Watch resources regenerate or deplete in real-time
-3. Use the speed slider to adjust simulation speed (0.1x to 5x)
-4. Click "⏸ Pause" to stop the simulation
+2. Backend server begins simulation and pushes updates via SSE
+3. Watch resources regenerate or deplete in real-time on the frontend
+4. Use the speed slider to adjust simulation speed (0.1x to 5x)
+5. Click "⏸ Pause" to stop the simulation
 
 ### Generating New Maps
 
@@ -137,30 +154,47 @@ yarn lint
 
 ## Technology Stack
 
+### Frontend
 - **React 19** - UI library with hooks
 - **TypeScript** - Type-safe JavaScript
-- **Vite 7** - Fast build tool and dev server
+- **Vite 7** - Fast build tool and dev server with proxy support
 - **Pixi.js 8** - High-performance 2D rendering engine
 - **D3-Delaunay** - Voronoi diagram generation
+- **EventSource API** - SSE client for real-time updates
 - **ESLint** - Code linting
+
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express** - Web framework for REST API
+- **TypeScript** - Type-safe JavaScript
+- **tsx** - TypeScript execution for development
+- **Server-Sent Events (SSE)** - Real-time push updates
 
 ## Project Structure
 
 ```
 civilization/
-├── src/
-│   ├── map-generator/        # Core map generation logic
+├── backend/                  # Backend server
+│   ├── src/
+│   │   └── server.ts         # Express server with SSE support
+│   ├── tsconfig.json         # Backend TypeScript config
+│   └── README.md             # Backend documentation
+├── src/                      # Frontend application
+│   ├── map-generator/        # Core map generation logic (shared with backend)
 │   │   ├── index.ts          # Main orchestrator
 │   │   ├── voronoi.ts        # Voronoi diagram generation
 │   │   ├── terrain.ts        # Terrain and river generation
 │   │   └── resources.ts      # Resource placement and simulation
+│   ├── api/                  # Backend API client
+│   │   └── client.ts         # API communication and SSE setup
 │   ├── components/           # React UI components
 │   │   ├── MapRenderer.tsx   # Pixi.js map renderer
 │   │   ├── ControlPanel.tsx  # Simulation controls
 │   │   └── ParcelDetailPanel.tsx  # Parcel information display
-│   ├── hooks/               # Custom React hooks
-│   │   └── useSimulation.ts # Simulation state management
-│   ├── utils/               # Utility functions
+│   ├── hooks/                # Custom React hooks
+│   │   ├── useSimulation.ts  # Local simulation (deprecated)
+│   │   └── useSSESimulation.ts # SSE-based simulation state management
+│   ├── utils/                # Utility functions
 │   │   ├── random.ts        # Seeded random number generator
 │   │   └── noise.ts         # Simplex noise implementation
 │   ├── types/               # TypeScript type definitions
@@ -169,9 +203,34 @@ civilization/
 │   └── main.tsx             # Application entry point
 ├── public/                  # Public static files
 ├── DOCUMENTATION.md         # Detailed technical documentation
-├── package.json            # Dependencies and scripts
-└── vite.config.ts          # Vite configuration
+├── package.json             # Dependencies and scripts
+└── vite.config.ts           # Vite configuration with API proxy
 ```
+
+## Architecture
+
+The application uses a **client-server architecture** with real-time communication:
+
+### Backend (Port 3001)
+- **REST API** for map generation and simulation control
+- **SSE endpoint** (`/api/events`) for pushing real-time updates
+- Runs simulation loop at 100ms intervals
+- Broadcasts resource changes to all connected clients
+- Maintains simulation state (map, speed, running status)
+
+### Frontend (Port 5173)
+- **React UI** for visualization and interaction
+- **Pixi.js renderer** for high-performance map rendering
+- **EventSource** connection to backend SSE endpoint
+- Receives and applies resource updates in real-time
+- Vite dev server proxies `/api/*` requests to backend
+
+### Communication Flow
+1. Frontend requests map generation via `POST /api/map/generate`
+2. Backend generates map and returns it + broadcasts via SSE
+3. User clicks "Start" → Frontend calls `POST /api/simulation/start`
+4. Backend starts simulation loop and broadcasts resource updates every 100ms
+5. Frontend receives SSE events and updates the UI in real-time
 
 ## Key Algorithms
 
