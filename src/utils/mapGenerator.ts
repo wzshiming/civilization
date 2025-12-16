@@ -155,13 +155,18 @@ function generateResources(
   for (let i = 0; i < numResources; i++) {
     // Pick a unique resource type
     let attempts = 0;
-    let resourceType: ResourceType;
-    do {
-      resourceType = availableResources[random.nextInt(0, availableResources.length - 1)];
+    let resourceType: ResourceType | null = null;
+    
+    while (attempts < 10) {
+      const candidate = availableResources[random.nextInt(0, availableResources.length - 1)];
+      if (!usedResourceTypes.has(candidate)) {
+        resourceType = candidate;
+        break;
+      }
       attempts++;
-    } while (usedResourceTypes.has(resourceType) && attempts < 10);
+    }
 
-    if (usedResourceTypes.has(resourceType)) continue;
+    if (!resourceType) continue;
     usedResourceTypes.add(resourceType);
 
     const baseReserves = random.nextInt(100, 1000);

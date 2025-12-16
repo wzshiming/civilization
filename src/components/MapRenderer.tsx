@@ -107,9 +107,10 @@ export default function MapRenderer({ mapData, onTileClick }: MapRendererProps) 
                 {showResources && feature.properties.resources.length > 0 && (
                   <>
                     {feature.properties.resources.map((resource, idx) => {
-                      // Calculate center position
-                      const centerX = coords.reduce((sum, coord) => sum + coord[0], 0) / (coords.length - 1);
-                      const centerY = coords.reduce((sum, coord) => sum + coord[1], 0) / (coords.length - 1);
+                      // Calculate center position (excluding the last duplicate point)
+                      const uniqueCoords = coords.slice(0, -1);
+                      const centerX = uniqueCoords.reduce((sum, coord) => sum + coord[0], 0) / uniqueCoords.length;
+                      const centerY = uniqueCoords.reduce((sum, coord) => sum + coord[1], 0) / uniqueCoords.length;
                       
                       // Offset multiple resources in a circle around center
                       const numResources = feature.properties.resources.length;
