@@ -1,0 +1,311 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "province_1",
+      "properties": {
+        "name": "Northern Plains",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 2,
+          "flint": 1
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_2", "province_4"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 50],
+          [-5, 52],
+          [-3, 50],
+          [-5, 48],
+          [-10, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_2",
+      "properties": {
+        "name": "Eastern Forests",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 3,
+          "flint": 2
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_1", "province_3", "province_5"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-3, 50],
+          [2, 52],
+          [4, 50],
+          [2, 48],
+          [-3, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_3",
+      "properties": {
+        "name": "Southern Valley",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 4,
+          "flint": 1
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_2", "province_6"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [4, 50],
+          [9, 52],
+          [11, 50],
+          [9, 48],
+          [4, 50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_4",
+      "properties": {
+        "name": "Western Hills",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 2,
+          "flint": 3
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_1", "province_5", "province_7"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10, 48],
+          [-5, 48],
+          [-3, 45],
+          [-8, 45],
+          [-10, 48]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_5",
+      "properties": {
+        "name": "Central Highlands",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 3,
+          "flint": 2
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_2", "province_4", "province_6", "province_8"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-3, 45],
+          [2, 48],
+          [4, 45],
+          [2, 43],
+          [-3, 45]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_6",
+      "properties": {
+        "name": "Eastern Coast",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 5,
+          "flint": 1
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_3", "province_5", "province_9"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [4, 45],
+          [9, 48],
+          [11, 45],
+          [9, 43],
+          [4, 45]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_7",
+      "properties": {
+        "name": "Southern Marshes",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 3,
+          "flint": 2
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_4", "province_8"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-8, 45],
+          [-3, 45],
+          [-1, 42],
+          [-6, 42],
+          [-8, 45]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_8",
+      "properties": {
+        "name": "Ancient Steppes",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 2,
+          "flint": 2
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_5", "province_7", "province_9"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-1, 42],
+          [4, 45],
+          [6, 42],
+          [4, 40],
+          [-1, 42]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "province_9",
+      "properties": {
+        "name": "Far East",
+        "type": "land",
+        "resources": {
+          "population": 0,
+          "food": 0,
+          "flint": 0
+        },
+        "resourceGrowth": {
+          "food": 3,
+          "flint": 3
+        },
+        "resourceLimit": {
+          "population": 100,
+          "food": 500,
+          "flint": 200
+        },
+        "controlled": false,
+        "neighbors": ["province_6", "province_8"]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [6, 42],
+          [11, 45],
+          [13, 42],
+          [11, 40],
+          [6, 42]
+        ]]
+      }
+    }
+  ]
+}
