@@ -13,50 +13,77 @@ export function useBackend() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Connect to SSE endpoint
-    const eventSource = new EventSource('/api/sse');
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: number | null = null;
+    let isMounted = true;
 
-    eventSource.onopen = () => {
-      console.log('SSE connection established');
-      setIsConnected(true);
-      setError(null);
-    };
+    const connect = () => {
+      if (!isMounted) return;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'world_update') {
-          // Convert parcels array to Map
-          const parcelsMap = new Map();
-          if (data.world && data.world.parcels) {
-            Object.entries(data.world.parcels).forEach(([id, parcel]) => {
-              parcelsMap.set(parseInt(id), parcel);
-            });
-          }
+      // Connect to SSE endpoint
+      eventSource = new EventSource('/api/sse');
+
+      eventSource.onopen = () => {
+        console.log('SSE connection established');
+        setIsConnected(true);
+        setError(null);
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
           
-          setWorldMap({
-            ...data.world,
-            parcels: parcelsMap,
-          });
-        } else if (data.type === 'simulation_state') {
-          setIsSimulating(data.isSimulating);
-          setSimulationSpeed(data.speed);
+          if (data.type === 'world_update') {
+            // Convert parcels array to Map
+            const parcelsMap = new Map();
+            if (data.world && data.world.parcels) {
+              Object.entries(data.world.parcels).forEach(([id, parcel]) => {
+                parcelsMap.set(parseInt(id), parcel);
+              });
+            }
+            
+            setWorldMap({
+              ...data.world,
+              parcels: parcelsMap,
+            });
+          } else if (data.type === 'simulation_state') {
+            setIsSimulating(data.isSimulating);
+            setSimulationSpeed(data.speed);
+          }
+        } catch (err) {
+          console.error('Error parsing SSE message:', err);
         }
-      } catch (err) {
-        console.error('Error parsing SSE message:', err);
-      }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error('SSE error:', err);
+        setIsConnected(false);
+        setError('Connection to server lost. Retrying...');
+        
+        if (eventSource) {
+          eventSource.close();
+        }
+        
+        // Attempt to reconnect after 2 seconds
+        if (isMounted) {
+          reconnectTimeout = setTimeout(() => {
+            console.log('Attempting to reconnect...');
+            connect();
+          }, 2000);
+        }
+      };
     };
 
-    eventSource.onerror = (err) => {
-      console.error('SSE error:', err);
-      setIsConnected(false);
-      setError('Connection to server lost. Retrying...');
-      eventSource.close();
-    };
+    connect();
 
     return () => {
-      eventSource.close();
+      isMounted = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (eventSource) {
+        eventSource.close();
+      }
     };
   }, []);
 

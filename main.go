@@ -388,12 +388,24 @@ func (ws *WorldSimulator) broadcastWorldState() {
 
 	message := fmt.Sprintf("data: %s\n\n", string(data))
 
+	// Track clients to remove if they're not reading
+	var toRemove []chan string
+
 	for ch := range ws.clients {
 		select {
 		case ch <- message:
+			// Message sent successfully
 		default:
-			// Client is not reading, skip
+			// Client channel is full, mark for removal
+			log.Printf("Client channel full, removing slow client")
+			toRemove = append(toRemove, ch)
 		}
+	}
+
+	// Remove slow/unresponsive clients
+	for _, ch := range toRemove {
+		delete(ws.clients, ch)
+		close(ch)
 	}
 }
 
@@ -408,8 +420,11 @@ func (ws *WorldSimulator) Run() {
 		if ws.IsSimulating() {
 			deltaTime := now.Sub(lastUpdate).Seconds() * ws.GetSpeed()
 			ws.Simulate(deltaTime)
+			lastUpdate = now
+		} else {
+			// Reset lastUpdate when paused to prevent jump when resuming
+			lastUpdate = now
 		}
-		lastUpdate = now
 	}
 }
 
