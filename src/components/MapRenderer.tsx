@@ -36,6 +36,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
   const parcelContainerRef = useRef<Container | null>(null);
+  const highlightContainerRef = useRef<Container | null>(null);
+  const highlightGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
   
   // Camera state
@@ -87,6 +89,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       parcelContainerRef.current.x = cameraRef.current.x;
       parcelContainerRef.current.y = cameraRef.current.y;
     }
+    // Update highlight container position to match
+    if (highlightContainerRef.current) {
+      highlightContainerRef.current.x = cameraRef.current.x;
+      highlightContainerRef.current.y = cameraRef.current.y;
+    }
   }, [worldMap.width, worldMap.height]);
 
   useEffect(() => {
@@ -118,9 +125,13 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           canvasRef.current.appendChild(app.canvas);
         }
 
-        // Create main container for all map tiles
+        // Create main container for all map tiles (terrain layer)
         const mainContainer = new Container();
         app.stage.addChild(mainContainer);
+        
+        // Create highlight container on top of terrain (selection layer)
+        const highlightContainer = new Container();
+        app.stage.addChild(highlightContainer);
         
         // Create 9 containers for toroidal wrapping (3x3 grid)
         // Center, and 8 surrounding tiles
@@ -136,16 +147,24 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           { x: 1, y: 1 },           // bottom-right
         ];
         
+        const localHighlightGraphics = new Map<number, Graphics[]>();
+        
         tileOffsets.forEach((offset) => {
           const tileContainer = new Container();
           tileContainer.x = offset.x * worldMap.width;
           tileContainer.y = offset.y * worldMap.height;
           mainContainer.addChild(tileContainer);
           
+          // Create highlight tile container at same position
+          const highlightTileContainer = new Container();
+          highlightTileContainer.x = offset.x * worldMap.width;
+          highlightTileContainer.y = offset.y * worldMap.height;
+          highlightContainer.addChild(highlightTileContainer);
+          
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
             const graphics = new Graphics();
-            renderParcel(graphics, parcel, false);
+            renderParcel(graphics, parcel);
 
             // Make all tiles interactive so clicks work on wrapped tiles too
             graphics.eventMode = 'static';
@@ -163,6 +182,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             localParcelGraphics.get(parcel.id)!.push(graphics);
 
             tileContainer.addChild(graphics);
+            
+            // Create highlight graphics for this parcel in the highlight layer
+            const highlightGraphics = new Graphics();
+            if (!localHighlightGraphics.has(parcel.id)) {
+              localHighlightGraphics.set(parcel.id, []);
+            }
+            localHighlightGraphics.get(parcel.id)!.push(highlightGraphics);
+            highlightTileContainer.addChild(highlightGraphics);
           });
           
           // Render boundaries (for rivers) in this tile
@@ -183,9 +210,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         });
         
         parcelContainerRef.current = mainContainer;
+        highlightContainerRef.current = highlightContainer;
 
         // Store in ref for use in other effect
         parcelGraphicsRef.current = localParcelGraphics;
+        highlightGraphicsRef.current = localHighlightGraphics;
         
         // Use Pixi's ticker for camera updates
         app.ticker.add(updateCameraLoop);
@@ -236,16 +265,25 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Update selected parcel highlighting
   useEffect(() => {
-    parcelGraphicsRef.current.forEach((graphicsArray, parcelId) => {
-      const parcel = worldMap.parcels.get(parcelId);
-      if (parcel) {
-        // Update all instances of this parcel across all tiles
-        graphicsArray.forEach((graphics) => {
-          graphics.clear();
-          renderParcel(graphics, parcel, parcelId === selectedParcelId);
+    // Clear all highlights first
+    highlightGraphicsRef.current.forEach((highlightArray) => {
+      highlightArray.forEach((graphics) => {
+        graphics.clear();
+      });
+    });
+    
+    // Draw highlight for selected parcel if any
+    if (selectedParcelId !== null) {
+      const parcel = worldMap.parcels.get(selectedParcelId);
+      const highlightArray = highlightGraphicsRef.current.get(selectedParcelId);
+      
+      if (parcel && highlightArray) {
+        // Draw highlight on all tile instances
+        highlightArray.forEach((graphics) => {
+          renderHighlight(graphics, parcel);
         });
       }
-    });
+    }
   }, [selectedParcelId, worldMap]);
 
   return (
@@ -266,7 +304,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 /**
  * Render a single parcel
  */
-function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): void {
+function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
   const color = TERRAIN_COLORS[parcel.terrain];
@@ -275,13 +313,9 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): 
   graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
   graphics.fill({ color, alpha: 1 });
 
-  // Draw border
-  const borderColor = isSelected ? 0xffff00 : 0x000000;
-  const borderWidth = isSelected ? 3 : 0.5;
-  const borderAlpha = isSelected ? 1 : 0.3;
-
+  // Draw border (subtle border for all parcels)
   graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
-  graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
+  graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.3 });
 
   // Draw resource indicators
   if (parcel.resources.length > 0) {
@@ -299,6 +333,17 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): 
       graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
     });
   }
+}
+
+/**
+ * Render selection highlight for a parcel
+ */
+function renderHighlight(graphics: Graphics, parcel: Parcel): void {
+  if (parcel.vertices.length < 3) return;
+
+  // Draw bright yellow border on top of everything
+  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.stroke({ width: 3, color: 0xffff00, alpha: 1 });
 }
 
 /**
