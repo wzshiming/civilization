@@ -35,69 +35,86 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    let cleanup = false;
+    const localParcelGraphics = new Map<number, Graphics>();
+
     // Create Pixi application
     const app = new Application();
     appRef.current = app;
-    const localParcelGraphics = new Map<number, Graphics>();
 
     (async () => {
-      await app.init({
-        width: worldMap.width,
-        height: worldMap.height,
-        backgroundColor: 0x1a1a1a,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      });
-
-      if (canvasRef.current) {
-        canvasRef.current.appendChild(app.canvas);
-      }
-
-      // Create container for parcels
-      const parcelContainer = new Container();
-      app.stage.addChild(parcelContainer);
-
-      // Render all parcels
-      worldMap.parcels.forEach((parcel) => {
-        const graphics = new Graphics();
-        renderParcel(graphics, parcel, false);
-
-        // Make interactive
-        graphics.eventMode = 'static';
-        graphics.cursor = 'pointer';
-        graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-          event.stopPropagation();
-          setSelectedParcelId(parcel.id);
-          onParcelClick?.(parcel);
+      try {
+        await app.init({
+          width: worldMap.width,
+          height: worldMap.height,
+          backgroundColor: 0x1a1a1a,
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
         });
 
-        parcelContainer.addChild(graphics);
-        localParcelGraphics.set(parcel.id, graphics);
-      });
+        if (cleanup) {
+          return;
+        }
 
-      // Store in ref for use in other effect
-      parcelGraphicsRef.current = localParcelGraphics;
+        if (canvasRef.current) {
+          canvasRef.current.appendChild(app.canvas);
+        }
 
-      // Render boundaries (for rivers)
-      const boundaryGraphics = new Graphics();
-      worldMap.boundaries.forEach((boundary) => {
-        if (boundary.resources.length > 0) {
-          // Draw river
-          boundaryGraphics.lineStyle(2, 0x4a9eff, 0.8);
-          if (boundary.edge.length >= 2) {
-            boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
-            for (let i = 1; i < boundary.edge.length; i++) {
-              boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
+        // Create container for parcels
+        const parcelContainer = new Container();
+        app.stage.addChild(parcelContainer);
+
+        // Render all parcels
+        worldMap.parcels.forEach((parcel) => {
+          const graphics = new Graphics();
+          renderParcel(graphics, parcel, false);
+
+          // Make interactive
+          graphics.eventMode = 'static';
+          graphics.cursor = 'pointer';
+          graphics.on('pointerdown', (event: FederatedPointerEvent) => {
+            event.stopPropagation();
+            setSelectedParcelId(parcel.id);
+            onParcelClick?.(parcel);
+          });
+
+          parcelContainer.addChild(graphics);
+          localParcelGraphics.set(parcel.id, graphics);
+        });
+
+        // Store in ref for use in other effect
+        parcelGraphicsRef.current = localParcelGraphics;
+
+        // Render boundaries (for rivers)
+        const boundaryGraphics = new Graphics();
+        worldMap.boundaries.forEach((boundary) => {
+          if (boundary.resources.length > 0) {
+            // Draw river
+            if (boundary.edge.length >= 2) {
+              boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
+              for (let i = 1; i < boundary.edge.length; i++) {
+                boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
+              }
+              boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
             }
           }
-        }
-      });
-      parcelContainer.addChild(boundaryGraphics);
+        });
+        parcelContainer.addChild(boundaryGraphics);
+      } catch (error) {
+        console.error('Failed to initialize Pixi application:', error);
+      }
     })();
 
     return () => {
-      app.destroy(true, { children: true, texture: true });
+      cleanup = true;
+      try {
+        if (app && app.stage) {
+          app.destroy(true, { children: true, texture: true });
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
       localParcelGraphics.clear();
     };
   }, [worldMap, onParcelClick]);
@@ -137,25 +154,16 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): 
   const color = TERRAIN_COLORS[parcel.terrain];
 
   // Fill the polygon
-  graphics.beginFill(color, 1);
-  graphics.moveTo(parcel.vertices[0].x, parcel.vertices[0].y);
-  for (let i = 1; i < parcel.vertices.length; i++) {
-    graphics.lineTo(parcel.vertices[i].x, parcel.vertices[i].y);
-  }
-  graphics.closePath();
-  graphics.endFill();
+  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.fill({ color, alpha: 1 });
 
   // Draw border
   const borderColor = isSelected ? 0xffff00 : 0x000000;
   const borderWidth = isSelected ? 3 : 0.5;
   const borderAlpha = isSelected ? 1 : 0.3;
 
-  graphics.lineStyle(borderWidth, borderColor, borderAlpha);
-  graphics.moveTo(parcel.vertices[0].x, parcel.vertices[0].y);
-  for (let i = 1; i < parcel.vertices.length; i++) {
-    graphics.lineTo(parcel.vertices[i].x, parcel.vertices[i].y);
-  }
-  graphics.closePath();
+  graphics.poly(parcel.vertices.map(v => [v.x, v.y]).flat());
+  graphics.stroke({ width: borderWidth, color: borderColor, alpha: borderAlpha });
 
   // Draw resource indicators
   if (parcel.resources.length > 0) {
@@ -169,9 +177,8 @@ function renderParcel(graphics: Graphics, parcel: Parcel, isSelected: boolean): 
       const offsetX = Math.cos(angle) * 8;
       const offsetY = Math.sin(angle) * 8;
 
-      graphics.beginFill(getResourceColor(resource.type), 1);
-      graphics.drawCircle(centerX + offsetX, centerY + offsetY, radius);
-      graphics.endFill();
+      graphics.circle(centerX + offsetX, centerY + offsetY, radius);
+      graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
     });
   }
 }
