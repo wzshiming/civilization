@@ -27,13 +27,17 @@ function getLatitudeFactor(y: number, height: number): number {
 
 /**
  * Calculate minimum distance based on latitude for spherical projection
- * Sites near poles should be further apart in x-direction
+ * Sites near poles should be further apart in x-direction to create larger cells
+ * At the poles, cells should converge into very large blocks
  */
 function getMinDistanceForLatitude(y: number, height: number, baseDistance: number): number {
   const latFactor = getLatitudeFactor(y, height);
-  // At poles (latFactor=1), require more x-spacing (up to 1.5x)
-  // At equator (latFactor=0), use base spacing
-  const xScale = 1 + latFactor * 0.5;
+  // Use aggressive exponential scaling to make cells much larger near poles
+  // At equator (latFactor=0): scale = 1
+  // At mid-latitudes (latFactor=0.5): scale ≈ 2.5x
+  // At poles (latFactor=1): scale = 6x
+  // This causes cells to merge into very large blocks at poles
+  const xScale = Math.pow(6, latFactor);
   return baseDistance * xScale;
 }
 
@@ -103,20 +107,42 @@ export function generateVoronoi(
   const baseMinDistance = Math.sqrt((width * height) / numSites) * 0.7;
 
   // Try to place sites with minimum spacing (considering wrapping and latitude)
+  // Use density weighting to place fewer sites near poles
   let attempts = 0;
   const maxAttempts = numSites * 50;
 
   while (sites.length < numSites && attempts < maxAttempts) {
-    const candidate = {
-      x: random.randomFloat(0, width),
-      y: random.randomFloat(0, height),
-    };
+    let candidate: Point;
+    let accepted = false;
+    
+    // Try to generate a candidate with latitude-based probability
+    for (let i = 0; i < 10 && !accepted; i++) {
+      candidate = {
+        x: random.randomFloat(0, width),
+        y: random.randomFloat(0, height),
+      };
+      
+      // Calculate placement probability based on latitude
+      // Sites near poles should be much less likely to be placed
+      const latFactor = getLatitudeFactor(candidate.y, height);
+      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+      
+      if (random.randomFloat(0, 1) < placementProbability) {
+        accepted = true;
+        break;
+      }
+    }
+    
+    if (!accepted) {
+      attempts++;
+      continue;
+    }
 
-    const minDist = getMinDistanceForLatitude(candidate.y, height, baseMinDistance);
+    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance);
     let valid = true;
     
     for (const site of sites) {
-      const dist = wrappedDistance(candidate, site, width, height);
+      const dist = wrappedDistance(candidate!, site, width, height);
       if (dist < minDist) {
         valid = false;
         break;
@@ -124,7 +150,7 @@ export function generateVoronoi(
     }
 
     if (valid) {
-      sites.push(candidate);
+      sites.push(candidate!);
     }
     attempts++;
   }
