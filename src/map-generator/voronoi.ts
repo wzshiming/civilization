@@ -38,13 +38,17 @@ function getMinDistanceForLatitude(y: number, height: number, baseDistance: numb
 }
 
 /**
- * Calculate wrapped distance between two points (considering horizontal wrapping)
+ * Calculate wrapped distance between two points (considering horizontal and vertical wrapping)
  */
-function wrappedDistance(p1: Point, p2: Point, width: number): number {
+function wrappedDistance(p1: Point, p2: Point, width: number, height: number): number {
   const dx1 = Math.abs(p1.x - p2.x);
-  const dx2 = width - dx1; // Distance through wrapping
+  const dx2 = width - dx1; // Distance through horizontal wrapping
   const dx = Math.min(dx1, dx2);
-  const dy = p1.y - p2.y;
+  
+  const dy1 = Math.abs(p1.y - p2.y);
+  const dy2 = height - dy1; // Distance through vertical wrapping
+  const dy = Math.min(dy1, dy2);
+  
   return Math.sqrt(dx * dx + dy * dy);
 }
 
@@ -54,35 +58,32 @@ function wrappedDistance(p1: Point, p2: Point, width: number): number {
 function transformVertex(x: number, y: number, width: number, height: number): Point {
   return {
     x: x - width,
-    y: Math.max(0, Math.min(height, y)),
+    y: y - height,
   };
 }
 
 /**
- * Create mirror sites for wrapping support
+ * Create mirror sites for toroidal wrapping support (both horizontal and vertical)
  * Returns all sites (original + mirrors) and mapping array
+ * Creates a 3x3 grid of mirrored sites to enable wrapping in both directions
  */
-function createMirrorSites(sites: Point[], width: number): { allSites: Point[], siteMapping: number[] } {
+function createMirrorSites(sites: Point[], width: number, height: number): { allSites: Point[], siteMapping: number[] } {
   const numOriginal = sites.length;
   const allSites: Point[] = [];
   const siteMapping: number[] = [];
   
-  // Add original sites shifted to center of extended space
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x + width, y: sites[i].y });
-    siteMapping.push(i);
-  }
-  
-  // Add left mirror sites
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x, y: sites[i].y });
-    siteMapping.push(i);
-  }
-  
-  // Add right mirror sites
-  for (let i = 0; i < numOriginal; i++) {
-    allSites.push({ x: sites[i].x + width * 2, y: sites[i].y });
-    siteMapping.push(i);
+  // Create a 3x3 grid of sites (9 copies total)
+  // This enables both horizontal (x) and vertical (y) wrapping
+  for (let yOffset = 0; yOffset < 3; yOffset++) {
+    for (let xOffset = 0; xOffset < 3; xOffset++) {
+      for (let i = 0; i < numOriginal; i++) {
+        allSites.push({
+          x: sites[i].x + xOffset * width,
+          y: sites[i].y + yOffset * height,
+        });
+        siteMapping.push(i);
+      }
+    }
   }
   
   return { allSites, siteMapping };
@@ -115,7 +116,7 @@ export function generateVoronoi(
     let valid = true;
     
     for (const site of sites) {
-      const dist = wrappedDistance(candidate, site, width);
+      const dist = wrappedDistance(candidate, site, width, height);
       if (dist < minDist) {
         valid = false;
         break;
@@ -136,9 +137,10 @@ export function generateVoronoi(
     });
   }
 
-  // Create Delaunay triangulation with extended bounds for wrapping
+  // Create Delaunay triangulation with extended bounds for toroidal wrapping
   const extendedWidth = width * 3;
-  const { allSites, siteMapping } = createMirrorSites(sites, width);
+  const extendedHeight = height * 3;
+  const { allSites, siteMapping } = createMirrorSites(sites, width, height);
   const numOriginal = sites.length;
 
   const points = new Float64Array(allSites.length * 2);
@@ -148,13 +150,16 @@ export function generateVoronoi(
   });
 
   const delaunay = new Delaunay(points);
-  const voronoi = delaunay.voronoi([0, 0, extendedWidth, height]);
+  const voronoi = delaunay.voronoi([0, 0, extendedWidth, extendedHeight]);
 
-  // Convert to our cell format (only for original sites)
+  // Convert to our cell format (only for original sites in center tile)
+  // Center tile is at position (1, 1) in the 3x3 grid = index 4
+  const centerTileOffset = numOriginal * 4; // yOffset=1, xOffset=1: 1*3 + 1 = 4
   const cells: VoronoiCell[] = [];
 
   for (let i = 0; i < numOriginal; i++) {
-    const cellPolygon = voronoi.cellPolygon(i);
+    const centerIndex = centerTileOffset + i;
+    const cellPolygon = voronoi.cellPolygon(centerIndex);
     if (!cellPolygon) continue;
 
     // Transform vertices back to original coordinate space
@@ -164,7 +169,7 @@ export function generateVoronoi(
 
     // Find neighbors (map back to original site indices)
     const neighborSet = new Set<number>();
-    for (const neighbor of voronoi.neighbors(i)) {
+    for (const neighbor of voronoi.neighbors(centerIndex)) {
       const originalIndex = siteMapping[neighbor];
       if (originalIndex !== i) {
         neighborSet.add(originalIndex);
@@ -224,13 +229,14 @@ export function relaxVoronoi(
       
       return {
         x: ((centroidX % width) + width) % width, // Wrap x coordinate
-        y: Math.max(0, Math.min(height, centroidY)), // Clamp y coordinate
+        y: ((centroidY % height) + height) % height, // Wrap y coordinate
       };
     });
 
-    // Generate new Voronoi from centroids with extended bounds
+    // Generate new Voronoi from centroids with extended bounds for toroidal wrapping
     const extendedWidth = width * 3;
-    const { allSites, siteMapping } = createMirrorSites(newSites, width);
+    const extendedHeight = height * 3;
+    const { allSites, siteMapping } = createMirrorSites(newSites, width, height);
     const numOriginal = newSites.length;
 
     const points = new Float64Array(allSites.length * 2);
@@ -240,11 +246,14 @@ export function relaxVoronoi(
     });
 
     const delaunay = new Delaunay(points);
-    const voronoi = delaunay.voronoi([0, 0, extendedWidth, height]);
+    const voronoi = delaunay.voronoi([0, 0, extendedWidth, extendedHeight]);
 
+    // Use center tile (position 1,1 in 3x3 grid = index 4)
+    const centerTileOffset = numOriginal * 4;
     currentCells = [];
     for (let i = 0; i < numOriginal; i++) {
-      const cellPolygon = voronoi.cellPolygon(i);
+      const centerIndex = centerTileOffset + i;
+      const cellPolygon = voronoi.cellPolygon(centerIndex);
       if (!cellPolygon) continue;
 
       // Transform vertices back to original coordinate space
@@ -253,7 +262,7 @@ export function relaxVoronoi(
       );
       
       const neighborSet = new Set<number>();
-      for (const neighbor of voronoi.neighbors(i)) {
+      for (const neighbor of voronoi.neighbors(centerIndex)) {
         const originalIndex = siteMapping[neighbor];
         if (originalIndex !== i) {
           neighborSet.add(originalIndex);

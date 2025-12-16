@@ -76,8 +76,8 @@ export function generateWorldMap(config: MapConfig): WorldMap {
       const neighbor = parcels.find(p => p.id === neighborId);
       if (!neighbor) continue;
 
-      // Find shared edge points (considering wrapping)
-      const sharedEdge = findSharedEdge(parcel.vertices, neighbor.vertices, width);
+      // Find shared edge points (considering toroidal wrapping)
+      const sharedEdge = findSharedEdge(parcel.vertices, neighbor.vertices, width, height);
 
       boundaries.push({
         parcel1: parcel.id,
@@ -104,19 +104,23 @@ export function generateWorldMap(config: MapConfig): WorldMap {
 }
 
 /**
- * Find shared edge points between two polygons with wrapping support
+ * Find shared edge points between two polygons with toroidal wrapping support
  */
-function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: number; y: number }[], width: number): { x: number; y: number }[] {
+function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: number; y: number }[], width: number, height: number): { x: number; y: number }[] {
   const threshold = 1.0; // Distance threshold for matching vertices
   const shared: { x: number; y: number }[] = [];
 
   for (const v1 of vertices1) {
     for (const v2 of vertices2) {
-      // Calculate distance considering wrapping
+      // Calculate distance considering horizontal and vertical wrapping
       const dx1 = Math.abs(v1.x - v2.x);
-      const dx2 = width - dx1; // Wrapped distance
+      const dx2 = width - dx1; // Wrapped distance horizontally
       const dx = Math.min(dx1, dx2);
-      const dy = v1.y - v2.y;
+      
+      const dy1 = Math.abs(v1.y - v2.y);
+      const dy2 = height - dy1; // Wrapped distance vertically
+      const dy = Math.min(dy1, dy2);
+      
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < threshold) {
@@ -125,7 +129,11 @@ function findSharedEdge(vertices1: { x: number; y: number }[], vertices2: { x: n
           const pdx1 = Math.abs(p.x - v1.x);
           const pdx2 = width - pdx1;
           const pdx = Math.min(pdx1, pdx2);
-          const pdy = p.y - v1.y;
+          
+          const pdy1 = Math.abs(p.y - v1.y);
+          const pdy2 = height - pdy1;
+          const pdy = Math.min(pdy1, pdy2);
+          
           return Math.sqrt(pdx * pdx + pdy * pdy) < threshold;
         });
 
