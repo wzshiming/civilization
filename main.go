@@ -504,6 +504,30 @@ func (ws *WorldSimulator) handleGenerateMap(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
+func (ws *WorldSimulator) broadcastSimulationState() {
+	ws.clientsMu.Lock()
+	defer ws.clientsMu.Unlock()
+
+	data, err := json.Marshal(map[string]interface{}{
+		"type":         "simulation_state",
+		"isSimulating": ws.IsSimulating(),
+		"speed":        ws.GetSpeed(),
+	})
+	if err != nil {
+		log.Printf("Error marshaling simulation state: %v", err)
+		return
+	}
+
+	message := fmt.Sprintf("data: %s\n\n", string(data))
+	for ch := range ws.clients {
+		select {
+		case ch <- message:
+		default:
+			// Skip if channel is full
+		}
+	}
+}
+
 func (ws *WorldSimulator) handleToggleSimulation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -516,21 +540,7 @@ func (ws *WorldSimulator) handleToggleSimulation(w http.ResponseWriter, r *http.
 		ws.StartSimulation()
 	}
 
-	// Broadcast simulation state
-	ws.clientsMu.Lock()
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":         "simulation_state",
-		"isSimulating": ws.IsSimulating(),
-		"speed":        ws.GetSpeed(),
-	})
-	message := fmt.Sprintf("data: %s\n\n", string(data))
-	for ch := range ws.clients {
-		select {
-		case ch <- message:
-		default:
-		}
-	}
-	ws.clientsMu.Unlock()
+	ws.broadcastSimulationState()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -555,22 +565,7 @@ func (ws *WorldSimulator) handleSetSpeed(w http.ResponseWriter, r *http.Request)
 	}
 
 	ws.SetSpeed(req.Speed)
-
-	// Broadcast simulation state
-	ws.clientsMu.Lock()
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":         "simulation_state",
-		"isSimulating": ws.IsSimulating(),
-		"speed":        ws.GetSpeed(),
-	})
-	message := fmt.Sprintf("data: %s\n\n", string(data))
-	for ch := range ws.clients {
-		select {
-		case ch <- message:
-		default:
-		}
-	}
-	ws.clientsMu.Unlock()
+	ws.broadcastSimulationState()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
