@@ -1,34 +1,68 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import type { FeatureCollection, Polygon } from 'geojson'
 import './App.css'
+import MapRenderer from './components/MapRenderer'
+import { generateMap } from './utils/mapGenerator'
+import type { TerrainProperties } from './types/terrain'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [mapData, setMapData] = useState<FeatureCollection<Polygon, TerrainProperties>>(() => 
+    generateMap({
+      width: 50,
+      height: 40,
+      continentCount: 3,
+      islandCount: 8,
+      mountainDensity: 0.15,
+      riverCount: 5,
+      resourceDensity: 0.3,
+      seed: Date.now(),
+    })
+  )
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const handleGenerateMap = () => {
+    setIsGenerating(true)
+    
+    // Use setTimeout to allow UI to update before heavy computation
+    setTimeout(() => {
+      const newMap = generateMap({
+        width: 50,
+        height: 40,
+        continentCount: 3,
+        islandCount: 8,
+        mountainDensity: 0.15,
+        riverCount: 5,
+        resourceDensity: 0.3,
+        seed: Date.now(),
+      })
+      setMapData(newMap)
+      setIsGenerating(false)
+    }, 100)
+  }
+
+  const handleTileClick = (tileId: string) => {
+    console.log('Clicked tile:', tileId)
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="app-container">
+      <div className="app-header">
+        <h1>🌍 Civilization Map Generator</h1>
+        <button 
+          onClick={handleGenerateMap} 
+          disabled={isGenerating}
+          className="generate-button"
+        >
+          {isGenerating ? 'Generating...' : 'Generate New Map'}
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      {isGenerating ? (
+        <div className="loading">Generating map...</div>
+      ) : (
+        <MapRenderer mapData={mapData} onTileClick={handleTileClick} />
+      )}
+    </div>
   )
 }
 
