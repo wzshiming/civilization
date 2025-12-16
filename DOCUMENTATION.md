@@ -28,13 +28,11 @@ This system implements a sophisticated procedural map generator that creates dyn
 - Multi-octave Simplex noise for realistic elevation, moisture, and temperature
 - Distance-from-center calculation for continent/island formation
 - Terrain type determination based on environmental parameters
-- River generation that follows elevation gradients from highlands to water
 
 **Resource Generation** (`resources.ts`)
 - Terrain-specific resource spawn rules
 - Support for multiple simultaneous resources per parcel (1-3 resources)
 - Dynamic resource properties: type, current reserve, maximum capacity, change rate
-- Boundary resource generation (rivers with water and fish)
 
 **Main Orchestrator** (`index.ts`)
 - Coordinates all generation steps in sequence
@@ -49,7 +47,6 @@ This system implements a sophisticated procedural map generator that creates dyn
 - Interactive parcel selection with pointer events
 - Color-coded terrain visualization
 - Resource indicators as small colored circles
-- River rendering on boundaries
 - Efficient render loop with cleanup on unmount
 
 #### 3. User Interface
@@ -113,7 +110,7 @@ Boundary {
   parcel1: number
   parcel2: number
   edge: Point[]          // Shared edge vertices
-  resources: Resource[]  // Boundary resources (rivers)
+  resources: Resource[]  // Boundary resources
 }
 
 // Complete world map
@@ -159,15 +156,7 @@ if moisture > 0.5: forest
 else: grassland
 ```
 
-### 3. River Generation
-
-1. Start from high-elevation land parcels (0.6-0.8 elevation)
-2. Follow steepest descent path to neighbors
-3. Stop at ocean or when no lower neighbor exists
-4. Create boundary resources for each river edge
-5. Rivers can contain water and fish resources
-
-### 4. Resource Simulation
+### 3. Resource Simulation
 
 Each simulation tick (100ms interval):
 ```
@@ -196,12 +185,6 @@ Examples:
 - **Regenerating**: Wood (0.5/s), fertile soil (0.2/s), fish (0.3/s), game (0.4/s)
 - **Non-regenerating**: Stone, iron, gold, oil, coal, water (0/s)
 - **Maximum capacities**: Range from 100 (fertile soil) to 1000 (water)
-
-### Boundary Resources
-
-Rivers (boundaries between parcels) can contain:
-- Water resource (always present on rivers)
-- Fish resource (40% chance)
 
 ## Visual Design
 
@@ -236,7 +219,6 @@ Rivers (boundaries between parcels) can contain:
 - **Parcel borders**: Semi-transparent black (0.3 alpha, 0.5px)
 - **Selected parcel**: Yellow border (3px, full opacity)
 - **Resource indicators**: Small circles (3px radius) around parcel center
-- **Rivers**: Blue lines (2px, 0.8 alpha)
 
 ## Usage Examples
 

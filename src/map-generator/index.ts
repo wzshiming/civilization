@@ -6,8 +6,8 @@ import type { WorldMap, Parcel, MapConfig, Boundary } from '../types/map';
 import { TerrainType } from '../types/map';
 import { SeededRandom } from '../utils/random';
 import { generateVoronoi, relaxVoronoi } from './voronoi';
-import { generateTerrain, generateRivers } from './terrain';
-import { generateResources, generateBoundaryResources, updateResources } from './resources';
+import { generateTerrain } from './terrain';
+import { generateResources, updateResources } from './resources';
 
 /**
  * Generate a complete world map with all features
@@ -50,19 +50,11 @@ export function generateWorldMap(config: MapConfig): WorldMap {
   console.log('Generating terrain...');
   generateTerrain(parcels, width, height, random);
 
-  // Step 5: Generate rivers
-  console.log('Generating rivers...');
-  const numRivers = Math.floor(numParcels * 0.03);
-  const rivers = generateRivers(parcels, numRivers, random);
-
-  // Step 6: Generate resources
+  // Step 5: Generate resources
   console.log('Generating resources...');
   generateResources(parcels, random);
 
-  // Step 7: Generate boundary resources (rivers)
-  const boundaryResourceMap = generateBoundaryResources(rivers, random);
-
-  // Step 8: Create boundaries
+  // Step 6: Create boundaries
   console.log('Creating boundaries...');
   const boundaries: Boundary[] = [];
   const processedEdges = new Set<string>();
@@ -83,12 +75,12 @@ export function generateWorldMap(config: MapConfig): WorldMap {
         parcel1: parcel.id,
         parcel2: neighborId,
         edge: sharedEdge,
-        resources: boundaryResourceMap.get(edgeKey) || [],
+        resources: [],
       });
     }
   }
 
-  // Step 9: Create world map
+  // Step 7: Create world map
   const parcelMap = new Map<number, Parcel>();
   parcels.forEach(parcel => parcelMap.set(parcel.id, parcel));
 

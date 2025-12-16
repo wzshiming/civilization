@@ -190,22 +190,6 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             localHighlightGraphics.get(parcel.id)!.push(highlightGraphics);
             highlightTileContainer.addChild(highlightGraphics);
           });
-          
-          // Render boundaries (for rivers) in this tile
-          const boundaryGraphics = new Graphics();
-          worldMap.boundaries.forEach((boundary) => {
-            if (boundary.resources.length > 0) {
-              // Draw river
-              if (boundary.edge.length >= 2) {
-                boundaryGraphics.moveTo(boundary.edge[0].x, boundary.edge[0].y);
-                for (let i = 1; i < boundary.edge.length; i++) {
-                  boundaryGraphics.lineTo(boundary.edge[i].x, boundary.edge[i].y);
-                }
-                boundaryGraphics.stroke({ width: 2, color: 0x4a9eff, alpha: 0.8 });
-              }
-            }
-          });
-          tileContainer.addChild(boundaryGraphics);
         });
         
         parcelContainerRef.current = mainContainer;

@@ -10,13 +10,11 @@ A sophisticated web-based procedural map generation system featuring dynamic ter
 - **Voronoi-based irregular parcels** - No grid system, organic-shaped regions using Delaunay triangulation
 - **Diverse terrain types** - Oceans, islands, continents, mountains, deserts, forests, tundra, and more
 - **Realistic terrain generation** - Multi-octave noise functions for elevation, moisture, and temperature
-- **River systems** - Dynamic rivers that flow from highlands to oceans
 
 ### 💎 Advanced Resource System
 - **Multiple resources per parcel** - Each parcel can contain 1-3 simultaneous resources (wood + minerals, water + fertile soil, etc.)
 - **10+ resource types** - Water, wood, stone, iron, gold, oil, coal, fertile soil, fish, game
 - **Dynamic properties** - Current reserve, maximum capacity, regeneration/depletion rates
-- **Boundary resources** - Rivers and borders can contain resources like water and fish
 
 ### 🎮 Interactive Visualization
 - **High-performance rendering** - Pixi.js GPU-accelerated graphics for smooth 60 FPS
@@ -152,7 +150,7 @@ civilization/
 │   ├── map-generator/        # Core map generation logic
 │   │   ├── index.ts          # Main orchestrator
 │   │   ├── voronoi.ts        # Voronoi diagram generation
-│   │   ├── terrain.ts        # Terrain and river generation
+│   │   ├── terrain.ts        # Terrain generation
 │   │   └── resources.ts      # Resource placement and simulation
 │   ├── components/           # React UI components
 │   │   ├── MapRenderer.tsx   # Pixi.js map renderer
@@ -177,7 +175,6 @@ civilization/
 
 - **Voronoi Diagram**: Delaunay triangulation with Lloyd's relaxation
 - **Terrain Generation**: Multi-octave Simplex noise with distance-based continent formation
-- **River Systems**: Elevation gradient descent from highlands to oceans
 - **Resource Simulation**: Time-based regeneration/depletion with configurable rates
 
 ## Documentation
