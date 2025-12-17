@@ -8,6 +8,16 @@ import { generateWorldMap } from '../src/map-generator';
 import { TerrainType } from '../src/types/map';
 import type { ResourceConfig } from '../src/types/resource-config';
 
+/**
+ * IMPORTANT: This is a simplified example for demonstration purposes.
+ * In a production application, you would need to:
+ * 1. Define ALL resources needed (or copy from DEFAULT_RESOURCE_CONFIG)
+ * 2. Configure ALL terrain types with appropriate resource IDs
+ * 3. Add translations for any new resource types
+ * 
+ * An incomplete configuration will result in missing resources in the game.
+ */
+
 // Define a custom resource configuration
 const customResourceConfig: ResourceConfig = {
   definitions: {

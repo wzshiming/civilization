@@ -1,6 +1,13 @@
 /**
  * Resource configuration and definition system
  * Allows for flexible, configurable resource types with various attributes
+ * 
+ * This module exports types for defining custom resources and terrain rules.
+ * Use these types to create custom resource configurations that can be
+ * passed to `setResourceConfig()` in the map generator.
+ * 
+ * @see DEFAULT_RESOURCE_CONFIG for the default configuration
+ * @see examples/custom-resources.ts for usage examples
  */
 
 /**

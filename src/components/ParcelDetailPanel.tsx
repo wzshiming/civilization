@@ -28,6 +28,10 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
     return (t.resourceTypes as Record<string, string>)[type] ?? type;
   };
 
+  const hasDisplayableAttributes = (resource: Parcel['resources'][0]): boolean => {
+    return !!(resource.edible || resource.consumable || resource.satiety || resource.energyEfficiency);
+  };
+
   return (
     <div className="parcel-detail-panel">
       <div className="panel-header">
@@ -89,7 +93,7 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
                     </span>
                   </div>
                   {/* Display resource attributes if present */}
-                  {(resource.edible || resource.consumable || resource.satiety || resource.energyEfficiency) && (
+                  {hasDisplayableAttributes(resource) && (
                     <div className="resource-attributes">
                       {resource.edible && (
                         <span className="attribute" title="Edible">
