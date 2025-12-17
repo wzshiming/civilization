@@ -111,6 +111,10 @@ export class StateManager {
 
   /**
    * Deep clone parcels map for change tracking
+   * 
+   * Note: This creates a deep clone of all parcels on each call. For the current scale
+   * (500 parcels, called once per simulation tick at 1Hz), this is performant.
+   * For larger scales, consider optimizations like dirty flags or immutable data structures.
    */
   private cloneParcels(parcels: Map<number, Parcel>): Map<number, Parcel> {
     const cloned = new Map<number, Parcel>();

@@ -234,6 +234,10 @@ export class SSEBroadcaster {
   /**
    * Immediately broadcast current state to all clients
    * Used to push updates right after simulation updates
+   * 
+   * Behavior is controlled by sendFullState flag:
+   * - If sendFullState is true: broadcasts complete world state (higher bandwidth, simpler client logic)
+   * - If sendFullState is false (default): broadcasts only changed parcels as deltas (lower bandwidth, requires client-side state merging)
    */
   broadcastImmediate(): void {
     if (this.clients.size === 0) return;
