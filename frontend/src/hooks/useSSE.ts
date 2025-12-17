@@ -33,26 +33,37 @@ export function useSSE(options: UseSSEOptions) {
       }
 
       case 'delta': {
-        // Received delta update
+        // Received delta update - optimized to only update if there are changes
         const delta = message.data as StateDelta;
+        if (delta.parcels.length === 0) break; // Skip if no parcel updates
+        
         setWorldMap((prevMap) => {
           if (!prevMap) return prevMap;
 
-          // Create a new map to trigger re-render
-          const updatedMap = { ...prevMap };
-          updatedMap.parcels = new Map(prevMap.parcels);
+          // Create a new map to trigger re-render only if needed
+          const updatedParcels = new Map(prevMap.parcels);
+          let hasChanges = false;
 
-          // Apply deltas
-          delta.parcels.forEach((parcelDelta) => {
-            const parcel = updatedMap.parcels.get(parcelDelta.id);
-            if (parcel && parcelDelta.resources) {
-              const updatedParcel = { ...parcel, resources: parcelDelta.resources };
-              updatedMap.parcels.set(parcelDelta.id, updatedParcel);
+          // Apply deltas more efficiently
+          for (const parcelDelta of delta.parcels) {
+            if (parcelDelta.resources) {
+              const parcel = updatedParcels.get(parcelDelta.id);
+              if (parcel) {
+                const updatedParcel = { ...parcel, resources: parcelDelta.resources };
+                updatedParcels.set(parcelDelta.id, updatedParcel);
+                hasChanges = true;
+              }
             }
-          });
+          }
 
-          updatedMap.lastUpdate = delta.lastUpdate;
-          return updatedMap;
+          // Only create new map if there were actual changes
+          if (!hasChanges) return prevMap;
+
+          return {
+            ...prevMap,
+            parcels: updatedParcels,
+            lastUpdate: delta.lastUpdate,
+          };
         });
         break;
       }

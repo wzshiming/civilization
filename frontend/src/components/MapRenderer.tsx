@@ -13,7 +13,7 @@ interface MapRendererProps {
   onParcelClick?: (parcel: Parcel) => void;
 }
 
-// Color scheme for different terrain types
+// Color scheme for different terrain types - moved outside component for better performance
 const TERRAIN_COLORS: Record<TerrainType, number> = {
   [TerrainType.OCEAN]: 0x1a5490,
   [TerrainType.SHALLOW_WATER]: 0x3a7ca8,
@@ -25,6 +25,20 @@ const TERRAIN_COLORS: Record<TerrainType, number> = {
   [TerrainType.TUNDRA]: 0xb8c8d0,
   [TerrainType.MOUNTAIN]: 0x8b7355,
   [TerrainType.SNOW]: 0xf0f8ff,
+};
+
+// Resource colors - moved outside component and cached
+const RESOURCE_COLORS: Record<string, number> = {
+  water: 0x4a9eff,
+  wood: 0x8b4513,
+  stone: 0x808080,
+  iron: 0xb87333,
+  gold: 0xffd700,
+  oil: 0x1a1a1a,
+  coal: 0x2f2f2f,
+  fertile_soil: 0x654321,
+  fish: 0x00bfff,
+  game: 0x8b6914,
 };
 
 // Constants for camera movement
@@ -57,15 +71,16 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
   const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
-  // Helper to update container position and scale
-  const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
+  // Helper to update container position and scale - removed useCallback as it's a simple inline operation
+  const updateContainer = (container: Container, x: number, y: number, scale: number) => {
     container.x = x;
     container.y = y;
     container.scale.set(scale);
-  }, []);
+  };
 
-  // Camera movement update function for Pixi ticker
+  // Camera movement update function for Pixi ticker - useMemo to prevent recreation on every render
   const updateCameraLoop = useCallback(() => {
+    if (!parcelContainerRef.current || !highlightContainerRef.current) return;
     // Update target based on keys pressed
     const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
                   (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
@@ -118,14 +133,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
     }
     
-    // Update containers
-    if (parcelContainerRef.current) {
-      updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
-    }
-    if (highlightContainerRef.current) {
-      updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
-    }
-  }, [worldMap, updateContainer]);
+    // Update containers - now safe to call since we checked at the start
+    updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
+    updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
+  }, [worldMap]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -388,13 +399,13 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 }
 
 /**
- * Render a single parcel
+ * Render a single parcel - optimized to reduce calculations
  */
 function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const color = TERRAIN_COLORS[parcel.terrain];
   const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
+  const color = TERRAIN_COLORS[parcel.terrain];
 
   // Fill the polygon
   graphics.poly(vertices);
@@ -404,21 +415,22 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
   graphics.poly(vertices);
   graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.3 });
 
-  // Draw resource indicators
-  if (parcel.resources.length > 0) {
-    const centerX = parcel.center.x;
-    const centerY = parcel.center.y;
+  // Draw resource indicators - optimized to avoid redundant calculations
+  const resourceCount = parcel.resources.length;
+  if (resourceCount > 0) {
+    const { x: centerX, y: centerY } = parcel.center;
     const radius = 3;
+    const angleStep = (Math.PI * 2) / resourceCount;
 
     // Draw a small circle for each resource
-    parcel.resources.forEach((resource, index) => {
-      const angle = (index / parcel.resources.length) * Math.PI * 2;
+    for (let i = 0; i < resourceCount; i++) {
+      const angle = i * angleStep;
       const offsetX = Math.cos(angle) * 8;
       const offsetY = Math.sin(angle) * 8;
 
       graphics.circle(centerX + offsetX, centerY + offsetY, radius);
-      graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
-    });
+      graphics.fill({ color: getResourceColor(parcel.resources[i].type), alpha: 1 });
+    }
   }
 }
 
@@ -436,22 +448,10 @@ function renderHighlight(graphics: Graphics, parcel: Parcel): void {
 }
 
 /**
- * Get color for resource type
+ * Get color for resource type - now uses cached RESOURCE_COLORS
  */
 function getResourceColor(type: string): number {
-  const colors: Record<string, number> = {
-    water: 0x4a9eff,
-    wood: 0x8b4513,
-    stone: 0x808080,
-    iron: 0xb87333,
-    gold: 0xffd700,
-    oil: 0x1a1a1a,
-    coal: 0x2f2f2f,
-    fertile_soil: 0x654321,
-    fish: 0x00bfff,
-    game: 0x8b6914,
-  };
-  return colors[type] || 0xffffff;
+  return RESOURCE_COLORS[type] || 0xffffff;
 }
 
 

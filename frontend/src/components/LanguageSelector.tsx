@@ -2,10 +2,11 @@
  * Language selector component
  */
 
+import { memo } from 'react';
 import { useI18n, type Locale } from '../i18n';
 import './LanguageSelector.css';
 
-export function LanguageSelector() {
+function LanguageSelectorComponent() {
   const { locale, setLocale, t } = useI18n();
 
   const languages: { value: Locale; label: string }[] = [
@@ -30,3 +31,6 @@ export function LanguageSelector() {
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const LanguageSelector = memo(LanguageSelectorComponent);

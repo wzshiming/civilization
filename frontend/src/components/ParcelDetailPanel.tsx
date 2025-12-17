@@ -2,6 +2,7 @@
  * Detail panel showing information about a selected parcel
  */
 
+import { memo } from 'react';
 import type { Parcel, ResourceType, TerrainType } from '../types/map';
 import { useI18n } from '../i18n';
 import './ParcelDetailPanel.css';
@@ -11,7 +12,7 @@ interface ParcelDetailPanelProps {
   onClose: () => void;
 }
 
-export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
+function ParcelDetailPanelComponent({ parcel, onClose }: ParcelDetailPanelProps) {
   const { t } = useI18n();
   
   if (!parcel) {
@@ -121,5 +122,8 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parcel or onClose haven't changed
+export const ParcelDetailPanel = memo(ParcelDetailPanelComponent);
 
 

@@ -3,6 +3,7 @@
  * Frontend cannot control speed or generate maps (backend-controlled)
  */
 
+import { memo } from 'react';
 import { useI18n } from '../i18n';
 import './ControlPanel.css';
 
@@ -11,7 +12,7 @@ interface ReadOnlyControlPanelProps {
   onReconnect: () => void;
 }
 
-export function ReadOnlyControlPanel({
+function ReadOnlyControlPanelComponent({
   isConnected,
   onReconnect,
 }: ReadOnlyControlPanelProps) {
@@ -50,3 +51,6 @@ export function ReadOnlyControlPanel({
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const ReadOnlyControlPanel = memo(ReadOnlyControlPanelComponent);

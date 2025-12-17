@@ -29,7 +29,7 @@ function AppSSE() {
 
   const handleReconnect = useCallback(() => {
     disconnect();
-    setTimeout(() => connect(), 100);
+    setTimeout(connect, 100);
   }, [connect, disconnect]);
 
   return (
