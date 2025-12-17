@@ -15,6 +15,7 @@ export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updateCounter, setUpdateCounter] = useState(0);
 
   const handleMessage = useCallback((event: string, data: string) => {
     switch (event) {
@@ -32,22 +33,30 @@ export function useSSE(options: UseSSEOptions) {
 
       case 'delta': {
         const delta = JSON.parse(data) as StateDelta;
-        if (!worldMap) return;
+        let hasUpdates = false;
+        
+        setWorldMap((prevWorldMap) => {
+          if (!prevWorldMap) return prevWorldMap;
 
-        // Create a new map to trigger re-render
-        const updatedMap = { ...worldMap };
-        updatedMap.parcels = new Map(worldMap.parcels);
+          // Update parcels in place to keep worldMap reference stable
+          // This prevents MapRenderer from re-initializing on every delta
+          delta.parcels.forEach((parcelDelta) => {
+            const parcel = prevWorldMap.parcels.get(parcelDelta.id);
+            if (parcel && parcelDelta.resources) {
+              // Update the parcel's resources in place
+              parcel.resources = parcelDelta.resources;
+              hasUpdates = true;
+            }
+          });
 
-        // Apply deltas
-        delta.parcels.forEach((parcelDelta) => {
-          const parcel = updatedMap.parcels.get(parcelDelta.id);
-          if (parcel && parcelDelta.resources) {
-            const updatedParcel = { ...parcel, resources: parcelDelta.resources };
-            updatedMap.parcels.set(parcelDelta.id, updatedParcel);
-          }
+          // Return the same reference
+          return prevWorldMap;
         });
-
-        setWorldMap(updatedMap)
+        
+        // Increment counter only if parcels were actually updated
+        if (hasUpdates) {
+          setUpdateCounter(c => c + 1);
+        }
         break;
       }
 
@@ -130,5 +139,6 @@ export function useSSE(options: UseSSEOptions) {
     error,
     connect,
     disconnect,
+    updateCounter, // Used to trigger re-renders when worldMap is updated in place
   };
 }

@@ -73,6 +73,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const highlightGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
+  // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
+  const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
+  worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
+
+  // Store onParcelClick in ref to avoid recreating click handlers
+  const onParcelClickRef = useRef(onParcelClick);
+  onParcelClickRef.current = onParcelClick;
+
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
     camera: { x: 0, y: 0 },
@@ -91,6 +99,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   }, []);
 
   // Camera movement update function for Pixi ticker
+  // Note: worldMapDimensionsRef and onParcelClickRef are intentionally not in dependencies
+  // to keep this callback stable and prevent MapRenderer re-initialization on clicks/updates
   const updateCameraLoop = useCallback(() => {
     const state = viewStateRef.current;
 
@@ -104,7 +114,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     state.targetCamera.y += moveY;
 
     // Apply wrapping for circular map (toroidal topology)
-    const { width: mapWidth, height: mapHeight } = worldMap;
+    const { width: mapWidth, height: mapHeight } = worldMapDimensionsRef.current;
     const halfWidth = mapWidth / 2;
     const halfHeight = mapHeight / 2;
 
@@ -154,15 +164,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
-
-    if (selectedParcelId) {
-      const parcel = worldMap.parcels.get(selectedParcelId);
-      if (parcel) {
-        console.log(parcel)
-        onParcelClick?.(parcel);
-      }
-    }
-  }, [worldMap, updateContainer, selectedParcelId, onParcelClick]);
+  }, [updateContainer]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -235,7 +237,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             setSelectedParcelId(parcelId);
             const parcel = worldMap.parcels.get(parcelId);
             if (parcel) {
-              onParcelClick?.(parcel);
+              onParcelClickRef.current?.(parcel);
             }
           }
         };
@@ -387,7 +389,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       parcelGraphicsRef.current.clear();
       highlightGraphicsRef.current.clear();
     };
-  }, [worldMap, onParcelClick, updateCameraLoop]);
+  }, [worldMap, updateCameraLoop]);
 
   // Update selected parcel highlighting
   const prevSelectedParcelIdRef = useRef<string | null>(null);
