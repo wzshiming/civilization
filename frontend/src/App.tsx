@@ -18,7 +18,7 @@ function AppSSE() {
   const { t } = useI18n();
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
 
-  const { worldMap, isConnected, error, connect, disconnect } = useSSE({
+  const { worldMap, isConnected, error, clientId, connect, disconnect } = useSSE({
     url: `${BACKEND_URL}/events`,
     autoConnect: true,
   });
@@ -35,6 +35,21 @@ function AppSSE() {
     disconnect();
     setTimeout(() => connect(), 100);
   }, [connect, disconnect]);
+
+  // Send viewport updates to backend
+  const updateViewport = useCallback(async (minX: number, maxX: number, minY: number, maxY: number) => {
+    if (!clientId) return;
+    
+    try {
+      await fetch(`${BACKEND_URL}/api/viewport`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, minX, maxX, minY, maxY }),
+      });
+    } catch (err) {
+      console.error('Failed to update viewport:', err);
+    }
+  }, [clientId]);
 
   // Define tabs for the left sidebar
   const tabs: Tab[] = useMemo(() => [
@@ -68,7 +83,11 @@ function AppSSE() {
       ) : (
         <>
           <TabPanel tabs={tabs} />
-          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
+          <MapRenderer 
+            worldMap={worldMap} 
+            onParcelClick={handleParcelClick}
+            onViewportChange={updateViewport}
+          />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
         </>
       )}

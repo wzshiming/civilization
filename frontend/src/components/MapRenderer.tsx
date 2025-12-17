@@ -16,6 +16,7 @@ interface ParcelGraphics extends Graphics {
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
+  onViewportChange?: (minX: number, maxX: number, minY: number, maxY: number) => void;
 }
 
 // Color scheme for different terrain types
@@ -80,7 +81,7 @@ const RESOURCE_COLORS: Record<string, number> = {
   game: 0x8b6914,
 };
 
-export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
+export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
@@ -106,6 +107,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     container.scale.set(scale);
   }, []);
 
+  // Track last viewport update to throttle updates
+  const lastViewportUpdateRef = useRef({ x: 0, y: 0, zoom: 1, time: 0 });
+  
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
     const state = viewStateRef.current;
@@ -170,7 +174,37 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
-  }, [worldMap, updateContainer]);
+
+    // Send viewport updates (throttled to once per second and significant changes)
+    const now = Date.now();
+    const last = lastViewportUpdateRef.current;
+    const timeSinceLastUpdate = now - last.time;
+    const cameraChanged = Math.abs(state.camera.x - last.x) > 50 || 
+                          Math.abs(state.camera.y - last.y) > 50 ||
+                          Math.abs(state.zoom - last.zoom) > 0.1;
+
+    if (onViewportChange && appRef.current && (timeSinceLastUpdate > 1000 && cameraChanged)) {
+      // Calculate viewport bounds in world coordinates
+      const screenWidth = appRef.current.screen.width;
+      const screenHeight = appRef.current.screen.height;
+      
+      // Convert screen bounds to world coordinates with some padding
+      const padding = 100; // Extra padding to preload nearby parcels
+      const minX = (-state.camera.x - padding) / state.zoom;
+      const maxX = (screenWidth - state.camera.x + padding) / state.zoom;
+      const minY = (-state.camera.y - padding) / state.zoom;
+      const maxY = (screenHeight - state.camera.y + padding) / state.zoom;
+
+      onViewportChange(minX, maxX, minY, maxY);
+      
+      lastViewportUpdateRef.current = {
+        x: state.camera.x,
+        y: state.camera.y,
+        zoom: state.zoom,
+        time: now,
+      };
+    }
+  }, [worldMap, updateContainer, onViewportChange]);
 
   useEffect(() => {
     if (!canvasRef.current) return;

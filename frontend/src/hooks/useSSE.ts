@@ -15,6 +15,7 @@ export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   const handleMessage = useCallback((message: SSEMessage) => {
     switch (message.type) {
@@ -58,6 +59,12 @@ export function useSSE(options: UseSSEOptions) {
       }
 
       case 'simulation-started':
+        // Extract client ID from connection message
+        if (message.data && typeof message.data === 'object' && 'clientId' in message.data) {
+          setClientId(message.data.clientId as string);
+        }
+        console.log('Backend event:', message.type, message.data);
+        break;
       case 'simulation-paused':
       case 'settings-updated':
         console.log('Backend event:', message.type, message.data);
@@ -133,6 +140,7 @@ export function useSSE(options: UseSSEOptions) {
     worldMap,
     isConnected,
     error,
+    clientId,
     connect,
     disconnect,
   };

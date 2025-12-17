@@ -178,5 +178,52 @@ export function createRouter(
     }
   });
 
+  /**
+   * POST /api/viewport
+   * Update viewport bounds for SSE filtering
+   */
+  router.post('/viewport', (req, res) => {
+    try {
+      const { clientId, minX, maxX, minY, maxY } = req.body;
+      
+      if (!clientId || typeof clientId !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: 'Client ID is required',
+        });
+      }
+
+      if (
+        typeof minX !== 'number' ||
+        typeof maxX !== 'number' ||
+        typeof minY !== 'number' ||
+        typeof maxY !== 'number'
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid viewport bounds',
+        });
+      }
+
+      const viewport = { minX, maxX, minY, maxY };
+      const updated = sseBroadcaster.updateClientViewportById(clientId, viewport);
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          error: 'Client not found',
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Viewport updated',
+        viewport
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+
   return router;
 }

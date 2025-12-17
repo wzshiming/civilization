@@ -30,7 +30,9 @@ app.use(express.json());
 
 // SSE endpoint
 app.get('/events', (req, res) => {
-  sseBroadcaster.addClient(res);
+  // Generate unique client ID
+  const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  sseBroadcaster.addClient(res, clientId);
 });
 
 // API routes
