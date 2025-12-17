@@ -2,9 +2,52 @@
 
 ## Overview
 
-This project implements a **separated front-end and back-end architecture** for the Civilization simulation system, as specified in the requirements.
+This project implements a **monorepo with separated front-end and back-end architecture** for the Civilization simulation system. All shared logic is extracted into an independent package to eliminate duplication.
+
+## Monorepo Structure
+
+The project uses npm workspaces to manage multiple packages:
+
+- **Root**: Main package.json with all dependencies
+- **Workspaces**:
+  - `shared` - Common types, utilities, and logic
+  - `backend` - Backend server
+  - `map-generator-cli` - Map generation CLI tool
+  
+The frontend code lives in the root `src/` directory and has **no independent logic** - it only consumes the backend API.
 
 ## System Components
+
+### 0. Shared Package (`@civilization/shared`)
+
+**Location:** `/shared/`
+
+**Purpose:** Centralized types, utilities, and map generation logic
+
+**Features:**
+- All type definitions (WorldMap, Parcel, Resource, etc.)
+- Utility functions (SeededRandom, SimplexNoise)
+- Complete map generation logic (Voronoi, terrain, resources)
+- Simulation update logic
+- No duplication across components
+
+**Exports:**
+```typescript
+// Types
+export * from './types';
+
+// Utilities
+export { SeededRandom } from './utils/random';
+export { SimplexNoise } from './utils/noise';
+
+// Map Generation
+export { generateWorldMap, simulateWorld } from './map-generator/index';
+```
+
+**Used By:**
+- Backend (for simulation and map loading)
+- Map Generator CLI (for map generation)
+- NOT used by frontend (frontend has no logic)
 
 ### 1. Map Generator (Standalone CLI Tool)
 
@@ -92,9 +135,11 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 
 ### 3. Frontend Application
 
-**Location:** `/src/`
+**Location:** `/src/` (root)
 
-**Purpose:** Visualize simulation state in real-time (read-only)
+**Purpose:** Visualize simulation state in real-time (read-only, API-only)
+
+**Critical:** Frontend has **NO independent logic**. It completely relies on backend API.
 
 #### 3.1 SSE Listener
 - **File:** `src/hooks/useSSE.ts`
@@ -129,6 +174,14 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
   - Show selected parcel information
   - Display terrain type, resources, properties
   - Update in real-time as simulation runs
+
+#### 3.5 What Frontend Does NOT Have
+- ❌ No map-generator logic
+- ❌ No utils (random, noise)
+- ❌ No simulation logic
+- ❌ No resource update logic
+- ❌ No standalone mode
+- ✅ Only SSE connection and rendering
 
 ---
 
@@ -277,26 +330,37 @@ MAPS_DIR=./maps
 
 ## Running the System
 
+### Installation (One Time)
+
+```bash
+# Install all dependencies (monorepo)
+npm install
+```
+
+This single command:
+- Installs all root dependencies
+- Installs workspace dependencies (shared, backend, map-generator-cli)
+- Builds the shared package automatically (postinstall hook)
+
 ### Development Mode
 
 **Terminal 1 - Generate a map:**
 ```bash
 cd map-generator-cli
-npm install
 npm run dev
+# Copy map: cp maps/default-map.json ../backend/maps/
 ```
 
 **Terminal 2 - Start backend:**
 ```bash
 cd backend
-npm install
 npm run dev
 ```
 
 **Terminal 3 - Start frontend:**
 ```bash
-npm install
-npm run dev
+# From root directory
+npm run dev:frontend
 ```
 
 ### Production Mode

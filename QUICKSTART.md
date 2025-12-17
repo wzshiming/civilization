@@ -7,17 +7,23 @@ Get the Civilization simulation running in 3 simple steps!
 - Node.js 18+ installed
 - npm or yarn installed
 
+## Step 0: Install All Dependencies
+
+```bash
+# Single command installs everything (monorepo)
+npm install
+```
+
+This installs dependencies for frontend, backend, map-generator-cli, and shared package.
+
 ## Step 1: Generate a Map
 
 ```bash
-# Install dependencies
-cd map-generator-cli
-npm install
-
 # Generate a default map
+cd map-generator-cli
 npm run dev
 
-# This creates: ./maps/default-map.json
+# This creates: map-generator-cli/maps/default-map.json
 ```
 
 **Optional:** Generate a custom map:
@@ -28,15 +34,13 @@ npm run dev -- --width 1600 --height 1200 --parcels 800 --seed 12345 --output cu
 ## Step 2: Start the Backend
 
 ```bash
-# Install dependencies
-cd ../backend
-npm install
-
-# Copy the generated map (if not already there)
-mkdir -p maps
-cp ../map-generator-cli/maps/default-map.json maps/
+# Copy the generated map
+cd ..
+mkdir -p backend/maps
+cp map-generator-cli/maps/default-map.json backend/maps/
 
 # Start the backend server
+cd backend
 npm run dev
 ```
 
@@ -54,17 +58,14 @@ The backend will start on http://localhost:3001
 In a new terminal:
 
 ```bash
-# Return to root directory
-cd ..
-
-# Install dependencies
-npm install
+# Return to root directory (if not already there)
+cd /path/to/civilization
 
 # Create environment file
 echo "VITE_BACKEND_URL=http://localhost:3001" > .env
 
 # Start the frontend
-npm run dev
+npm run dev:frontend
 ```
 
 The frontend will start on http://localhost:5173

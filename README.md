@@ -6,12 +6,18 @@ A sophisticated simulation system featuring dynamic terrain, resource simulation
 
 ## Architecture
 
-This project uses a **separated front-end and back-end architecture**:
+This project uses a **monorepo structure with separated front-end and back-end architecture**:
 
 ### Components
 
+**Shared Package (`@civilization/shared`)**
+- Common types, utilities, and map generation logic
+- Used by all components (no duplication)
+- Exports: types, SeededRandom, SimplexNoise, generateWorldMap, simulateWorld
+
 **Map Generator (Standalone CLI Tool)**
 - Generate maps offline with custom parameters
+- Uses shared package for generation logic
 - Save maps to files for backend loading
 - Reproducible map generation using seeds
 
@@ -22,12 +28,14 @@ This project uses a **separated front-end and back-end architecture**:
 - **SSE Broadcaster**: Sends state updates via Server-Sent Events
 - **Settings Manager**: Backend-controlled simulation settings
 - **REST API**: Backend administration endpoints
+- Uses shared package for types and logic
 
 **Frontend (React/TypeScript)**
 - **SSE Listener**: Connects to backend SSE stream
 - **Renderer**: Visualizes simulation state with Pixi.js
 - **Read-only UI**: Cannot control simulation or generate maps
 - **Interactive**: Click parcels to view details
+- **No independent logic**: Completely relies on backend API
 
 ## Features
 
@@ -75,24 +83,15 @@ This project uses a **separated front-end and back-end architecture**:
 
 ### Installation
 
-1. **Install frontend dependencies:**
+**Single command installs all workspace dependencies:**
 ```bash
 npm install
 ```
 
-2. **Install backend dependencies:**
-```bash
-cd backend
-npm install
-cd ..
-```
-
-3. **Install map generator dependencies:**
-```bash
-cd map-generator-cli
-npm install
-cd ..
-```
+This will:
+- Install all dependencies for frontend, backend, map-generator-cli, and shared package
+- Build the shared package automatically (via postinstall hook)
+- Link workspace dependencies
 
 ### Quick Start
 
@@ -103,7 +102,10 @@ npm run dev
 cd ..
 ```
 
-This creates `./maps/default-map.json`
+This creates `map-generator-cli/maps/default-map.json`. Copy it to backend:
+```bash
+cp map-generator-cli/maps/default-map.json backend/maps/
+```
 
 2. **Start the backend server:**
 ```bash
@@ -115,7 +117,7 @@ Backend runs at [http://localhost:3001](http://localhost:3001)
 
 3. **Start the frontend (in a new terminal):**
 ```bash
-npm run dev
+npm run dev:frontend
 ```
 
 Frontend runs at [http://localhost:5173](http://localhost:5173)
@@ -240,6 +242,15 @@ curl -X POST http://localhost:3001/api/maps/load \
 
 ```
 civilization/
+├── package.json                  # Root workspace config
+├── shared/                       # Shared package (types, utils, logic)
+│   ├── src/
+│   │   ├── map-generator/        # Map generation logic
+│   │   ├── utils/                # Utility functions (random, noise)
+│   │   ├── types.ts              # Shared type definitions
+│   │   └── index.ts              # Package exports
+│   ├── package.json              # Workspace package
+│   └── tsconfig.json
 ├── backend/                      # Backend server
 │   ├── src/
 │   │   ├── simulation/           # Simulation Engine
@@ -248,32 +259,27 @@ civilization/
 │   │   ├── sse/                  # SSE Broadcaster
 │   │   ├── settings/             # Settings Manager
 │   │   ├── api/                  # REST API routes
-│   │   ├── map-generator/        # Map generation logic
-│   │   ├── utils/                # Utility functions
-│   │   ├── types.ts              # Type definitions
 │   │   └── index.ts              # Server entry point
 │   ├── maps/                     # Generated map files
-│   ├── package.json
+│   ├── package.json              # Workspace package
 │   └── README.md
 ├── map-generator-cli/            # Standalone map generator
 │   ├── src/
-│   │   ├── map-generator/        # Generation logic
-│   │   ├── utils/                # Utility functions
-│   │   ├── types.ts              # Type definitions
 │   │   └── index.ts              # CLI entry point
-│   ├── package.json
+│   ├── package.json              # Workspace package
 │   └── README.md
-├── src/                          # Frontend application
+├── src/                          # Frontend application (API-only)
 │   ├── components/               # React UI components
 │   │   ├── MapRenderer.tsx       # Pixi.js map renderer
 │   │   ├── ReadOnlyControlPanel.tsx  # Status display
 │   │   └── ParcelDetailPanel.tsx     # Parcel details
 │   ├── hooks/                    # Custom React hooks
 │   │   └── useSSE.ts             # SSE connection hook
-│   ├── types/                    # TypeScript types
-│   ├── App-SSE.tsx               # Main App with SSE
+│   ├── types/                    # Frontend-only types
+│   ├── App.tsx                   # Main App (SSE only)
 │   └── main.tsx                  # Application entry point
-├── DOCUMENTATION.md              # Technical documentation
+├── ARCHITECTURE.md               # Detailed architecture
+├── QUICKSTART.md                 # Quick start guide
 └── README.md                     # This file
 ```
 
