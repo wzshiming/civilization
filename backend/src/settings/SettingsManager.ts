@@ -2,10 +2,10 @@
  * Settings Manager - Manages simulation settings
  */
 
-import type { SimulationSettings } from '@civilization/shared';
+import type { SimulationSettings } from '@civilization/shared'
 
 export class SettingsManager {
-  private settings: SimulationSettings;
+  private settings: SimulationSettings
 
   constructor(defaultSettings?: Partial<SimulationSettings>) {
     this.settings = {
@@ -14,14 +14,14 @@ export class SettingsManager {
       speed: defaultSettings?.speed || 1.0,
       mapFile: defaultSettings?.mapFile || 'default-map.json',
       active: defaultSettings?.active !== undefined ? defaultSettings.active : true,
-    };
+    }
   }
 
   /**
    * Get current settings
    */
   getSettings(): SimulationSettings {
-    return { ...this.settings };
+    return { ...this.settings }
   }
 
   /**
@@ -31,14 +31,14 @@ export class SettingsManager {
     this.settings = {
       ...this.settings,
       ...updates,
-    };
+    }
   }
 
   /**
    * Get simulation speed
    */
   getSpeed(): number {
-    return this.settings.speed;
+    return this.settings.speed
   }
 
   /**
@@ -46,50 +46,50 @@ export class SettingsManager {
    */
   setSpeed(speed: number): void {
     if (speed < 0.1 || speed > 10) {
-      throw new Error('Speed must be between 0.1 and 10');
+      throw new Error('Speed must be between 0.1 and 10')
     }
-    this.settings.speed = speed;
+    this.settings.speed = speed
   }
 
   /**
    * Get current map file
    */
   getMapFile(): string {
-    return this.settings.mapFile;
+    return this.settings.mapFile
   }
 
   /**
    * Set map file
    */
   setMapFile(mapFile: string): void {
-    this.settings.mapFile = mapFile;
+    this.settings.mapFile = mapFile
   }
 
   /**
    * Check if simulation is active
    */
   isActive(): boolean {
-    return this.settings.active;
+    return this.settings.active
   }
 
   /**
    * Set active state
    */
   setActive(active: boolean): void {
-    this.settings.active = active;
+    this.settings.active = active
   }
 
   /**
    * Get simulation ID
    */
   getId(): string {
-    return this.settings.id;
+    return this.settings.id
   }
 
   /**
    * Get simulation name
    */
   getName(): string {
-    return this.settings.name;
+    return this.settings.name
   }
 }

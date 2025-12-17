@@ -3,13 +3,17 @@
 ## Requirements Fulfilled
 
 ### ✅ 1. Frontend and Backend Separated
+
 The simulation now has complete separation between frontend and backend:
+
 - **Backend**: Runs all simulation logic, manages state, provides API
 - **Frontend**: Only displays state, completely API-dependent
 - **Communication**: Server-Sent Events (SSE) for real-time updates
 
 ### ✅ 2. Extract Duplicate Logic into Independent Package
+
 Created `@civilization/shared` package containing:
+
 - All type definitions
 - Utility functions (SeededRandom, SimplexNoise)
 - Map generation logic
@@ -17,14 +21,18 @@ Created `@civilization/shared` package containing:
 - **Zero code duplication** across components
 
 ### ✅ 3. Three Components Share Root package.json
+
 Implemented npm workspaces monorepo:
+
 - **Root `package.json`**: Manages all workspaces
 - **Workspaces**: `shared`, `backend`, `map-generator-cli`, `frontend`
 - **Single command**: `npm install` sets up everything
 - **Auto-build**: Shared package builds on install
 
 ### ✅ 4. Frontend Must Rely on Backend API
+
 Frontend has **NO independent logic**:
+
 - ❌ No map generation
 - ❌ No simulation logic
 - ❌ No resource updates
@@ -33,7 +41,9 @@ Frontend has **NO independent logic**:
 - ✅ Imports types from shared package
 
 ### ✅ 5. Frontend Directory Moved to frontend/src
+
 Frontend is now a proper workspace:
+
 - Located at `frontend/` (not root `src/`)
 - Has own `package.json` with dependencies
 - Separate configuration files
@@ -56,14 +66,18 @@ Monorepo Structure:
 ## Component Responsibilities
 
 ### Shared Package
+
 **Purpose**: Single source of truth for common logic
+
 - Types: WorldMap, Parcel, Resource, etc.
 - Utils: SeededRandom, SimplexNoise
 - Logic: generateWorldMap(), simulateWorld()
 - Used by: backend, map-generator-cli, frontend (types only)
 
 ### Backend
+
 **Purpose**: Run simulation and provide API
+
 - Simulation Engine: Fixed-speed simulation loop
 - Map Loader: Load pre-generated maps
 - State Manager: Track simulation state
@@ -74,14 +88,18 @@ Monorepo Structure:
 **Cannot be controlled by frontend**: Speed, start/stop, maps
 
 ### Map Generator CLI
+
 **Purpose**: Offline map generation
+
 - Generates maps with custom parameters
 - Saves to JSON files
 - Uses shared package for generation
 - Reproducible with seeds
 
 ### Frontend
+
 **Purpose**: Visualize simulation state (read-only)
+
 - SSE Listener: Connect to backend stream
 - Renderer: Pixi.js GPU-accelerated rendering
 - UI: Read-only controls, connection status
@@ -104,24 +122,29 @@ Map Generator CLI
 ## Installation & Usage
 
 ### Install (One Command)
+
 ```bash
 npm install
 ```
+
 Installs all workspace dependencies and builds shared package.
 
 ### Generate Map
+
 ```bash
 cd map-generator-cli
 npm run dev
 ```
 
 ### Start Backend
+
 ```bash
 cd backend
 npm run dev
 ```
 
 ### Start Frontend
+
 ```bash
 npm run dev:frontend
 ```

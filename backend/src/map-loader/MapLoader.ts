@@ -2,16 +2,16 @@
  * Map Loader - Loads pre-generated maps from files
  */
 
-import fs from 'fs';
-import path from 'path';
-import type { WorldMap, SerializableWorldMap } from '@civilization/shared';
+import fs from 'fs'
+import path from 'path'
+import type { WorldMap, SerializableWorldMap } from '@civilization/shared'
 
 export class MapLoader {
-  private mapsDirectory: string;
+  private mapsDirectory: string
 
   constructor(mapsDirectory: string = './maps') {
-    this.mapsDirectory = mapsDirectory;
-    this.ensureMapsDirectory();
+    this.mapsDirectory = mapsDirectory
+    this.ensureMapsDirectory()
   }
 
   /**
@@ -19,7 +19,7 @@ export class MapLoader {
    */
   private ensureMapsDirectory(): void {
     if (!fs.existsSync(this.mapsDirectory)) {
-      fs.mkdirSync(this.mapsDirectory, { recursive: true });
+      fs.mkdirSync(this.mapsDirectory, { recursive: true })
     }
   }
 
@@ -27,28 +27,28 @@ export class MapLoader {
    * Load a map from a file
    */
   loadMap(filename: string): WorldMap {
-    const filePath = path.join(this.mapsDirectory, filename);
+    const filePath = path.join(this.mapsDirectory, filename)
 
     if (!fs.existsSync(filePath)) {
-      throw new Error(`Map file not found: ${filename}`);
+      throw new Error(`Map file not found: ${filename}`)
     }
 
     try {
-      const data = fs.readFileSync(filePath, 'utf-8');
-      const serializable: SerializableWorldMap = JSON.parse(data);
-      
+      const data = fs.readFileSync(filePath, 'utf-8')
+      const serializable: SerializableWorldMap = JSON.parse(data)
+
       // Convert serializable format to WorldMap with Map structure
       const worldMap: WorldMap = {
-        parcels: new Map(serializable.parcels.map(p => [p.id, p])),
+        parcels: new Map(serializable.parcels.map((p) => [p.id, p])),
         boundaries: serializable.boundaries,
         width: serializable.width,
         height: serializable.height,
         lastUpdate: Date.now(),
-      };
+      }
 
-      return worldMap;
+      return worldMap
     } catch (error) {
-      throw new Error(`Failed to load map from ${filename}: ${error}`);
+      throw new Error(`Failed to load map from ${filename}: ${error}`)
     }
   }
 
@@ -56,7 +56,7 @@ export class MapLoader {
    * Save a map to a file
    */
   saveMap(worldMap: WorldMap, filename: string): void {
-    const filePath = path.join(this.mapsDirectory, filename);
+    const filePath = path.join(this.mapsDirectory, filename)
 
     // Convert WorldMap to serializable format
     const serializable: SerializableWorldMap = {
@@ -65,12 +65,12 @@ export class MapLoader {
       width: worldMap.width,
       height: worldMap.height,
       lastUpdate: worldMap.lastUpdate,
-    };
+    }
 
     try {
-      fs.writeFileSync(filePath, JSON.stringify(serializable, null, 2), 'utf-8');
+      fs.writeFileSync(filePath, JSON.stringify(serializable, null, 2), 'utf-8')
     } catch (error) {
-      throw new Error(`Failed to save map to ${filename}: ${error}`);
+      throw new Error(`Failed to save map to ${filename}: ${error}`)
     }
   }
 
@@ -79,11 +79,11 @@ export class MapLoader {
    */
   listMaps(): string[] {
     try {
-      const files = fs.readdirSync(this.mapsDirectory);
-      return files.filter(file => file.endsWith('.json'));
+      const files = fs.readdirSync(this.mapsDirectory)
+      return files.filter((file) => file.endsWith('.json'))
     } catch (error) {
-      console.error('Failed to list maps:', error);
-      return [];
+      console.error('Failed to list maps:', error)
+      return []
     }
   }
 
@@ -91,16 +91,16 @@ export class MapLoader {
    * Delete a map file
    */
   deleteMap(filename: string): void {
-    const filePath = path.join(this.mapsDirectory, filename);
-    
+    const filePath = path.join(this.mapsDirectory, filename)
+
     if (!fs.existsSync(filePath)) {
-      throw new Error(`Map file not found: ${filename}`);
+      throw new Error(`Map file not found: ${filename}`)
     }
 
     try {
-      fs.unlinkSync(filePath);
+      fs.unlinkSync(filePath)
     } catch (error) {
-      throw new Error(`Failed to delete map ${filename}: ${error}`);
+      throw new Error(`Failed to delete map ${filename}: ${error}`)
     }
   }
 
@@ -108,7 +108,7 @@ export class MapLoader {
    * Check if a map exists
    */
   mapExists(filename: string): boolean {
-    const filePath = path.join(this.mapsDirectory, filename);
-    return fs.existsSync(filePath);
+    const filePath = path.join(this.mapsDirectory, filename)
+    return fs.existsSync(filePath)
   }
 }

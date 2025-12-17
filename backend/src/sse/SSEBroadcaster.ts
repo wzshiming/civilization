@@ -2,19 +2,24 @@
  * SSE Broadcaster - Sends simulation state updates via Server-Sent Events
  */
 
-import type { Response } from 'express';
-import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType } from '@civilization/shared';
-import { StateManager } from '../state/StateManager';
+import type { Response } from 'express'
+import type {
+  SSEMessage,
+  SerializableWorldMap,
+  StateDelta,
+  SSEEventType,
+} from '@civilization/shared'
+import { StateManager } from '../state/StateManager'
 
 export class SSEBroadcaster {
-  private clients: Set<Response> = new Set();
-  private stateManager: StateManager;
-  private broadcastInterval: NodeJS.Timeout | null = null;
-  private updateFrequency: number = 1000; // 1 second between broadcasts
-  private sendFullState: boolean = false; // Send deltas by default
+  private clients: Set<Response> = new Set()
+  private stateManager: StateManager
+  private broadcastInterval: NodeJS.Timeout | null = null
+  private updateFrequency: number = 1000 // 1 second between broadcasts
+  private sendFullState: boolean = false // Send deltas by default
 
   constructor(stateManager: StateManager) {
-    this.stateManager = stateManager;
+    this.stateManager = stateManager
   }
 
   /**
@@ -22,33 +27,33 @@ export class SSEBroadcaster {
    */
   addClient(res: Response): void {
     // Set SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no') // Disable nginx buffering
 
     // Send initial connection message
     this.sendMessage(res, {
       type: 'simulation-started',
       timestamp: Date.now(),
       data: { message: 'Connected to simulation stream' },
-    });
+    })
 
     // Send initial full state
-    const worldMap = this.stateManager.getWorldMap();
+    const worldMap = this.stateManager.getWorldMap()
     if (worldMap) {
-      this.sendFullStateToClient(res);
+      this.sendFullStateToClient(res)
     }
 
-    this.clients.add(res);
+    this.clients.add(res)
 
     // Handle client disconnect
     res.on('close', () => {
-      this.clients.delete(res);
-      console.log(`SSE client disconnected. Active clients: ${this.clients.size}`);
-    });
+      this.clients.delete(res)
+      console.log(`SSE client disconnected. Active clients: ${this.clients.size}`)
+    })
 
-    console.log(`SSE client connected. Active clients: ${this.clients.size}`);
+    console.log(`SSE client connected. Active clients: ${this.clients.size}`)
   }
 
   /**
@@ -56,15 +61,15 @@ export class SSEBroadcaster {
    */
   startBroadcasting(): void {
     if (this.broadcastInterval) {
-      console.log('Broadcasting already started');
-      return;
+      console.log('Broadcasting already started')
+      return
     }
 
     this.broadcastInterval = setInterval(() => {
-      this.broadcast();
-    }, this.updateFrequency);
+      this.broadcast()
+    }, this.updateFrequency)
 
-    console.log(`Started broadcasting updates every ${this.updateFrequency}ms`);
+    console.log(`Started broadcasting updates every ${this.updateFrequency}ms`)
   }
 
   /**
@@ -72,22 +77,22 @@ export class SSEBroadcaster {
    */
   stopBroadcasting(): void {
     if (this.broadcastInterval) {
-      clearInterval(this.broadcastInterval);
-      this.broadcastInterval = null;
+      clearInterval(this.broadcastInterval)
+      this.broadcastInterval = null
     }
-    console.log('Stopped broadcasting updates');
+    console.log('Stopped broadcasting updates')
   }
 
   /**
    * Broadcast to all connected clients
    */
   private broadcast(): void {
-    if (this.clients.size === 0) return;
+    if (this.clients.size === 0) return
 
     if (this.sendFullState) {
-      this.broadcastFullState();
+      this.broadcastFullState()
     } else {
-      this.broadcastDelta();
+      this.broadcastDelta()
     }
   }
 
@@ -95,8 +100,8 @@ export class SSEBroadcaster {
    * Broadcast full state to all clients
    */
   private broadcastFullState(): void {
-    const worldMap = this.stateManager.getWorldMap();
-    if (!worldMap) return;
+    const worldMap = this.stateManager.getWorldMap()
+    if (!worldMap) return
 
     const serializable: SerializableWorldMap = {
       parcels: Array.from(worldMap.parcels.values()),
@@ -104,23 +109,23 @@ export class SSEBroadcaster {
       width: worldMap.width,
       height: worldMap.height,
       lastUpdate: worldMap.lastUpdate,
-    };
+    }
 
     const message: SSEMessage = {
       type: 'full-state',
       timestamp: Date.now(),
       data: serializable,
-    };
+    }
 
-    this.broadcastMessage(message);
+    this.broadcastMessage(message)
   }
 
   /**
    * Send full state to a specific client
    */
   private sendFullStateToClient(res: Response): void {
-    const worldMap = this.stateManager.getWorldMap();
-    if (!worldMap) return;
+    const worldMap = this.stateManager.getWorldMap()
+    if (!worldMap) return
 
     const serializable: SerializableWorldMap = {
       parcels: Array.from(worldMap.parcels.values()),
@@ -128,66 +133,66 @@ export class SSEBroadcaster {
       width: worldMap.width,
       height: worldMap.height,
       lastUpdate: worldMap.lastUpdate,
-    };
+    }
 
     const message: SSEMessage = {
       type: 'full-state',
       timestamp: Date.now(),
       data: serializable,
-    };
+    }
 
-    this.sendMessage(res, message);
+    this.sendMessage(res, message)
   }
 
   /**
    * Broadcast delta updates to all clients
    */
   private broadcastDelta(): void {
-    const deltas = this.stateManager.getDeltas();
-    
-    // Only send if there are changes
-    if (deltas.length === 0) return;
+    const deltas = this.stateManager.getDeltas()
 
-    const worldMap = this.stateManager.getWorldMap();
+    // Only send if there are changes
+    if (deltas.length === 0) return
+
+    const worldMap = this.stateManager.getWorldMap()
     const delta: StateDelta = {
       parcels: deltas,
       lastUpdate: worldMap?.lastUpdate || Date.now(),
-    };
+    }
 
     const message: SSEMessage = {
       type: 'delta',
       timestamp: Date.now(),
       data: delta,
-    };
+    }
 
-    this.broadcastMessage(message);
+    this.broadcastMessage(message)
   }
 
   /**
    * Broadcast a message to all clients
    */
   private broadcastMessage(message: SSEMessage): void {
-    const data = `data: ${JSON.stringify(message)}\n\n`;
-    
-    this.clients.forEach(client => {
+    const data = `data: ${JSON.stringify(message)}\n\n`
+
+    this.clients.forEach((client) => {
       try {
-        client.write(data);
+        client.write(data)
       } catch (error) {
-        console.error('Error sending to client:', error);
-        this.clients.delete(client);
+        console.error('Error sending to client:', error)
+        this.clients.delete(client)
       }
-    });
+    })
   }
 
   /**
    * Send a message to a specific client
    */
   private sendMessage(res: Response, message: SSEMessage): void {
-    const data = `data: ${JSON.stringify(message)}\n\n`;
+    const data = `data: ${JSON.stringify(message)}\n\n`
     try {
-      res.write(data);
+      res.write(data)
     } catch (error) {
-      console.error('Error sending message to client:', error);
+      console.error('Error sending message to client:', error)
     }
   }
 
@@ -195,12 +200,12 @@ export class SSEBroadcaster {
    * Set update frequency
    */
   setUpdateFrequency(frequency: number): void {
-    this.updateFrequency = frequency;
-    
+    this.updateFrequency = frequency
+
     // Restart broadcasting with new frequency
     if (this.broadcastInterval) {
-      this.stopBroadcasting();
-      this.startBroadcasting();
+      this.stopBroadcasting()
+      this.startBroadcasting()
     }
   }
 
@@ -208,14 +213,14 @@ export class SSEBroadcaster {
    * Toggle between full state and delta updates
    */
   setSendFullState(sendFull: boolean): void {
-    this.sendFullState = sendFull;
+    this.sendFullState = sendFull
   }
 
   /**
    * Get number of connected clients
    */
   getClientCount(): number {
-    return this.clients.size;
+    return this.clients.size
   }
 
   /**
@@ -226,8 +231,8 @@ export class SSEBroadcaster {
       type,
       timestamp: Date.now(),
       data,
-    };
+    }
 
-    this.broadcastMessage(message);
+    this.broadcastMessage(message)
   }
 }

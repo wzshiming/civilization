@@ -2,34 +2,36 @@
  * Detail panel showing information about a selected parcel
  */
 
-import type { Parcel, ResourceType, TerrainType } from '../types/map';
-import { useI18n } from '../i18n';
-import './ParcelDetailPanel.css';
+import type { Parcel, ResourceType, TerrainType } from '../types/map'
+import { useI18n } from '../i18n'
+import './ParcelDetailPanel.css'
 
 interface ParcelDetailPanelProps {
-  parcel: Parcel | null;
-  onClose: () => void;
+  parcel: Parcel | null
+  onClose: () => void
 }
 
 export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
-  const { t } = useI18n();
-  
+  const { t } = useI18n()
+
   if (!parcel) {
-    return null;
+    return null
   }
 
   const formatTerrainType = (type: TerrainType): string => {
-    return t.terrainTypes[type] || type;
-  };
+    return t.terrainTypes[type] || type
+  }
 
   const formatResourceType = (type: ResourceType): string => {
-    return t.resourceTypes[type] || type;
-  };
+    return t.resourceTypes[type] || type
+  }
 
   return (
     <div className="parcel-detail-panel">
       <div className="panel-header">
-        <h2>{t.parcel} #{parcel.id}</h2>
+        <h2>
+          {t.parcel} #{parcel.id}
+        </h2>
         <button className="close-button" onClick={onClose}>
           ✕
         </button>
@@ -57,7 +59,9 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
         </section>
 
         <section className="resources-section">
-          <h3>{t.resources} ({parcel.resources.length})</h3>
+          <h3>
+            {t.resources} ({parcel.resources.length})
+          </h3>
           {parcel.resources.length === 0 ? (
             <p className="no-resources">{t.noResources}</p>
           ) : (
@@ -65,9 +69,7 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
               {parcel.resources.map((resource, index) => (
                 <div key={index} className="resource-item">
                   <div className="resource-header">
-                    <span className="resource-type">
-                      {formatResourceType(resource.type)}
-                    </span>
+                    <span className="resource-type">{formatResourceType(resource.type)}</span>
                     <span className="resource-change">
                       {resource.changeRate > 0 ? '+' : ''}
                       {resource.changeRate.toFixed(2)}/s
@@ -119,7 +121,5 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
         </section>
       </div>
     </div>
-  );
+  )
 }
-
-

@@ -9,6 +9,7 @@ This package eliminates code duplication across the backend, map-generator-cli, 
 ## Contents
 
 ### Types (`src/types.ts`)
+
 - `WorldMap` - Complete world map structure
 - `Parcel` - Map cell/parcel
 - `Resource` - Resource with properties
@@ -23,31 +24,37 @@ This package eliminates code duplication across the backend, map-generator-cli, 
 ### Utilities
 
 **Random Number Generation (`src/utils/random.ts`)**
+
 - `SeededRandom` class for reproducible random generation
 - Used for deterministic map generation
 
 **Noise Generation (`src/utils/noise.ts`)**
+
 - `SimplexNoise` class for terrain generation
 - Multi-octave noise for realistic elevation, moisture, temperature
 
 ### Map Generation (`src/map-generator/`)
 
 **Voronoi Generation (`voronoi.ts`)**
+
 - Delaunay triangulation
 - Lloyd's relaxation for uniform cells
 - Toroidal wrapping support
 
 **Terrain Generation (`terrain.ts`)**
+
 - Multi-octave Simplex noise
 - Distance-from-center calculation for continents
 - Terrain type determination based on elevation, moisture, temperature
 
 **Resource Generation (`resources.ts`)**
+
 - Terrain-specific resource spawn rules
 - Multiple resources per parcel (1-3)
 - Dynamic resource properties (regeneration/depletion)
 
 **Main Orchestrator (`index.ts`)**
+
 - `generateWorldMap(config)` - Generate complete world map
 - `simulateWorld(worldMap, deltaTime)` - Update simulation state
 
@@ -56,42 +63,33 @@ This package eliminates code duplication across the backend, map-generator-cli, 
 ### In Backend
 
 ```typescript
-import { 
-  generateWorldMap, 
-  simulateWorld,
-  type WorldMap, 
-  type Parcel 
-} from '@civilization/shared';
+import { generateWorldMap, simulateWorld, type WorldMap, type Parcel } from '@civilization/shared'
 
 // Load or generate map
 const worldMap = generateWorldMap({
   width: 1200,
   height: 800,
   numParcels: 500,
-  seed: 12345
-});
+  seed: 12345,
+})
 
 // Update simulation
-simulateWorld(worldMap, deltaTime);
+simulateWorld(worldMap, deltaTime)
 ```
 
 ### In Map Generator CLI
 
 ```typescript
-import { 
-  generateWorldMap,
-  type MapConfig,
-  type SerializableWorldMap 
-} from '@civilization/shared';
+import { generateWorldMap, type MapConfig, type SerializableWorldMap } from '@civilization/shared'
 
 const config: MapConfig = {
   width: 1200,
   height: 800,
   numParcels: 500,
-  seed: 42
-};
+  seed: 42,
+}
 
-const worldMap = generateWorldMap(config);
+const worldMap = generateWorldMap(config)
 ```
 
 ## Building

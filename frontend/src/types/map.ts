@@ -14,9 +14,9 @@ export const TerrainType = {
   TUNDRA: 'tundra',
   MOUNTAIN: 'mountain',
   SNOW: 'snow',
-} as const;
+} as const
 
-export type TerrainType = typeof TerrainType[keyof typeof TerrainType];
+export type TerrainType = (typeof TerrainType)[keyof typeof TerrainType]
 
 /** Resource types that can exist in parcels */
 export const ResourceType = {
@@ -30,85 +30,85 @@ export const ResourceType = {
   FERTILE_SOIL: 'fertile_soil',
   FISH: 'fish',
   GAME: 'game',
-} as const;
+} as const
 
-export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
+export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType]
 
 /** Represents a resource attribute (e.g., food, energy) */
 export interface ResourceAttribute {
-  name: string;
-  efficiency: number;
+  name: string
+  efficiency: number
 }
 
 /** Represents a single resource with its attributes */
 export interface Resource {
-  type: ResourceType;
-  current: number;
-  maximum: number;
-  changeRate: number; // positive for regeneration, negative for depletion
-  attributes: ResourceAttribute[];
+  type: ResourceType
+  current: number
+  maximum: number
+  changeRate: number // positive for regeneration, negative for depletion
+  attributes: ResourceAttribute[]
 }
 
 /** 2D Point coordinate */
 export interface Point {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
 /** A single map parcel (polygon region) */
 export interface Parcel {
-  id: number;
+  id: number
   /** Vertices defining the polygon boundary */
-  vertices: Point[];
+  vertices: Point[]
   /** Center point of the parcel */
-  center: Point;
+  center: Point
   /** Terrain type of this parcel */
-  terrain: TerrainType;
+  terrain: TerrainType
   /** Multiple resources that can exist in this parcel */
-  resources: Resource[];
+  resources: Resource[]
   /** IDs of neighboring parcels */
-  neighbors: number[];
+  neighbors: number[]
   /** Elevation value (used for terrain generation) */
-  elevation: number;
+  elevation: number
   /** Moisture value (used for terrain generation) */
-  moisture: number;
+  moisture: number
   /** Temperature value (used for terrain generation) */
-  temperature: number;
+  temperature: number
 }
 
 /** Represents a boundary between two parcels */
 export interface Boundary {
-  parcel1: number;
-  parcel2: number;
+  parcel1: number
+  parcel2: number
   /** Shared edge points */
-  edge: Point[];
+  edge: Point[]
   /** Resources that exist on this boundary */
-  resources: Resource[];
+  resources: Resource[]
 }
 
 /** Complete world map structure */
 export interface WorldMap {
   /** All parcels in the world */
-  parcels: Map<number, Parcel>;
+  parcels: Map<number, Parcel>
   /** Boundaries between parcels */
-  boundaries: Boundary[];
+  boundaries: Boundary[]
   /** World dimensions */
-  width: number;
-  height: number;
+  width: number
+  height: number
   /** Timestamp of last simulation update */
-  lastUpdate: number;
+  lastUpdate: number
 }
 
 /** Configuration for map generation */
 export interface MapConfig {
-  width: number;
-  height: number;
+  width: number
+  height: number
   /** Number of parcels to generate */
-  numParcels: number;
+  numParcels: number
   /** Random seed for reproducible generation */
-  seed?: number;
+  seed?: number
   /** Water level threshold (0-1) */
-  waterLevel?: number;
+  waterLevel?: number
   /** Number of continental landmasses */
-  numContinents?: number;
+  numContinents?: number
 }

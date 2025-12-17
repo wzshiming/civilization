@@ -2,19 +2,19 @@
  * Simulation Engine - Runs the simulation loop and updates the state
  */
 
-import type { WorldMap, Resource } from '@civilization/shared';
-import { StateManager } from '../state/StateManager';
+import type { WorldMap, Resource } from '@civilization/shared'
+import { StateManager } from '../state/StateManager'
 
 export class SimulationEngine {
-  private stateManager: StateManager;
-  private isRunning: boolean = false;
-  private intervalId: NodeJS.Timeout | null = null;
-  private speed: number = 1.0;
-  private lastUpdateTime: number = Date.now();
-  private tickInterval: number = 100; // 100ms tick rate
+  private stateManager: StateManager
+  private isRunning: boolean = false
+  private intervalId: NodeJS.Timeout | null = null
+  private speed: number = 1.0
+  private lastUpdateTime: number = Date.now()
+  private tickInterval: number = 100 // 100ms tick rate
 
   constructor(stateManager: StateManager) {
-    this.stateManager = stateManager;
+    this.stateManager = stateManager
   }
 
   /**
@@ -22,24 +22,24 @@ export class SimulationEngine {
    */
   start(): void {
     if (this.isRunning) {
-      console.log('Simulation already running');
-      return;
+      console.log('Simulation already running')
+      return
     }
 
-    const worldMap = this.stateManager.getWorldMap();
+    const worldMap = this.stateManager.getWorldMap()
     if (!worldMap) {
-      console.error('Cannot start simulation: No map loaded');
-      return;
+      console.error('Cannot start simulation: No map loaded')
+      return
     }
 
-    this.isRunning = true;
-    this.lastUpdateTime = Date.now();
+    this.isRunning = true
+    this.lastUpdateTime = Date.now()
 
     this.intervalId = setInterval(() => {
-      this.tick();
-    }, this.tickInterval);
+      this.tick()
+    }, this.tickInterval)
 
-    console.log(`Simulation started at speed ${this.speed}x`);
+    console.log(`Simulation started at speed ${this.speed}x`)
   }
 
   /**
@@ -47,17 +47,17 @@ export class SimulationEngine {
    */
   stop(): void {
     if (!this.isRunning) {
-      console.log('Simulation not running');
-      return;
+      console.log('Simulation not running')
+      return
     }
 
     if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+      clearInterval(this.intervalId)
+      this.intervalId = null
     }
 
-    this.isRunning = false;
-    console.log('Simulation stopped');
+    this.isRunning = false
+    console.log('Simulation stopped')
   }
 
   /**
@@ -65,41 +65,41 @@ export class SimulationEngine {
    */
   setSpeed(speed: number): void {
     if (speed < 0.1 || speed > 10) {
-      console.error('Speed must be between 0.1 and 10');
-      return;
+      console.error('Speed must be between 0.1 and 10')
+      return
     }
-    this.speed = speed;
-    console.log(`Simulation speed set to ${speed}x`);
+    this.speed = speed
+    console.log(`Simulation speed set to ${speed}x`)
   }
 
   /**
    * Get current simulation speed
    */
   getSpeed(): number {
-    return this.speed;
+    return this.speed
   }
 
   /**
    * Check if simulation is running
    */
   isSimulationRunning(): boolean {
-    return this.isRunning;
+    return this.isRunning
   }
 
   /**
    * Run a single simulation tick
    */
   private tick(): void {
-    const worldMap = this.stateManager.getWorldMap();
-    if (!worldMap) return;
+    const worldMap = this.stateManager.getWorldMap()
+    if (!worldMap) return
 
-    const now = Date.now();
-    const deltaTime = ((now - this.lastUpdateTime) / 1000) * this.speed;
+    const now = Date.now()
+    const deltaTime = ((now - this.lastUpdateTime) / 1000) * this.speed
 
-    this.simulateWorld(worldMap, deltaTime);
-    this.stateManager.updateTimestamp();
+    this.simulateWorld(worldMap, deltaTime)
+    this.stateManager.updateTimestamp()
 
-    this.lastUpdateTime = now;
+    this.lastUpdateTime = now
   }
 
   /**
@@ -107,16 +107,16 @@ export class SimulationEngine {
    */
   private simulateWorld(world: WorldMap, deltaTime: number): void {
     // Update resources for all parcels
-    world.parcels.forEach(parcel => {
-      this.updateResources(parcel.resources, deltaTime);
-    });
+    world.parcels.forEach((parcel) => {
+      this.updateResources(parcel.resources, deltaTime)
+    })
 
     // Update boundary resources
     for (const boundary of world.boundaries) {
-      this.updateResources(boundary.resources, deltaTime);
+      this.updateResources(boundary.resources, deltaTime)
     }
 
-    world.lastUpdate = Date.now();
+    world.lastUpdate = Date.now()
   }
 
   /**
@@ -124,8 +124,8 @@ export class SimulationEngine {
    */
   private updateResources(resources: Resource[], deltaTime: number): void {
     for (const resource of resources) {
-      resource.current += resource.changeRate * deltaTime;
-      resource.current = Math.max(0, Math.min(resource.maximum, resource.current));
+      resource.current += resource.changeRate * deltaTime
+      resource.current = Math.max(0, Math.min(resource.maximum, resource.current))
     }
   }
 }

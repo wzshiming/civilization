@@ -27,6 +27,7 @@ npm run dev
 ```
 
 **Optional:** Generate a custom map:
+
 ```bash
 npm run dev -- --width 1600 --height 1200 --parcels 800 --seed 12345 --output custom-map.json
 ```
@@ -47,6 +48,7 @@ npm run dev
 The backend will start on http://localhost:3001
 
 **Backend API endpoints:**
+
 - Health check: `GET /health`
 - SSE stream: `GET /events`
 - Status: `GET /api/status`
@@ -95,7 +97,7 @@ curl -X POST http://localhost:3001/api/simulation/speed \
 
 ## What You Should See
 
-1. **Backend Terminal**: 
+1. **Backend Terminal**:
    - "Map loaded successfully: X parcels"
    - "SSE broadcasting started"
    - "Simulation started" (after API call)
@@ -109,18 +111,22 @@ curl -X POST http://localhost:3001/api/simulation/speed \
 ## Common Issues
 
 ### Backend won't start
+
 - **Issue:** Port 3001 already in use
 - **Solution:** Stop other processes on port 3001 or change PORT in backend/.env
 
 ### Frontend can't connect
+
 - **Issue:** Connection error in browser console
 - **Solution:** Check that backend is running and VITE_BACKEND_URL in .env is correct
 
 ### No map loaded
+
 - **Issue:** Backend says "No maps found"
 - **Solution:** Run map generator first to create default-map.json
 
 ### Simulation not updating
+
 - **Issue:** State not changing
 - **Solution:** Start simulation via API: `curl -X POST http://localhost:3001/api/simulation/start`
 
@@ -134,17 +140,20 @@ curl -X POST http://localhost:3001/api/simulation/speed \
 ## Development Tips
 
 ### Backend Development
+
 ```bash
 cd backend
 npm run dev  # Auto-restarts on file changes
 ```
 
 ### Frontend Development
+
 ```bash
 npm run dev  # Hot reload on file changes
 ```
 
 ### Map Generation
+
 ```bash
 cd map-generator-cli
 npm run dev -- -w 800 -h 600 -p 200 -o test.json  # Quick small map

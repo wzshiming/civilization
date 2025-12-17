@@ -2,9 +2,9 @@
  * Resource generation and placement
  */
 
-import type { Parcel, Resource, ResourceAttribute } from '../types';
-import { ResourceType, TerrainType } from '../types';
-import { SeededRandom } from '../utils/random';
+import type { Parcel, Resource, ResourceAttribute } from '../types'
+import { ResourceType, TerrainType } from '../types'
+import { SeededRandom } from '../utils/random'
 
 /**
  * Resource spawn rules based on terrain
@@ -50,100 +50,87 @@ const RESOURCE_RULES: Record<TerrainType, { types: ResourceType[]; probability: 
     types: [ResourceType.WATER],
     probability: 0.2,
   },
-};
+}
 
 /**
  * Base resource properties
  */
-const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: number; attributes: ResourceAttribute[] }> = {
-  [ResourceType.WATER]: { 
-    max: 1000, 
+const RESOURCE_PROPERTIES: Record<
+  ResourceType,
+  { max: number; changeRate: number; attributes: ResourceAttribute[] }
+> = {
+  [ResourceType.WATER]: {
+    max: 1000,
     changeRate: 0,
-    attributes: [
-      { name: 'hydration', efficiency: 1.0 },
-    ]
+    attributes: [{ name: 'hydration', efficiency: 1.0 }],
   },
-  [ResourceType.WOOD]: { 
-    max: 500, 
+  [ResourceType.WOOD]: {
+    max: 500,
     changeRate: 0.5,
     attributes: [
       { name: 'energy', efficiency: 0.8 },
       { name: 'construction', efficiency: 1.0 },
-    ]
+    ],
   },
-  [ResourceType.STONE]: { 
-    max: 800, 
+  [ResourceType.STONE]: {
+    max: 800,
     changeRate: 0,
-    attributes: [
-      { name: 'construction', efficiency: 1.2 },
-    ]
+    attributes: [{ name: 'construction', efficiency: 1.2 }],
   },
-  [ResourceType.IRON]: { 
-    max: 300, 
+  [ResourceType.IRON]: {
+    max: 300,
     changeRate: 0,
     attributes: [
       { name: 'tools', efficiency: 1.0 },
       { name: 'construction', efficiency: 0.9 },
-    ]
+    ],
   },
-  [ResourceType.GOLD]: { 
-    max: 150, 
+  [ResourceType.GOLD]: {
+    max: 150,
     changeRate: 0,
-    attributes: [
-      { name: 'wealth', efficiency: 1.0 },
-    ]
+    attributes: [{ name: 'wealth', efficiency: 1.0 }],
   },
-  [ResourceType.OIL]: { 
-    max: 400, 
+  [ResourceType.OIL]: {
+    max: 400,
     changeRate: 0,
-    attributes: [
-      { name: 'energy', efficiency: 1.5 },
-    ]
+    attributes: [{ name: 'energy', efficiency: 1.5 }],
   },
-  [ResourceType.COAL]: { 
-    max: 600, 
+  [ResourceType.COAL]: {
+    max: 600,
     changeRate: 0,
-    attributes: [
-      { name: 'energy', efficiency: 1.2 },
-    ]
+    attributes: [{ name: 'energy', efficiency: 1.2 }],
   },
-  [ResourceType.FERTILE_SOIL]: { 
-    max: 100, 
+  [ResourceType.FERTILE_SOIL]: {
+    max: 100,
     changeRate: 0.2,
-    attributes: [
-      { name: 'food', efficiency: 1.0 },
-    ]
+    attributes: [{ name: 'food', efficiency: 1.0 }],
   },
-  [ResourceType.FISH]: { 
-    max: 300, 
+  [ResourceType.FISH]: {
+    max: 300,
     changeRate: 0.3,
-    attributes: [
-      { name: 'food', efficiency: 0.9 },
-    ]
+    attributes: [{ name: 'food', efficiency: 0.9 }],
   },
-  [ResourceType.GAME]: { 
-    max: 200, 
+  [ResourceType.GAME]: {
+    max: 200,
     changeRate: 0.4,
-    attributes: [
-      { name: 'food', efficiency: 1.2 },
-    ]
+    attributes: [{ name: 'food', efficiency: 1.2 }],
   },
-};
+}
 
 /**
  * Create a new resource instance
  */
 function createResource(type: ResourceType, random: SeededRandom): Resource {
-  const props = RESOURCE_PROPERTIES[type];
-  const initial = random.randomFloat(0.3, 0.9) * props.max;
-  
+  const props = RESOURCE_PROPERTIES[type]
+  const initial = random.randomFloat(0.3, 0.9) * props.max
+
   return {
     type,
     current: initial,
     maximum: props.max,
     changeRate: props.changeRate,
     attributes: props.attributes,
-  };
+  }
 }
 
 /**
@@ -152,30 +139,30 @@ function createResource(type: ResourceType, random: SeededRandom): Resource {
  */
 export function generateResources(parcels: Parcel[], random: SeededRandom): void {
   for (const parcel of parcels) {
-    const rules = RESOURCE_RULES[parcel.terrain];
-    
+    const rules = RESOURCE_RULES[parcel.terrain]
+
     // Skip if terrain doesn't support resources or probability check fails
     if (!random.chance(rules.probability)) {
-      continue;
+      continue
     }
 
     // Determine how many resource types this parcel will have (1-3)
-    const numResources = random.chance(0.4) ? 2 : random.chance(0.1) ? 3 : 1;
-    
+    const numResources = random.chance(0.4) ? 2 : random.chance(0.1) ? 3 : 1
+
     // Shuffle available resource types
-    const availableTypes = [...rules.types];
+    const availableTypes = [...rules.types]
     for (let i = availableTypes.length - 1; i > 0; i--) {
-      const j = random.randomInt(0, i + 1);
-      [availableTypes[i], availableTypes[j]] = [availableTypes[j], availableTypes[i]];
+      const j = random.randomInt(0, i + 1)
+      ;[availableTypes[i], availableTypes[j]] = [availableTypes[j], availableTypes[i]]
     }
 
     // Add resources up to numResources
-    const resourcesAdded = new Set<ResourceType>();
+    const resourcesAdded = new Set<ResourceType>()
     for (let i = 0; i < Math.min(numResources, availableTypes.length); i++) {
-      const type = availableTypes[i];
+      const type = availableTypes[i]
       if (!resourcesAdded.has(type)) {
-        parcel.resources.push(createResource(type, random));
-        resourcesAdded.add(type);
+        parcel.resources.push(createResource(type, random))
+        resourcesAdded.add(type)
       }
     }
 
@@ -183,14 +170,12 @@ export function generateResources(parcels: Parcel[], random: SeededRandom): void
     if (parcel.terrain === TerrainType.GRASSLAND || parcel.terrain === TerrainType.FOREST) {
       if (parcel.moisture > 0.7 && random.chance(0.5)) {
         if (!resourcesAdded.has(ResourceType.WATER)) {
-          parcel.resources.push(createResource(ResourceType.WATER, random));
+          parcel.resources.push(createResource(ResourceType.WATER, random))
         }
       }
     }
   }
 }
-
-
 
 /**
  * Simulate resource changes over time
@@ -198,9 +183,9 @@ export function generateResources(parcels: Parcel[], random: SeededRandom): void
 export function updateResources(parcel: Parcel, deltaTime: number): void {
   for (const resource of parcel.resources) {
     // Apply change rate (regeneration or depletion)
-    resource.current += resource.changeRate * deltaTime;
-    
+    resource.current += resource.changeRate * deltaTime
+
     // Clamp to valid range
-    resource.current = Math.max(0, Math.min(resource.maximum, resource.current));
+    resource.current = Math.max(0, Math.min(resource.maximum, resource.current))
   }
 }

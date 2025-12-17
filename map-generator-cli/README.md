@@ -55,16 +55,19 @@ npm run dev -- --seed 12345 --output seeded-map.json
 ## Examples
 
 ### Small Map
+
 ```bash
 npm run dev -- -w 800 -h 600 -p 300 -o small-map.json
 ```
 
 ### Large Map
+
 ```bash
 npm run dev -- -w 2000 -h 1500 -p 1000 -o large-map.json
 ```
 
 ### Reproducible Map
+
 ```bash
 npm run dev -- -s 42 -o reproducible-map.json
 ```
@@ -96,6 +99,7 @@ Generated maps are saved as JSON files in the specified output directory (defaul
 ## Map Statistics
 
 After generation, the tool displays:
+
 - Total parcels and boundaries
 - Terrain distribution (percentage of each terrain type)
 - Resource statistics

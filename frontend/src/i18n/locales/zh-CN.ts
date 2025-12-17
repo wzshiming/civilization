@@ -2,14 +2,14 @@
  * Simplified Chinese translations (简体中文)
  */
 
-import type { TerrainType, ResourceType } from '../../types/map';
-import type { TranslationKeys } from './en';
+import type { TerrainType, ResourceType } from '../../types/map'
+import type { TranslationKeys } from './en'
 
 export const zhCN: TranslationKeys = {
   // App level
   loadingMap: '正在生成世界地图...',
   mapGenerationFailed: '地图生成失败',
-  
+
   // Control Panel
   simulation: '模拟',
   pause: '⏸ 暂停',
@@ -21,7 +21,7 @@ export const zhCN: TranslationKeys = {
   seedOptional: '种子（可选）：',
   random: '随机',
   regenerateMap: '🔄 重新生成地图',
-  
+
   // Parcel Detail Panel
   parcel: '地块',
   terrain: '地形',
@@ -34,7 +34,7 @@ export const zhCN: TranslationKeys = {
   location: '位置',
   center: '中心：',
   neighbors: '邻居：',
-  
+
   // Terrain types
   terrainTypes: {
     ocean: '海洋',
@@ -48,7 +48,7 @@ export const zhCN: TranslationKeys = {
     mountain: '山地',
     snow: '雪地',
   } as Record<TerrainType, string>,
-  
+
   // Resource types
   resourceTypes: {
     water: '水',
@@ -62,7 +62,7 @@ export const zhCN: TranslationKeys = {
     fish: '鱼',
     game: '猎物',
   } as Record<ResourceType, string>,
-  
+
   // Language selector
   language: '语言',
-};
+}

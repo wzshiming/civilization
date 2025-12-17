@@ -2,13 +2,13 @@
  * English translations
  */
 
-import type { TerrainType, ResourceType } from '../../types/map';
+import type { TerrainType, ResourceType } from '../../types/map'
 
 export const en = {
   // App level
   loadingMap: 'Generating world map...',
   mapGenerationFailed: 'Failed to generate map',
-  
+
   // Control Panel
   simulation: 'Simulation',
   pause: '⏸ Pause',
@@ -20,7 +20,7 @@ export const en = {
   seedOptional: 'Seed (optional):',
   random: 'Random',
   regenerateMap: '🔄 Regenerate Map',
-  
+
   // Parcel Detail Panel
   parcel: 'Parcel',
   terrain: 'Terrain',
@@ -33,7 +33,7 @@ export const en = {
   location: 'Location',
   center: 'Center:',
   neighbors: 'Neighbors:',
-  
+
   // Terrain types
   terrainTypes: {
     ocean: 'Ocean',
@@ -47,7 +47,7 @@ export const en = {
     mountain: 'Mountain',
     snow: 'Snow',
   } as Record<TerrainType, string>,
-  
+
   // Resource types
   resourceTypes: {
     water: 'Water',
@@ -61,9 +61,9 @@ export const en = {
     fish: 'Fish',
     game: 'Game',
   } as Record<ResourceType, string>,
-  
+
   // Language selector
   language: 'Language',
-};
+}
 
-export type TranslationKeys = typeof en;
+export type TranslationKeys = typeof en

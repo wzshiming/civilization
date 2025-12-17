@@ -14,7 +14,7 @@ The project uses npm workspaces to manage multiple packages:
   - `backend` - Backend server
   - `map-generator-cli` - Map generation CLI tool
   - `frontend` - Frontend application
-  
+
 The frontend lives in the `frontend/` workspace and has **no independent logic** - it only consumes the backend API.
 
 ## System Components
@@ -26,6 +26,7 @@ The frontend lives in the `frontend/` workspace and has **no independent logic**
 **Purpose:** Centralized types, utilities, and map generation logic
 
 **Features:**
+
 - All type definitions (WorldMap, Parcel, Resource, etc.)
 - Utility functions (SeededRandom, SimplexNoise)
 - Complete map generation logic (Voronoi, terrain, resources)
@@ -33,19 +34,21 @@ The frontend lives in the `frontend/` workspace and has **no independent logic**
 - No duplication across components
 
 **Exports:**
+
 ```typescript
 // Types
-export * from './types';
+export * from './types'
 
 // Utilities
-export { SeededRandom } from './utils/random';
-export { SimplexNoise } from './utils/noise';
+export { SeededRandom } from './utils/random'
+export { SimplexNoise } from './utils/noise'
 
 // Map Generation
-export { generateWorldMap, simulateWorld } from './map-generator/index';
+export { generateWorldMap, simulateWorld } from './map-generator/index'
 ```
 
 **Used By:**
+
 - Backend (for simulation and map loading)
 - Map Generator CLI (for map generation)
 - NOT used by frontend (frontend has no logic)
@@ -57,6 +60,7 @@ export { generateWorldMap, simulateWorld } from './map-generator/index';
 **Purpose:** Generate maps offline based on demand parameters
 
 **Features:**
+
 - Command-line interface for map generation
 - Configurable parameters (width, height, parcel count, seed)
 - Reproducible map generation using seeds
@@ -64,6 +68,7 @@ export { generateWorldMap, simulateWorld } from './map-generator/index';
 - Displays detailed statistics after generation
 
 **Usage:**
+
 ```bash
 cd map-generator-cli
 npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
@@ -80,6 +85,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 **Purpose:** Run the simulation and broadcast state updates
 
 #### 2.1 Simulation Engine
+
 - **File:** `src/simulation/SimulationEngine.ts`
 - **Responsibilities:**
   - Run simulation loop at fixed intervals (100ms tick rate)
@@ -88,6 +94,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Control:** Start/stop via API, not controllable from frontend
 
 #### 2.2 Map Loader
+
 - **File:** `src/map-loader/MapLoader.ts`
 - **Responsibilities:**
   - Load pre-generated maps from `./maps/` directory
@@ -96,6 +103,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Usage:** Maps must be generated offline using map-generator-cli
 
 #### 2.3 State Manager
+
 - **File:** `src/state/StateManager.ts`
 - **Responsibilities:**
   - Manage current simulation state (parcels, resources)
@@ -104,6 +112,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Provides:** Current state and incremental changes to SSE broadcaster
 
 #### 2.4 SSE Broadcaster
+
 - **File:** `src/sse/SSEBroadcaster.ts`
 - **Responsibilities:**
   - Broadcast state updates via Server-Sent Events
@@ -113,6 +122,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Endpoint:** `GET /events`
 
 #### 2.5 Settings Manager
+
 - **File:** `src/settings/SettingsManager.ts`
 - **Responsibilities:**
   - Manage simulation settings (speed, active map, etc.)
@@ -121,6 +131,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Access:** Via API endpoints only
 
 #### 2.6 REST API
+
 - **File:** `src/api/routes.ts`
 - **Provides:**
   - `GET /api/status` - Get simulation status
@@ -143,6 +154,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 **Critical:** Frontend has **NO independent logic**. It completely relies on backend API.
 
 #### 3.1 SSE Listener
+
 - **File:** `frontend/src/hooks/useSSE.ts`
 - **Responsibilities:**
   - Connect to backend SSE stream
@@ -152,6 +164,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Connection:** Auto-connects on mount to configured backend URL
 
 #### 3.2 Renderer
+
 - **File:** `frontend/src/components/MapRenderer.tsx`
 - **Responsibilities:**
   - Render simulation state using Pixi.js
@@ -161,6 +174,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Performance:** GPU-accelerated via WebGL
 
 #### 3.3 UI Components
+
 - **File:** `frontend/src/components/ReadOnlyControlPanel.tsx`
 - **Responsibilities:**
   - Display connection status
@@ -170,6 +184,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Limitations:** Cannot control simulation, speed, or map generation
 
 #### 3.4 Detail Panel
+
 - **File:** `frontend/src/components/ParcelDetailPanel.tsx`
 - **Responsibilities:**
   - Show selected parcel information
@@ -177,6 +192,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
   - Update in real-time as simulation runs
 
 #### 3.5 What Frontend Does NOT Have
+
 - ❌ No map-generator logic
 - ❌ No utils (random, noise)
 - ❌ No simulation logic
@@ -241,6 +257,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 **Endpoint:** `GET /events`
 
 **Message Format:**
+
 ```json
 {
   "type": "full-state" | "delta" | "simulation-started" | "simulation-paused" | "settings-updated",
@@ -320,11 +337,13 @@ All simulation control is done via the backend:
 ## Environment Configuration
 
 ### Frontend (.env)
+
 ```env
 VITE_BACKEND_URL=http://localhost:3001
 ```
 
 ### Backend (backend/.env)
+
 ```env
 PORT=3001
 MAPS_DIR=./maps
@@ -340,6 +359,7 @@ npm install
 ```
 
 This single command:
+
 - Installs all root dependencies
 - Installs workspace dependencies (shared, backend, map-generator-cli)
 - Builds the shared package automatically (postinstall hook)
@@ -347,6 +367,7 @@ This single command:
 ### Development Mode
 
 **Terminal 1 - Generate a map:**
+
 ```bash
 cd map-generator-cli
 npm run dev
@@ -354,12 +375,14 @@ npm run dev
 ```
 
 **Terminal 2 - Start backend:**
+
 ```bash
 cd backend
 npm run dev
 ```
 
 **Terminal 3 - Start frontend:**
+
 ```bash
 # From root directory
 npm run dev:frontend
@@ -368,6 +391,7 @@ npm run dev:frontend
 ### Production Mode
 
 **Generate map:**
+
 ```bash
 cd map-generator-cli
 npm run build
@@ -375,6 +399,7 @@ node dist/index.js
 ```
 
 **Start backend:**
+
 ```bash
 cd backend
 npm run build
@@ -382,6 +407,7 @@ npm start
 ```
 
 **Build and serve frontend:**
+
 ```bash
 npm run build
 npm run preview
@@ -431,21 +457,25 @@ npm run preview
 ## Troubleshooting
 
 ### Backend won't start
+
 - Check if port 3001 is available
 - Ensure maps directory exists and has at least one map file
 - Verify dependencies are installed: `npm install`
 
 ### Frontend can't connect
+
 - Check `VITE_BACKEND_URL` in `.env`
 - Verify backend is running: `curl http://localhost:3001/health`
 - Check browser console for connection errors
 
 ### No state updates
+
 - Verify simulation is started: `GET /api/status`
 - Start simulation: `POST /api/simulation/start`
 - Check SSE connection: `curl -N http://localhost:3001/events`
 
 ### Map generation fails
+
 - Verify parameters are valid (positive numbers)
 - Check disk space for output directory
 - Ensure output directory exists or can be created

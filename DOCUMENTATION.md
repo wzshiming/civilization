@@ -19,22 +19,26 @@ This system implements a sophisticated procedural map generator that creates dyn
 #### 1. Map Generation (`src/map-generator/`)
 
 **Voronoi Generation** (`voronoi.ts`)
+
 - Uses Delaunay triangulation to generate irregular Voronoi cells
 - Implements Lloyd's relaxation algorithm for more uniform cell distribution
 - Poisson disk sampling for initial site placement with minimum spacing
 - Returns polygonal parcels with vertex coordinates and neighbor information
 
 **Terrain Generation** (`terrain.ts`)
+
 - Multi-octave Simplex noise for realistic elevation, moisture, and temperature
 - Distance-from-center calculation for continent/island formation
 - Terrain type determination based on environmental parameters
 
 **Resource Generation** (`resources.ts`)
+
 - Terrain-specific resource spawn rules
 - Support for multiple simultaneous resources per parcel (1-3 resources)
 - Dynamic resource properties: type, current reserve, maximum capacity, change rate
 
 **Main Orchestrator** (`index.ts`)
+
 - Coordinates all generation steps in sequence
 - Manages parcel and boundary data structures
 - Implements simulation tick for resource updates
@@ -52,12 +56,14 @@ This system implements a sophisticated procedural map generator that creates dyn
 #### 3. User Interface
 
 **Control Panel** (`src/components/ControlPanel.tsx`)
+
 - Simulation start/pause toggle
 - Speed control slider (0.1x to 5x)
 - Map configuration options
 - Regenerate map with custom parameters
 
 **Parcel Detail Panel** (`src/components/ParcelDetailPanel.tsx`)
+
 - Selected parcel information display
 - Terrain properties (type, elevation, moisture, temperature)
 - Resource list with progress bars
@@ -77,11 +83,11 @@ This system implements a sophisticated procedural map generator that creates dyn
 
 ```typescript
 // Terrain types using const assertion for type safety
-TerrainType: ocean, shallow_water, beach, grassland, forest, 
+TerrainType: ocean, shallow_water, beach, grassland, forest,
              jungle, desert, tundra, mountain, snow
 
 // Resource types
-ResourceType: water, wood, stone, iron, gold, oil, coal, 
+ResourceType: water, wood, stone, iron, gold, oil, coal,
               fertile_soil, fish, game
 
 // Resource with dynamic properties
@@ -138,11 +144,13 @@ WorldMap {
 ### 2. Terrain Generation
 
 Uses three noise layers:
+
 - **Elevation**: 6 octaves, modified by distance from center for continent formation
 - **Moisture**: 4 octaves, boosted near water bodies
 - **Temperature**: 3 octaves, varied by latitude and elevation
 
 Terrain determination logic:
+
 ```
 if elevation < 0.30: ocean
 if elevation < 0.35: shallow_water
@@ -159,6 +167,7 @@ else: grassland
 ### 3. Resource Simulation
 
 Each simulation tick (100ms interval):
+
 ```
 for each resource:
   current += changeRate * deltaTime * simulationSpeed
@@ -170,11 +179,13 @@ for each resource:
 ### Resource Distribution Rules
 
 Each terrain type has:
+
 - List of possible resource types
 - Spawn probability
 - Support for 1-3 simultaneous resources per parcel
 
 Examples:
+
 - **Mountains**: Stone, iron, gold, coal (80% spawn chance)
 - **Forests**: Wood, game, fertile soil (70% spawn chance)
 - **Oceans**: Fish, oil (40% spawn chance)
@@ -225,42 +236,42 @@ Examples:
 ### Generating a New Map
 
 ```typescript
-import { generateWorldMap } from './map-generator';
+import { generateWorldMap } from './map-generator'
 
 const worldMap = generateWorldMap({
   width: 1200,
   height: 800,
   numParcels: 500,
   seed: 12345, // Optional for reproducibility
-});
+})
 ```
 
 ### Running Simulation
 
 ```typescript
-import { simulateWorld } from './map-generator';
+import { simulateWorld } from './map-generator'
 
 // In a game loop or interval
-const deltaTime = 0.1; // seconds since last update
-simulateWorld(worldMap, deltaTime);
+const deltaTime = 0.1 // seconds since last update
+simulateWorld(worldMap, deltaTime)
 ```
 
 ### Customizing Map Parameters
 
 ```typescript
 // Small, detailed map
-generateWorldMap({ width: 800, height: 600, numParcels: 300 });
+generateWorldMap({ width: 800, height: 600, numParcels: 300 })
 
 // Large, sparse map
-generateWorldMap({ width: 1600, height: 1200, numParcels: 800 });
+generateWorldMap({ width: 1600, height: 1200, numParcels: 800 })
 
 // Reproducible map
-generateWorldMap({ 
-  width: 1200, 
-  height: 800, 
+generateWorldMap({
+  width: 1200,
+  height: 800,
   numParcels: 500,
-  seed: 98765 
-});
+  seed: 98765,
+})
 ```
 
 ## Performance Considerations
@@ -268,8 +279,8 @@ generateWorldMap({
 - **Voronoi Generation**: O(n log n) for n parcels
 - **Terrain Generation**: O(n) with noise evaluation
 - **Rendering**: GPU-accelerated via WebGL
-- **Simulation**: O(n * r) where r is average resources per parcel
-- **Typical Performance**: 
+- **Simulation**: O(n \* r) where r is average resources per parcel
+- **Typical Performance**:
   - 500 parcels: ~100-200ms generation time
   - 60 FPS rendering with Pixi.js
   - Simulation updates every 100ms

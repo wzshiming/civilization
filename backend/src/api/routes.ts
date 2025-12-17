@@ -2,12 +2,12 @@
  * REST API Routes
  */
 
-import { Router } from 'express';
-import { SimulationEngine } from '../simulation/SimulationEngine';
-import { SettingsManager } from '../settings/SettingsManager';
-import { MapLoader } from '../map-loader/MapLoader';
-import { StateManager } from '../state/StateManager';
-import { SSEBroadcaster } from '../sse/SSEBroadcaster';
+import { Router } from 'express'
+import { SimulationEngine } from '../simulation/SimulationEngine'
+import { SettingsManager } from '../settings/SettingsManager'
+import { MapLoader } from '../map-loader/MapLoader'
+import { StateManager } from '../state/StateManager'
+import { SSEBroadcaster } from '../sse/SSEBroadcaster'
 
 export function createRouter(
   simulationEngine: SimulationEngine,
@@ -16,7 +16,7 @@ export function createRouter(
   stateManager: StateManager,
   sseBroadcaster: SSEBroadcaster
 ): Router {
-  const router = Router();
+  const router = Router()
 
   /**
    * GET /api/status
@@ -29,8 +29,8 @@ export function createRouter(
       settings: settingsManager.getSettings(),
       clientCount: sseBroadcaster.getClientCount(),
       hasMap: stateManager.getWorldMap() !== null,
-    });
-  });
+    })
+  })
 
   /**
    * POST /api/simulation/start
@@ -38,16 +38,16 @@ export function createRouter(
    */
   router.post('/simulation/start', (req, res) => {
     try {
-      simulationEngine.start();
+      simulationEngine.start()
       sseBroadcaster.broadcastEvent('simulation-started', {
         message: 'Simulation started',
         speed: simulationEngine.getSpeed(),
-      });
-      res.json({ success: true, message: 'Simulation started' });
+      })
+      res.json({ success: true, message: 'Simulation started' })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * POST /api/simulation/stop
@@ -55,15 +55,15 @@ export function createRouter(
    */
   router.post('/simulation/stop', (req, res) => {
     try {
-      simulationEngine.stop();
+      simulationEngine.stop()
       sseBroadcaster.broadcastEvent('simulation-paused', {
         message: 'Simulation paused',
-      });
-      res.json({ success: true, message: 'Simulation stopped' });
+      })
+      res.json({ success: true, message: 'Simulation stopped' })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * POST /api/simulation/speed
@@ -71,26 +71,26 @@ export function createRouter(
    */
   router.post('/simulation/speed', (req, res) => {
     try {
-      const { speed } = req.body;
+      const { speed } = req.body
       if (typeof speed !== 'number' || speed < 0.1 || speed > 10) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Speed must be a number between 0.1 and 10' 
-        });
+        return res.status(400).json({
+          success: false,
+          error: 'Speed must be a number between 0.1 and 10',
+        })
       }
-      
-      simulationEngine.setSpeed(speed);
-      settingsManager.setSpeed(speed);
+
+      simulationEngine.setSpeed(speed)
+      settingsManager.setSpeed(speed)
       sseBroadcaster.broadcastEvent('settings-updated', {
         message: 'Speed updated',
         speed,
-      });
-      
-      res.json({ success: true, speed });
+      })
+
+      res.json({ success: true, speed })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * GET /api/maps
@@ -98,12 +98,12 @@ export function createRouter(
    */
   router.get('/maps', (req, res) => {
     try {
-      const maps = mapLoader.listMaps();
-      res.json({ success: true, maps });
+      const maps = mapLoader.listMaps()
+      res.json({ success: true, maps })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * POST /api/maps/load
@@ -111,31 +111,31 @@ export function createRouter(
    */
   router.post('/maps/load', (req, res) => {
     try {
-      const { mapFile } = req.body;
+      const { mapFile } = req.body
       if (!mapFile) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'mapFile is required' 
-        });
+        return res.status(400).json({
+          success: false,
+          error: 'mapFile is required',
+        })
       }
 
-      const worldMap = mapLoader.loadMap(mapFile);
-      stateManager.loadMap(worldMap);
-      settingsManager.setMapFile(mapFile);
-      
-      res.json({ 
-        success: true, 
+      const worldMap = mapLoader.loadMap(mapFile)
+      stateManager.loadMap(worldMap)
+      settingsManager.setMapFile(mapFile)
+
+      res.json({
+        success: true,
         message: `Map ${mapFile} loaded successfully`,
         mapInfo: {
           width: worldMap.width,
           height: worldMap.height,
           parcelCount: worldMap.parcels.size,
-        }
-      });
+        },
+      })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * GET /api/settings
@@ -143,12 +143,12 @@ export function createRouter(
    */
   router.get('/settings', (req, res) => {
     try {
-      const settings = settingsManager.getSettings();
-      res.json({ success: true, settings });
+      const settings = settingsManager.getSettings()
+      res.json({ success: true, settings })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
   /**
    * GET /api/state
@@ -156,12 +156,12 @@ export function createRouter(
    */
   router.get('/state', (req, res) => {
     try {
-      const worldMap = stateManager.getWorldMap();
+      const worldMap = stateManager.getWorldMap()
       if (!worldMap) {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'No map loaded' 
-        });
+        return res.status(404).json({
+          success: false,
+          error: 'No map loaded',
+        })
       }
 
       const serializable = {
@@ -170,13 +170,13 @@ export function createRouter(
         width: worldMap.width,
         height: worldMap.height,
         lastUpdate: worldMap.lastUpdate,
-      };
+      }
 
-      res.json({ success: true, state: serializable });
+      res.json({ success: true, state: serializable })
     } catch (error) {
-      res.status(500).json({ success: false, error: String(error) });
+      res.status(500).json({ success: false, error: String(error) })
     }
-  });
+  })
 
-  return router;
+  return router
 }
