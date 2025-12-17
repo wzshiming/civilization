@@ -47,7 +47,7 @@ const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position 
 // Constants for viewport reporting
 const VIEWPORT_CHANGE_THRESHOLD = 10; // pixels - minimum change to trigger viewport update
 const VIEWPORT_ZOOM_THRESHOLD = 0.01; // minimum zoom change to trigger viewport update
-const VIEWPORT_DEBOUNCE_MS = 200; // milliseconds - debounce delay for viewport updates
+const VIEWPORT_DEBOUNCE_MS = 1000; // milliseconds - debounce delay for viewport updates (max once per second)
 
 // Constants for rendering
 const BORDER_WIDTH = 0.5;
@@ -210,12 +210,14 @@ export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRe
         // Clear existing timer
         if (viewportReportTimerRef.current) {
           clearTimeout(viewportReportTimerRef.current);
+          viewportReportTimerRef.current = null;
         }
         
         // Debounce viewport updates
         viewportReportTimerRef.current = setTimeout(() => {
           onViewportChangeRef.current?.(viewport);
           lastViewportReportRef.current = viewport;
+          viewportReportTimerRef.current = null;
         }, VIEWPORT_DEBOUNCE_MS);
       }
     }

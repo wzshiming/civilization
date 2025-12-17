@@ -166,10 +166,13 @@ export class SSEBroadcaster {
           const delta = message as StateDelta;
           const worldMap = this.stateManager.getWorldMap();
           if (worldMap) {
-            const filteredParcels = delta.parcels.filter(parcelDelta => {
+            const filteredParcels: ParcelDelta[] = [];
+            for (const parcelDelta of delta.parcels) {
               const parcel = worldMap.parcels.get(parcelDelta.id);
-              return parcel && this.isParcelVisible(parcel, clientInfo.viewport!, worldMap);
-            });
+              if (parcel && this.isParcelVisible(parcel, clientInfo.viewport, worldMap)) {
+                filteredParcels.push(parcelDelta);
+              }
+            }
             
             // Only send if there are visible changes
             if (filteredParcels.length > 0) {
