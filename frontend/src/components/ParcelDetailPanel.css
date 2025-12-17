@@ -1,8 +1,12 @@
+:root {
+  --panel-width: 33.33vw;
+}
+
 .parcel-detail-panel {
   position: fixed;
   right: 0;
   top: 0;
-  width: 33.33vw; /* Takes exactly 1/3 of viewport width */
+  width: var(--panel-width); /* Takes exactly 1/3 of viewport width */
   min-width: 300px;
   max-width: 500px;
   height: 100vh;
