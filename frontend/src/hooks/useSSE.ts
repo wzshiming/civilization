@@ -33,6 +33,8 @@ export function useSSE(options: UseSSEOptions) {
 
       case 'delta': {
         const delta = JSON.parse(data) as StateDelta;
+        let hasUpdates = false;
+        
         setWorldMap((prevWorldMap) => {
           if (!prevWorldMap) return prevWorldMap;
 
@@ -43,6 +45,7 @@ export function useSSE(options: UseSSEOptions) {
             if (parcel && parcelDelta.resources) {
               // Update the parcel's resources in place
               parcel.resources = parcelDelta.resources;
+              hasUpdates = true;
             }
           });
 
@@ -50,8 +53,10 @@ export function useSSE(options: UseSSEOptions) {
           return prevWorldMap;
         });
         
-        // Increment counter to notify components that depend on worldMap updates
-        setUpdateCounter(c => c + 1);
+        // Increment counter only if parcels were actually updated
+        if (hasUpdates) {
+          setUpdateCounter(c => c + 1);
+        }
         break;
       }
 
