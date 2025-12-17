@@ -3,124 +3,94 @@
  */
 
 import type { Parcel, Resource } from '../types/map';
-import { ResourceType, TerrainType } from '../types/map';
+import { TerrainType } from '../types/map';
+import type { ResourceConfig, ResourceDefinition } from '../types/resource-config';
+import { DEFAULT_RESOURCE_CONFIG } from '../config/resources';
 import { SeededRandom } from '../utils/random';
 
 /**
- * Resource spawn rules based on terrain
+ * Active resource configuration
+ * Can be replaced to use custom resource definitions
  */
-const RESOURCE_RULES: Record<TerrainType, { types: ResourceType[]; probability: number }> = {
-  [TerrainType.OCEAN]: {
-    types: [ResourceType.FISH, ResourceType.OIL],
-    probability: 0.4,
-  },
-  [TerrainType.SHALLOW_WATER]: {
-    types: [ResourceType.FISH, ResourceType.WATER],
-    probability: 0.5,
-  },
-  [TerrainType.BEACH]: {
-    types: [ResourceType.STONE],
-    probability: 0.2,
-  },
-  [TerrainType.GRASSLAND]: {
-    types: [ResourceType.FERTILE_SOIL, ResourceType.GAME, ResourceType.STONE],
-    probability: 0.6,
-  },
-  [TerrainType.FOREST]: {
-    types: [ResourceType.WOOD, ResourceType.GAME, ResourceType.FERTILE_SOIL],
-    probability: 0.7,
-  },
-  [TerrainType.JUNGLE]: {
-    types: [ResourceType.WOOD, ResourceType.GAME, ResourceType.GOLD],
-    probability: 0.65,
-  },
-  [TerrainType.DESERT]: {
-    types: [ResourceType.OIL, ResourceType.STONE],
-    probability: 0.3,
-  },
-  [TerrainType.TUNDRA]: {
-    types: [ResourceType.GAME, ResourceType.IRON],
-    probability: 0.35,
-  },
-  [TerrainType.MOUNTAIN]: {
-    types: [ResourceType.STONE, ResourceType.IRON, ResourceType.GOLD, ResourceType.COAL],
-    probability: 0.8,
-  },
-  [TerrainType.SNOW]: {
-    types: [ResourceType.WATER],
-    probability: 0.2,
-  },
-};
+let activeResourceConfig: ResourceConfig = DEFAULT_RESOURCE_CONFIG;
 
 /**
- * Base resource properties
+ * Set the active resource configuration
+ * Allows for custom resource types and rules
  */
-const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: number }> = {
-  [ResourceType.WATER]: { max: 1000, changeRate: 0 },
-  [ResourceType.WOOD]: { max: 500, changeRate: 0.5 },
-  [ResourceType.STONE]: { max: 800, changeRate: 0 },
-  [ResourceType.IRON]: { max: 300, changeRate: 0 },
-  [ResourceType.GOLD]: { max: 150, changeRate: 0 },
-  [ResourceType.OIL]: { max: 400, changeRate: 0 },
-  [ResourceType.COAL]: { max: 600, changeRate: 0 },
-  [ResourceType.FERTILE_SOIL]: { max: 100, changeRate: 0.2 },
-  [ResourceType.FISH]: { max: 300, changeRate: 0.3 },
-  [ResourceType.GAME]: { max: 200, changeRate: 0.4 },
-};
+export function setResourceConfig(config: ResourceConfig): void {
+  activeResourceConfig = config;
+}
 
 /**
- * Create a new resource instance
+ * Get the active resource configuration
  */
-function createResource(type: ResourceType, random: SeededRandom): Resource {
-  const props = RESOURCE_PROPERTIES[type];
-  const initial = random.randomFloat(0.3, 0.9) * props.max;
+export function getResourceConfig(): ResourceConfig {
+  return activeResourceConfig;
+}
+
+/**
+ * Create a new resource instance from a resource definition
+ */
+function createResource(resourceId: string, definition: ResourceDefinition, random: SeededRandom): Resource {
+  const initial = random.randomFloat(0.3, 0.9) * definition.maximum;
   
   return {
-    type,
+    type: resourceId,
     current: initial,
-    maximum: props.max,
-    changeRate: props.changeRate,
+    maximum: definition.maximum,
+    changeRate: definition.changeRate,
+    consumable: definition.consumable,
+    edible: definition.edible,
+    satiety: definition.satiety,
+    energyEfficiency: definition.energyEfficiency,
+    attributes: definition.customAttributes,
   };
 }
 
 /**
- * Generate resources for all parcels
+ * Generate resources for all parcels using the active configuration
  * Each parcel can have multiple resources
  */
 export function generateResources(parcels: Parcel[], random: SeededRandom): void {
+  const config = activeResourceConfig;
+  
   for (const parcel of parcels) {
-    const rules = RESOURCE_RULES[parcel.terrain];
+    const rules = config.terrainRules[parcel.terrain];
     
-    // Skip if terrain doesn't support resources or probability check fails
-    if (!random.chance(rules.probability)) {
+    // Skip if terrain doesn't have rules or probability check fails
+    if (!rules || !random.chance(rules.probability)) {
       continue;
     }
 
     // Determine how many resource types this parcel will have (1-3)
     const numResources = random.chance(0.4) ? 2 : random.chance(0.1) ? 3 : 1;
     
-    // Shuffle available resource types
-    const availableTypes = [...rules.types];
-    for (let i = availableTypes.length - 1; i > 0; i--) {
+    // Shuffle available resource IDs
+    const availableIds = [...rules.resourceIds];
+    for (let i = availableIds.length - 1; i > 0; i--) {
       const j = random.randomInt(0, i + 1);
-      [availableTypes[i], availableTypes[j]] = [availableTypes[j], availableTypes[i]];
+      [availableIds[i], availableIds[j]] = [availableIds[j], availableIds[i]];
     }
 
     // Add resources up to numResources
-    const resourcesAdded = new Set<ResourceType>();
-    for (let i = 0; i < Math.min(numResources, availableTypes.length); i++) {
-      const type = availableTypes[i];
-      if (!resourcesAdded.has(type)) {
-        parcel.resources.push(createResource(type, random));
-        resourcesAdded.add(type);
+    const resourcesAdded = new Set<string>();
+    for (let i = 0; i < Math.min(numResources, availableIds.length); i++) {
+      const resourceId = availableIds[i];
+      const definition = config.definitions[resourceId];
+      
+      if (definition && !resourcesAdded.has(resourceId)) {
+        parcel.resources.push(createResource(resourceId, definition, random));
+        resourcesAdded.add(resourceId);
       }
     }
 
     // Special case: add water resource to parcels near water
     if (parcel.terrain === TerrainType.GRASSLAND || parcel.terrain === TerrainType.FOREST) {
       if (parcel.moisture > 0.7 && random.chance(0.5)) {
-        if (!resourcesAdded.has(ResourceType.WATER)) {
-          parcel.resources.push(createResource(ResourceType.WATER, random));
+        const waterDef = config.definitions['water'];
+        if (waterDef && !resourcesAdded.has('water')) {
+          parcel.resources.push(createResource('water', waterDef, random));
         }
       }
     }

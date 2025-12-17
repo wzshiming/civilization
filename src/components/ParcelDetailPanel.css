@@ -155,6 +155,24 @@
   text-align: right;
 }
 
+.resource-attributes {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.resource-attributes .attribute {
+  font-size: 0.8em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: rgba(100, 200, 100, 0.2);
+  color: #80ff80;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* Scrollbar styling */
 .panel-content::-webkit-scrollbar {
   width: 8px;

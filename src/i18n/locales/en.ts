@@ -33,6 +33,8 @@ export const en = {
   location: 'Location',
   center: 'Center:',
   neighbors: 'Neighbors:',
+  edible: 'Edible',
+  consumable: 'Consumable',
   
   // Terrain types
   terrainTypes: {

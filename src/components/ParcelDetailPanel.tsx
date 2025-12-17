@@ -22,8 +22,9 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
     return t.terrainTypes[type] || type;
   };
 
-  const formatResourceType = (type: ResourceType): string => {
-    return t.resourceTypes[type] || type;
+  const formatResourceType = (type: string): string => {
+    // Try to get translation, fallback to the type itself
+    return t.resourceTypes[type as ResourceType] || type;
   };
 
   return (
@@ -86,6 +87,23 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
                       {resource.current.toFixed(0)} / {resource.maximum}
                     </span>
                   </div>
+                  {/* Display resource attributes if present */}
+                  {(resource.edible || resource.consumable || resource.satiety || resource.energyEfficiency) && (
+                    <div className="resource-attributes">
+                      {resource.edible && (
+                        <span className="attribute" title="Edible">
+                          🍴 {t.edible}
+                          {resource.satiety !== undefined && ` (${resource.satiety})`}
+                        </span>
+                      )}
+                      {resource.consumable && (
+                        <span className="attribute" title="Consumable">
+                          ⚡ {t.consumable}
+                          {resource.energyEfficiency !== undefined && ` (${resource.energyEfficiency.toFixed(1)}x)`}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

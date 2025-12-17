@@ -34,6 +34,8 @@ export const zhCN: TranslationKeys = {
   location: '位置',
   center: '中心：',
   neighbors: '邻居：',
+  edible: '可食用',
+  consumable: '可消耗',
   
   // Terrain types
   terrainTypes: {

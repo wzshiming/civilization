@@ -34,12 +34,26 @@ export const ResourceType = {
 
 export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
 
-/** Represents a single resource with its attributes */
+/** Represents a single resource instance with its current state and attributes */
 export interface Resource {
-  type: ResourceType;
+  /** Resource type identifier (can be extended beyond the default types) */
+  type: string;
+  /** Current amount of this resource */
   current: number;
+  /** Maximum amount of this resource */
   maximum: number;
-  changeRate: number; // positive for regeneration, negative for depletion
+  /** Rate of change per time unit (positive for regeneration, negative for depletion) */
+  changeRate: number;
+  /** Whether this resource can be consumed */
+  consumable?: boolean;
+  /** Whether this resource can be eaten (food) */
+  edible?: boolean;
+  /** Satiety value when eaten (if edible) */
+  satiety?: number;
+  /** Energy efficiency ratio (if consumable for energy) */
+  energyEfficiency?: number;
+  /** Additional custom attributes */
+  attributes?: Record<string, unknown>;
 }
 
 /** 2D Point coordinate */
