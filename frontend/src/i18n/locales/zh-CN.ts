@@ -65,4 +65,13 @@ export const zhCN: TranslationKeys = {
   
   // Language selector
   language: '语言',
+  
+  // Tab labels
+  config: '配置',
+  settings: '设置',
+  
+  // Configuration tab
+  connectedStatus: '已连接到后端',
+  disconnectedStatus: '已断开连接',
+  reconnect: '重新连接',
 };

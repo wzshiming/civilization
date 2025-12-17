@@ -1,31 +1,30 @@
 /**
- * Read-only control panel for viewing simulation status
- * Frontend cannot control speed or generate maps (backend-controlled)
+ * Configuration tab content - the content previously shown in ReadOnlyControlPanel
+ * Now displayed inside a tab instead of floating
  */
 
 import { useI18n } from '../i18n';
-import './ControlPanel.css';
 
-interface ReadOnlyControlPanelProps {
+interface ConfigurationTabContentProps {
   isConnected: boolean;
   onReconnect: () => void;
 }
 
-export function ReadOnlyControlPanel({
+export function ConfigurationTabContent({
   isConnected,
   onReconnect,
-}: ReadOnlyControlPanelProps) {
+}: ConfigurationTabContentProps) {
   const { t } = useI18n();
 
   return (
-    <div className="control-panel">
-      <div className="control-group">
+    <div className="config-tab-content">
+      <div className="config-section">
         <h3>{t.simulation}</h3>
         
         <div className="status-indicator">
           <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
           <span className="status-text">
-            {isConnected ? 'Connected to backend' : 'Disconnected'}
+            {isConnected ? t.connectedStatus : t.disconnectedStatus}
           </span>
         </div>
 
@@ -34,7 +33,7 @@ export function ReadOnlyControlPanel({
             className="control-button secondary"
             onClick={onReconnect}
           >
-            🔄 Reconnect
+            {'🔄 ' + t.reconnect}
           </button>
         )}
       </div>

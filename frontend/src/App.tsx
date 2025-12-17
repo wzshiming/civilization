@@ -1,12 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Parcel } from './types/map';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
-import { ReadOnlyControlPanel } from './components/ReadOnlyControlPanel';
-import { LanguageSelector } from './components/LanguageSelector';
+import { TabPanel } from './components/TabPanel';
+import type { Tab } from './components/TabPanel';
+import { ConfigurationTabContent } from './components/ConfigurationTabContent';
+import { SettingsTabContent } from './components/SettingsTabContent';
 import { useSSE } from './hooks/useSSE';
 import { useI18n } from './i18n';
 import './App.css';
+import './components/ConfigurationTabContent.css';
+import './components/SettingsTabContent.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -32,9 +36,29 @@ function AppSSE() {
     setTimeout(() => connect(), 100);
   }, [connect, disconnect]);
 
+  // Define tabs for the left sidebar
+  const tabs: Tab[] = useMemo(() => [
+    {
+      id: 'config',
+      label: t.config,
+      icon: '⚙️',
+      content: (
+        <ConfigurationTabContent
+          isConnected={isConnected}
+          onReconnect={handleReconnect}
+        />
+      ),
+    },
+    {
+      id: 'settings',
+      label: t.settings,
+      icon: '🔧',
+      content: <SettingsTabContent />,
+    },
+  ], [isConnected, handleReconnect, t.config, t.settings]);
+
   return (
     <div className="app">
-      <LanguageSelector />
       {!worldMap ? (
         <div className="loading-screen">
           <div className="loading-spinner" />
@@ -43,15 +67,9 @@ function AppSSE() {
         </div>
       ) : (
         <>
-          <ReadOnlyControlPanel
-            isConnected={isConnected}
-            onReconnect={handleReconnect}
-          />
+          <TabPanel tabs={tabs} />
           <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
-          <div className="map-controls-hint">
-            <strong>💡 Tip:</strong> Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move the map, <strong>Mouse Wheel</strong> or <strong>+/-</strong> to zoom
-          </div>
         </>
       )}
     </div>

@@ -1,0 +1,57 @@
+/* Settings tab content styles */
+.settings-tab-content {
+  color: #fff;
+}
+
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1em;
+  color: #4a9eff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+.settings-item {
+  padding: 8px 0;
+}
+
+/* Override language selector styles for dark theme in tab */
+.settings-tab-content .language-selector {
+  background-color: rgba(50, 50, 50, 0.8);
+  border: 1px solid #555;
+}
+
+.settings-tab-content .language-selector label {
+  color: #ccc;
+}
+
+.settings-tab-content .language-selector select {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid #555;
+  color: #fff;
+}
+
+.settings-tab-content .language-selector select:hover {
+  border-color: #4a9eff;
+}
+
+.settings-tab-content .language-selector select:focus {
+  outline: none;
+}
+
+.settings-tab-content .language-selector select:focus-visible {
+  border-color: #4a9eff;
+}
+
+.settings-tab-content .language-selector select option {
+  background-color: #2a2a2a;
+  color: #fff;
+}

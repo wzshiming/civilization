@@ -64,6 +64,15 @@ export const en = {
   
   // Language selector
   language: 'Language',
+  
+  // Tab labels
+  config: 'Config',
+  settings: 'Settings',
+  
+  // Configuration tab
+  connectedStatus: 'Connected to backend',
+  disconnectedStatus: 'Disconnected',
+  reconnect: 'Reconnect',
 };
 
 export type TranslationKeys = typeof en;
