@@ -2,8 +2,8 @@
  * Terrain generation using noise functions
  */
 
-import type { Parcel } from '../types/map';
-import { TerrainType } from '../types/map';
+import type { Parcel } from '../types';
+import { TerrainType } from '../types';
 import { SimplexNoise } from '../utils/noise';
 import { SeededRandom } from '../utils/random';
 

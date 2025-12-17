@@ -2,8 +2,8 @@
  * Resource generation and placement
  */
 
-import type { Parcel, Resource, ResourceAttribute } from '../types/map';
-import { ResourceType, TerrainType } from '../types/map';
+import type { Parcel, Resource, ResourceAttribute } from '../types';
+import { ResourceType, TerrainType } from '../types';
 import { SeededRandom } from '../utils/random';
 
 /**

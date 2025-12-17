@@ -2,8 +2,8 @@
  * Main map generator orchestrator
  */
 
-import type { WorldMap, Parcel, MapConfig, Boundary } from '../types/map';
-import { TerrainType } from '../types/map';
+import type { WorldMap, Parcel, MapConfig, Boundary } from '../types';
+import { TerrainType } from '../types';
 import { SeededRandom } from '../utils/random';
 import { generateVoronoi, relaxVoronoi } from './voronoi';
 import { generateTerrain } from './terrain';

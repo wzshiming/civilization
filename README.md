@@ -1,18 +1,52 @@
-# Civilization - Procedural Map Generator
+# Civilization - Procedural Map Simulation
 
-A sophisticated web-based procedural map generation system featuring dynamic terrain, resource simulation, and interactive visualization.
+A sophisticated simulation system featuring dynamic terrain, resource simulation, and interactive visualization with separated front-end and back-end architecture.
 
 ![Map Example](https://github.com/user-attachments/assets/5ad7c5c7-e213-4c2d-97ec-05800a932aa4)
+
+## Architecture
+
+This project uses a **monorepo structure with separated front-end and back-end architecture**:
+
+### Components
+
+**Shared Package (`@civilization/shared`)**
+- Common types, utilities, and map generation logic
+- Used by all components (no duplication)
+- Exports: types, SeededRandom, SimplexNoise, generateWorldMap, simulateWorld
+
+**Map Generator (Standalone CLI Tool)**
+- Generate maps offline with custom parameters
+- Uses shared package for generation logic
+- Save maps to files for backend loading
+- Reproducible map generation using seeds
+
+**Backend Server (Node.js/TypeScript)**
+- **Simulation Engine**: Runs simulation loop at fixed/adjustable speed
+- **Map Loader**: Loads pre-generated maps from files
+- **State Manager**: Manages simulation state (parcels, resources)
+- **SSE Broadcaster**: Sends state updates via Server-Sent Events
+- **Settings Manager**: Backend-controlled simulation settings
+- **REST API**: Backend administration endpoints
+- Uses shared package for types and logic
+
+**Frontend (React/TypeScript)**
+- **SSE Listener**: Connects to backend SSE stream
+- **Renderer**: Visualizes simulation state with Pixi.js
+- **Read-only UI**: Cannot control simulation or generate maps
+- **Interactive**: Click parcels to view details
+- **No independent logic**: Completely relies on backend API
 
 ## Features
 
 ### 🗺️ Procedural Map Generation
-- **Voronoi-based irregular parcels** - No grid system, organic-shaped regions using Delaunay triangulation
-- **Diverse terrain types** - Oceans, islands, continents, mountains, deserts, forests, tundra, and more
-- **Realistic terrain generation** - Multi-octave noise functions for elevation, moisture, and temperature
+- **Offline generation** - Maps generated using CLI tool
+- **Voronoi-based irregular parcels** - Organic-shaped regions using Delaunay triangulation
+- **Diverse terrain types** - Oceans, islands, continents, mountains, deserts, forests, tundra
+- **Realistic terrain** - Multi-octave noise functions for elevation, moisture, temperature
 
 ### 💎 Advanced Resource System
-- **Multiple resources per parcel** - Each parcel can contain 1-3 simultaneous resources (wood + minerals, water + fertile soil, etc.)
+- **Multiple resources per parcel** - Each parcel can contain 1-3 simultaneous resources
 - **10+ resource types** - Water, wood, stone, iron, gold, oil, coal, fertile soil, fish, game
 - **Dynamic properties** - Current reserve, maximum capacity, regeneration/depletion rates
 
@@ -21,18 +55,18 @@ A sophisticated web-based procedural map generation system featuring dynamic ter
 - **Color-coded terrain** - Clear visual distinction between terrain types
 - **Resource indicators** - Small colored dots show resource presence
 - **Click interaction** - Select parcels to view detailed information
-- **Clear boundaries** - Parcel edges are distinct and overlap cleanly
 
 ### ⚡ Real-time Simulation
-- **Resource dynamics** - Resources regenerate or deplete over time
-- **Configurable speed** - Adjust simulation speed from 0.1x to 5x
-- **Live updates** - Watch resources change in real-time
+- **Backend-controlled** - Simulation runs on server at fixed speed
+- **SSE updates** - Real-time state updates via Server-Sent Events
+- **Delta updates** - Efficient incremental state changes
+- **Live visualization** - Watch resources change in real-time
 
 ### 🎨 Modern UI
 - **React-based interface** - Clean, responsive design
-- **Control panel** - Start/pause simulation, adjust speed
+- **Read-only controls** - View simulation status
 - **Detail panel** - View parcel terrain, resources, and location data
-- **Map configuration** - Customize parcel count and seed for reproducible maps
+- **Connection status** - Real-time backend connection indicator
 
 ## Screenshots
 
@@ -49,126 +83,215 @@ A sophisticated web-based procedural map generation system featuring dynamic ter
 
 ### Installation
 
-Install dependencies:
-
+**Single command installs all workspace dependencies:**
 ```bash
 npm install
-# or
-yarn install
 ```
 
-### Development
+This will:
+- Install all dependencies for frontend, backend, map-generator-cli, and shared package
+- Build the shared package automatically (via postinstall hook)
+- Link workspace dependencies
 
-Start the development server:
+### Quick Start
 
+1. **Generate a map:**
 ```bash
+cd map-generator-cli
 npm run dev
-# or
-yarn dev
+cd ..
 ```
 
-The application will be available at [http://localhost:5173/](http://localhost:5173/)
+This creates `map-generator-cli/maps/default-map.json`. Copy it to backend:
+```bash
+cp map-generator-cli/maps/default-map.json backend/maps/
+```
 
-### Build
+2. **Start the backend server:**
+```bash
+cd backend
+npm run dev
+```
 
-Build for production:
+Backend runs at [http://localhost:3001](http://localhost:3001)
 
+3. **Start the frontend (in a new terminal):**
+
+Create `.env` file in frontend directory:
+```bash
+echo "VITE_BACKEND_URL=http://localhost:3001" > frontend/.env
+```
+
+Start frontend:
+```bash
+npm run dev:frontend
+```
+
+Frontend runs at [http://localhost:5173](http://localhost:5173)
+
+### Environment Configuration
+
+Create `.env` files from examples:
+
+**Frontend** (`frontend/.env`):
+```
+VITE_BACKEND_URL=http://localhost:3001
+```
+
+**Backend** (`backend/.env`):
+```
+PORT=3001
+MAPS_DIR=./maps
+```
+
+### Production Build
+
+**Frontend:**
 ```bash
 npm run build
-# or
-yarn build
-```
-
-The built files will be in the `dist` directory.
-
-### Preview Production Build
-
-Preview the production build locally:
-
-```bash
 npm run preview
-# or
-yarn preview
 ```
 
-### Linting
-
-Run ESLint to check code quality:
-
+**Backend:**
 ```bash
-npm run lint
-# or
-yarn lint
+cd backend
+npm run build
+npm start
 ```
 
 ## Usage
 
-### Viewing the Map
+### Generating Maps
 
-1. Launch the application - a map will be automatically generated
-2. The map displays 500 parcels by default with various terrains
-3. Different colors represent different terrain types (blue=water, green=grassland, etc.)
-4. Small colored dots indicate resources on parcels
+Use the map generator CLI to create maps:
 
-### Interacting with Parcels
+```bash
+cd map-generator-cli
+npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
+```
 
-1. Click any parcel on the map
-2. A detail panel appears on the right showing:
-   - Terrain type and environmental properties
-   - All resources with current/max values
-   - Resource regeneration rates
-   - Location and neighbor information
+Options:
+- `--width <number>` - Map width (default: 1200)
+- `--height <number>` - Map height (default: 800)
+- `--parcels <number>` - Number of parcels (default: 500)
+- `--seed <number>` - Random seed for reproducibility
+- `--output <path>` - Output filename (default: default-map.json)
 
-### Running the Simulation
+### Backend Control (API)
 
-1. Click the "▶ Start" button in the control panel
-2. Watch resources regenerate or deplete in real-time
-3. Use the speed slider to adjust simulation speed (0.1x to 5x)
-4. Click "⏸ Pause" to stop the simulation
+The backend provides REST API endpoints for control:
 
-### Generating New Maps
+**Start simulation:**
+```bash
+curl -X POST http://localhost:3001/api/simulation/start
+```
 
-1. Click "⚙ Map Config" button
-2. Adjust the number of parcels (100-2000)
-3. Optionally enter a seed for reproducible maps
-4. Click "🔄 Regenerate Map"
+**Stop simulation:**
+```bash
+curl -X POST http://localhost:3001/api/simulation/stop
+```
+
+**Set speed (0.1 to 10):**
+```bash
+curl -X POST http://localhost:3001/api/simulation/speed \
+  -H "Content-Type: application/json" \
+  -d '{"speed": 2.0}'
+```
+
+**Load a different map:**
+```bash
+curl -X POST http://localhost:3001/api/maps/load \
+  -H "Content-Type: application/json" \
+  -d '{"mapFile": "my-map.json"}'
+```
+
+### Frontend Interaction
+
+1. **Viewing the Map**
+   - Frontend automatically connects to backend
+   - Displays real-time simulation state
+   - Different colors represent terrain types
+   - Small dots indicate resources
+
+2. **Interacting with Parcels**
+   - Click any parcel to view details
+   - See terrain type, resources, and properties
+   - View resource regeneration rates
+
+3. **Read-only Mode**
+   - Frontend cannot start/stop simulation
+   - Cannot adjust simulation speed
+   - Cannot generate maps
+   - All control is backend-side
 
 ## Technology Stack
 
+**Frontend:**
 - **React 19** - UI library with hooks
 - **TypeScript** - Type-safe JavaScript
 - **Vite 7** - Fast build tool and dev server
 - **Pixi.js 8** - High-performance 2D rendering engine
+- **Server-Sent Events** - Real-time updates from backend
+
+**Backend:**
+- **Node.js** - JavaScript runtime
+- **Express** - Web server framework
+- **TypeScript** - Type-safe JavaScript
+- **Server-Sent Events** - Real-time broadcasting
+
+**Map Generator:**
+- **Node.js** - JavaScript runtime
+- **TypeScript** - Type-safe JavaScript
 - **D3-Delaunay** - Voronoi diagram generation
-- **ESLint** - Code linting
+- **Commander** - CLI argument parsing
 
 ## Project Structure
 
 ```
 civilization/
-├── src/
-│   ├── map-generator/        # Core map generation logic
-│   │   ├── index.ts          # Main orchestrator
-│   │   ├── voronoi.ts        # Voronoi diagram generation
-│   │   ├── terrain.ts        # Terrain generation
-│   │   └── resources.ts      # Resource placement and simulation
-│   ├── components/           # React UI components
-│   │   ├── MapRenderer.tsx   # Pixi.js map renderer
-│   │   ├── ControlPanel.tsx  # Simulation controls
-│   │   └── ParcelDetailPanel.tsx  # Parcel information display
-│   ├── hooks/               # Custom React hooks
-│   │   └── useSimulation.ts # Simulation state management
-│   ├── utils/               # Utility functions
-│   │   ├── random.ts        # Seeded random number generator
-│   │   └── noise.ts         # Simplex noise implementation
-│   ├── types/               # TypeScript type definitions
-│   │   └── map.ts           # Core data structures
-│   ├── App.tsx              # Main App component
-│   └── main.tsx             # Application entry point
-├── public/                  # Public static files
-├── DOCUMENTATION.md         # Detailed technical documentation
-├── package.json            # Dependencies and scripts
-└── vite.config.ts          # Vite configuration
+├── package.json                  # Root workspace config
+├── shared/                       # Shared package (types, utils, logic)
+│   ├── src/
+│   │   ├── map-generator/        # Map generation logic
+│   │   ├── utils/                # Utility functions (random, noise)
+│   │   ├── types.ts              # Shared type definitions
+│   │   └── index.ts              # Package exports
+│   ├── package.json              # Workspace package
+│   └── tsconfig.json
+├── backend/                      # Backend server
+│   ├── src/
+│   │   ├── simulation/           # Simulation Engine
+│   │   ├── map-loader/           # Map Loader
+│   │   ├── state/                # State Manager
+│   │   ├── sse/                  # SSE Broadcaster
+│   │   ├── settings/             # Settings Manager
+│   │   ├── api/                  # REST API routes
+│   │   └── index.ts              # Server entry point
+│   ├── maps/                     # Generated map files
+│   ├── package.json              # Workspace package
+│   └── README.md
+├── map-generator-cli/            # Standalone map generator
+│   ├── src/
+│   │   └── index.ts              # CLI entry point
+│   ├── package.json              # Workspace package
+│   └── README.md
+├── frontend/                     # Frontend application (API-only)
+│   ├── src/
+│   │   ├── components/           # React UI components
+│   │   │   ├── MapRenderer.tsx   # Pixi.js map renderer
+│   │   │   ├── ReadOnlyControlPanel.tsx  # Status display
+│   │   │   └── ParcelDetailPanel.tsx     # Parcel details
+│   │   ├── hooks/                # Custom React hooks
+│   │   │   └── useSSE.ts         # SSE connection hook
+│   │   ├── types/                # Frontend-only types
+│   │   ├── App.tsx               # Main App (SSE only)
+│   │   └── main.tsx              # Application entry point
+│   ├── package.json              # Workspace package
+│   ├── index.html
+│   └── vite.config.ts
+├── ARCHITECTURE.md               # Detailed architecture
+├── QUICKSTART.md                 # Quick start guide
+└── README.md                     # This file
 ```
 
 ## Key Algorithms

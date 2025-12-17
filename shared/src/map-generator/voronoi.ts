@@ -6,7 +6,7 @@
  */
 
 import { Delaunay } from 'd3-delaunay';
-import type { Point } from '../types/map';
+import type { Point } from '../types';
 import { SeededRandom } from '../utils/random';
 
 export interface VoronoiCell {
