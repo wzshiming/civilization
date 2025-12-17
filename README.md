@@ -1,8 +1,17 @@
-# Civilization - Procedural Map Simulation
+# Civilization
 
-A sophisticated simulation system featuring dynamic terrain, resource simulation, and interactive visualization with separated front-end and back-end architecture.
+This is an experimental game project of vibe coding
 
-![Map Example](https://github.com/user-attachments/assets/5ad7c5c7-e213-4c2d-97ec-05800a932aa4)
+It aims to integrate several of my favorite strategy simulation games
+
+- [Crusader Kings Series](https://en.wikipedia.org/wiki/Crusader_Kings_III)
+- [Victoria Series](https://en.wikipedia.org/wiki/Victoria_3)
+- [Stellaris](https://en.wikipedia.org/wiki/Stellaris_(video_game))
+- [Civilization Series](https://en.wikipedia.org/wiki/Civilization_V)
+
+This will be a web-based multiplayer strategy simulation game.
+
+You will play as a person (and their heirs), evolving from early human civilization to the space age.
 
 ## Architecture
 
