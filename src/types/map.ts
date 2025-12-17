@@ -34,12 +34,19 @@ export const ResourceType = {
 
 export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
 
+/** Represents a resource attribute (e.g., food, energy) */
+export interface ResourceAttribute {
+  name: string;
+  efficiency: number;
+}
+
 /** Represents a single resource with its attributes */
 export interface Resource {
   type: ResourceType;
   current: number;
   maximum: number;
   changeRate: number; // positive for regeneration, negative for depletion
+  attributes: ResourceAttribute[];
 }
 
 /** 2D Point coordinate */

@@ -86,6 +86,18 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
                       {resource.current.toFixed(0)} / {resource.maximum}
                     </span>
                   </div>
+                  {resource.attributes.length > 0 && (
+                    <div className="resource-attributes">
+                      {resource.attributes.map((attr, attrIndex) => (
+                        <div key={attrIndex} className="attribute-item">
+                          <span className="attribute-name">{attr.name}</span>
+                          <span className="attribute-efficiency">
+                            {(attr.efficiency * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
