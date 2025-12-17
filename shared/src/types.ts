@@ -134,3 +134,11 @@ export interface StateDelta {
   parcels: ParcelDelta[];
   lastUpdate: number;
 }
+
+/** Viewport bounds for culling */
+export interface ViewportBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}

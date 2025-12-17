@@ -14,7 +14,7 @@ function AppSSE() {
   const { t } = useI18n();
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
 
-  const { worldMap, isConnected, error, connect, disconnect } = useSSE({
+  const { worldMap, isConnected, error, clientId, connect, disconnect } = useSSE({
     url: `${BACKEND_URL}/events`,
     autoConnect: true,
   });
@@ -47,7 +47,12 @@ function AppSSE() {
             isConnected={isConnected}
             onReconnect={handleReconnect}
           />
-          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
+          <MapRenderer 
+            worldMap={worldMap} 
+            onParcelClick={handleParcelClick}
+            clientId={clientId}
+            backendUrl={BACKEND_URL}
+          />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
           <div className="map-controls-hint">
             <strong>💡 Tip:</strong> Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move the map, <strong>Mouse Wheel</strong> or <strong>+/-</strong> to zoom

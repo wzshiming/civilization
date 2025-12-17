@@ -11,6 +11,8 @@ import { TerrainType } from '../types/map';
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
+  clientId: string | null;
+  backendUrl: string;
 }
 
 // Color scheme for different terrain types
@@ -38,7 +40,7 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
-export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
+export function MapRenderer({ worldMap, onParcelClick, clientId, backendUrl }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
@@ -57,12 +59,43 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
   const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
+  // Viewport tracking
+  const lastSentViewportRef = useRef<string | null>(null);
+  const viewportUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Helper to update container position and scale
   const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
     container.x = x;
     container.y = y;
     container.scale.set(scale);
   }, []);
+
+  // Send viewport bounds to backend
+  const sendViewportUpdate = useCallback((viewport: { minX: number; maxX: number; minY: number; maxY: number }) => {
+    if (!clientId) return;
+
+    // Debounce viewport updates - only send if viewport has changed significantly
+    const viewportKey = `${Math.round(viewport.minX)},${Math.round(viewport.maxX)},${Math.round(viewport.minY)},${Math.round(viewport.maxY)}`;
+    if (viewportKey === lastSentViewportRef.current) return;
+
+    lastSentViewportRef.current = viewportKey;
+
+    // Clear existing timer
+    if (viewportUpdateTimerRef.current) {
+      clearTimeout(viewportUpdateTimerRef.current);
+    }
+
+    // Debounce by 300ms to avoid too many requests
+    viewportUpdateTimerRef.current = setTimeout(() => {
+      fetch(`${backendUrl}/api/viewport`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, ...viewport }),
+      }).catch((error) => {
+        console.error('Failed to update viewport:', error);
+      });
+    }, 300);
+  }, [clientId, backendUrl]);
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
@@ -125,7 +158,21 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     }
-  }, [worldMap, updateContainer]);
+
+    // Calculate and send viewport bounds
+    if (appRef.current) {
+      const screenWidth = appRef.current.screen.width;
+      const screenHeight = appRef.current.screen.height;
+      
+      // Calculate world coordinates of viewport corners
+      const minX = -cameraRef.current.x / zoomRef.current;
+      const maxX = (screenWidth - cameraRef.current.x) / zoomRef.current;
+      const minY = -cameraRef.current.y / zoomRef.current;
+      const maxY = (screenHeight - cameraRef.current.y) / zoomRef.current;
+
+      sendViewportUpdate({ minX, maxX, minY, maxY });
+    }
+  }, [worldMap, updateContainer, sendViewportUpdate]);
 
   useEffect(() => {
     if (!canvasRef.current) return;

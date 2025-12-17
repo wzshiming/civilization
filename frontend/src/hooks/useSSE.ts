@@ -15,9 +15,20 @@ export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   const handleMessage = useCallback((message: SSEMessage) => {
     switch (message.type) {
+      case 'simulation-started': {
+        // Extract client ID from connection message
+        const data = message.data as { clientId?: string };
+        if (data.clientId) {
+          setClientId(data.clientId);
+        }
+        console.log('Backend event:', message.type, message.data);
+        break;
+      }
+
       case 'full-state': {
         // Received full state from backend
         const serializable = message.data as SerializableWorldMap;
@@ -57,7 +68,6 @@ export function useSSE(options: UseSSEOptions) {
         break;
       }
 
-      case 'simulation-started':
       case 'simulation-paused':
       case 'settings-updated':
         console.log('Backend event:', message.type, message.data);
@@ -133,6 +143,7 @@ export function useSSE(options: UseSSEOptions) {
     worldMap,
     isConnected,
     error,
+    clientId,
     connect,
     disconnect,
   };
