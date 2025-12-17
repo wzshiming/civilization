@@ -8,6 +8,11 @@ import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js
 import type { WorldMap, Parcel } from '../types/map';
 import { TerrainType } from '../types/map';
 
+// Extended Graphics type to store parcel ID
+interface ParcelGraphics extends Graphics {
+  parcelId?: number;
+}
+
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
@@ -46,6 +51,14 @@ const HIGHLIGHT_WIDTH = 3;
 const HIGHLIGHT_COLOR = 0xffff00;
 const RESOURCE_RADIUS = 3;
 const RESOURCE_OFFSET = 8;
+
+// Tile offsets for toroidal wrapping (center + 8 surrounding tiles)
+const TILE_OFFSETS = [
+  { x: 0, y: 0 }, { x: -1, y: 0 }, { x: 1, y: 0 },
+  { x: 0, y: -1 }, { x: 0, y: 1 },
+  { x: -1, y: -1 }, { x: 1, y: -1 },
+  { x: -1, y: 1 }, { x: 1, y: 1 },
+] as const;
 
 // Resource colors lookup table
 const RESOURCE_COLORS: Record<string, number> = {
@@ -212,32 +225,32 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           return { tileContainer, highlightTileContainer };
         };
         
-        // Create center and 8 surrounding tiles
-        const tileOffsets = [
-          { x: 0, y: 0 }, { x: -1, y: 0 }, { x: 1, y: 0 },
-          { x: 0, y: -1 }, { x: 0, y: 1 },
-          { x: -1, y: -1 }, { x: 1, y: -1 },
-          { x: -1, y: 1 }, { x: 1, y: 1 },
-        ];
-        
         // Shared click handler for all parcel graphics
-        const handleParcelClick = (parcel: Parcel) => (event: FederatedPointerEvent) => {
-          event.stopPropagation();
-          setSelectedParcelId(parcel.id);
-          onParcelClick?.(parcel);
+        const handleParcelClick = (event: FederatedPointerEvent) => {
+          const graphics = event.currentTarget as ParcelGraphics;
+          const parcelId = graphics.parcelId;
+          if (parcelId !== undefined) {
+            event.stopPropagation();
+            setSelectedParcelId(parcelId);
+            const parcel = worldMap.parcels.get(parcelId);
+            if (parcel) {
+              onParcelClick?.(parcel);
+            }
+          }
         };
         
-        tileOffsets.forEach(({ x, y }) => {
+        TILE_OFFSETS.forEach(({ x, y }) => {
           const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
           
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
             // Create and configure parcel graphics
-            const graphics = new Graphics();
+            const graphics = new Graphics() as ParcelGraphics;
             renderParcel(graphics, parcel);
             graphics.eventMode = 'static';
             graphics.cursor = 'pointer';
-            graphics.on('pointerdown', handleParcelClick(parcel));
+            graphics.parcelId = parcel.id; // Store parcel ID on graphics object
+            graphics.on('pointerdown', handleParcelClick);
             
             // Store and add to container
             if (!localParcelGraphics.has(parcel.id)) {
