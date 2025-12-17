@@ -130,13 +130,21 @@ const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: numbe
   },
 };
 
+// Resource richness scaling bounds
+const MIN_RICHNESS_MULTIPLIER = 0.5; // Minimum resource capacity/amount (at richness=0)
+const MAX_RICHNESS_MULTIPLIER = 1.5; // Maximum resource capacity/amount (at richness=1)
+
 /**
  * Create a new resource instance
  */
 function createResource(type: ResourceType, random: SeededRandom, resourceRichness: number = 0.5): Resource {
   const props = RESOURCE_PROPERTIES[type];
   // Richness affects initial amount and maximum capacity
-  const richnessMultiplier = Math.max(0.5, Math.min(1.5, 0.5 + resourceRichness));
+  // Scale from 0.5x (sparse) to 1.5x (abundant)
+  const richnessMultiplier = Math.max(
+    MIN_RICHNESS_MULTIPLIER, 
+    Math.min(MAX_RICHNESS_MULTIPLIER, MIN_RICHNESS_MULTIPLIER + resourceRichness)
+  );
   const initial = random.randomFloat(0.3, 0.9) * props.max * richnessMultiplier;
   const maximum = props.max * richnessMultiplier;
   
@@ -149,13 +157,17 @@ function createResource(type: ResourceType, random: SeededRandom, resourceRichne
   };
 }
 
+// Maximum multiplier for resource spawn probability
+const MAX_PROBABILITY_MULTIPLIER = 2; // Richness can double the base spawn probability
+
 /**
  * Generate resources for all parcels
  * Each parcel can have multiple resources
  */
 export function generateResources(parcels: Parcel[], random: SeededRandom, resourceRichness: number = 0.5): void {
   // Scale probabilities based on richness (0 = no resources, 1 = abundant)
-  const richnessMultiplier = Math.max(0, Math.min(2, resourceRichness * 2));
+  // At richness=0: multiplier=0 (no resources), at richness=1: multiplier=2 (double probability)
+  const richnessMultiplier = Math.max(0, Math.min(MAX_PROBABILITY_MULTIPLIER, resourceRichness * MAX_PROBABILITY_MULTIPLIER));
   
   for (const parcel of parcels) {
     const rules = RESOURCE_RULES[parcel.terrain];

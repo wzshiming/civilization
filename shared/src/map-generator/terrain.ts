@@ -86,6 +86,10 @@ export function generateTerrain(
   const temperatureNoise = new SimplexNoise(random);
 
   const scale = 0.003; // Frequency of the noise
+  
+  // Elevation scaling factors
+  const POLAR_ELEVATION_REDUCTION = 0.3; // Reduces elevation near poles to create more ocean
+  const OCEAN_PROPORTION_SCALE = 0.3; // Controls how much oceanProportion affects elevation distribution
 
   for (const parcel of parcels) {
     const x = parcel.center.x;
@@ -99,7 +103,7 @@ export function generateTerrain(
     const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
     
     // Slight reduction at extreme latitudes to create more ocean at poles
-    elevation = elevation * (1 - latitude * 0.3);
+    elevation = elevation * (1 - latitude * POLAR_ELEVATION_REDUCTION);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -107,7 +111,7 @@ export function generateTerrain(
     // Adjust elevation based on desired ocean proportion
     // If oceanProportion is 0.35 (35% ocean), we want elevation threshold around 0.35
     // Scale elevation to match the desired ocean proportion
-    elevation = elevation * (1 - oceanProportion * 0.3) + oceanProportion * 0.3;
+    elevation = elevation * (1 - oceanProportion * OCEAN_PROPORTION_SCALE) + oceanProportion * OCEAN_PROPORTION_SCALE;
     elevation = Math.max(0, Math.min(1, elevation));
 
     // Generate moisture
