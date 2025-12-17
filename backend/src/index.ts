@@ -61,11 +61,9 @@ app.listen(PORT, () => {
         stateManager.loadMap(worldMap);
         console.log(`✓ Map loaded successfully: ${worldMap.parcels.size} parcels`);
         
-        // Start broadcasting
-        sseBroadcaster.startBroadcasting();
-        console.log('✓ SSE broadcasting started');
-
-        simulationEngine.start()
+        // Simulation engine will push updates through SSE after each simulation update
+        simulationEngine.start();
+        console.log('✓ Simulation started - updates will be pushed via SSE after each tick');
       } catch (error) {
         console.error('Failed to load default map:', error);
       }

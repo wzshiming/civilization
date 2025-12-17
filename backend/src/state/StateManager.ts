@@ -13,7 +13,7 @@ export class StateManager {
    */
   loadMap(worldMap: WorldMap): void {
     this.worldMap = worldMap;
-    this.previousState = new Map(worldMap.parcels);
+    this.previousState = this.cloneParcels(worldMap.parcels);
   }
 
   /**
@@ -84,8 +84,8 @@ export class StateManager {
       }
     });
 
-    // Update previous state snapshot
-    this.previousState = new Map(this.worldMap.parcels);
+    // Update previous state snapshot (deep clone to track changes)
+    this.previousState = this.cloneParcels(this.worldMap.parcels);
 
     return deltas;
   }
@@ -107,6 +107,20 @@ export class StateManager {
     }
 
     return false;
+  }
+
+  /**
+   * Deep clone parcels map for change tracking
+   */
+  private cloneParcels(parcels: Map<number, Parcel>): Map<number, Parcel> {
+    const cloned = new Map<number, Parcel>();
+    parcels.forEach((parcel, id) => {
+      cloned.set(id, {
+        ...parcel,
+        resources: parcel.resources.map(resource => ({ ...resource })),
+      });
+    });
+    return cloned;
   }
 
   /**
