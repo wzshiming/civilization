@@ -36,15 +36,6 @@ export function ConfigurationTabContent({
             {'🔄 ' + t.reconnect}
           </button>
         )}
-
-        <div className="info-panel">
-          <p>
-            <strong>{t.configNote}</strong> {t.configNoteText}
-          </p>
-          <p>
-            {t.configMapInfo}
-          </p>
-        </div>
       </div>
     </div>
   );

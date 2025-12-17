@@ -37,15 +37,6 @@ export function ReadOnlyControlPanel({
             🔄 Reconnect
           </button>
         )}
-
-        <div className="info-panel">
-          <p>
-            <strong>Note:</strong> Simulation controls (start/stop, speed) are managed by the backend server.
-          </p>
-          <p>
-            Maps are pre-generated using the map-generator-cli tool and loaded by the backend.
-          </p>
-        </div>
       </div>
     </div>
   );
