@@ -15,6 +15,7 @@ export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updateCounter, setUpdateCounter] = useState(0);
 
   const handleMessage = useCallback((event: string, data: string) => {
     switch (event) {
@@ -35,21 +36,22 @@ export function useSSE(options: UseSSEOptions) {
         setWorldMap((prevWorldMap) => {
           if (!prevWorldMap) return prevWorldMap;
 
-          // Create a new map to trigger re-render
-          const updatedMap = { ...prevWorldMap };
-          updatedMap.parcels = new Map(prevWorldMap.parcels);
-
-          // Apply deltas
+          // Update parcels in place to keep worldMap reference stable
+          // This prevents MapRenderer from re-initializing on every delta
           delta.parcels.forEach((parcelDelta) => {
-            const parcel = updatedMap.parcels.get(parcelDelta.id);
+            const parcel = prevWorldMap.parcels.get(parcelDelta.id);
             if (parcel && parcelDelta.resources) {
-              const updatedParcel = { ...parcel, resources: parcelDelta.resources };
-              updatedMap.parcels.set(parcelDelta.id, updatedParcel);
+              // Update the parcel's resources in place
+              parcel.resources = parcelDelta.resources;
             }
           });
 
-          return updatedMap;
+          // Return the same reference
+          return prevWorldMap;
         });
+        
+        // Increment counter to notify components that depend on worldMap updates
+        setUpdateCounter(c => c + 1);
         break;
       }
 
@@ -132,5 +134,6 @@ export function useSSE(options: UseSSEOptions) {
     error,
     connect,
     disconnect,
+    updateCounter, // Used to trigger re-renders when worldMap is updated in place
   };
 }

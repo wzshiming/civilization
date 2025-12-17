@@ -18,16 +18,17 @@ function AppSSE() {
   const { t } = useI18n();
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
-  const { worldMap, isConnected, error, connect, disconnect } = useSSE({
+  const { worldMap, isConnected, error, connect, disconnect, updateCounter } = useSSE({
     url: `${BACKEND_URL}/events`,
     autoConnect: true,
   });
 
   // Get the current parcel from worldMap based on selectedParcelId
+  // updateCounter ensures this re-computes when worldMap is updated in place
   const selectedParcel = useMemo(() => {
     if (!selectedParcelId || !worldMap) return null;
     return worldMap.parcels.get(selectedParcelId) || null;
-  }, [selectedParcelId, worldMap]);
+  }, [selectedParcelId, worldMap, updateCounter]);
 
   const handleParcelClick = useCallback((parcel: Parcel) => {
     setSelectedParcelId(parcel.id);
