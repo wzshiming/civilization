@@ -89,18 +89,16 @@ export function useSSE(options: UseSSEOptions) {
       es.close();
       eventSourceRef.current = null;
     };
-    es.addEventListener('full-state', (event) => {
+    es.addEventListener('full-state', (event: MessageEvent) => {
       try {
-        console.log('SSE full-state received');
-        handleMessage('full-state', (event as MessageEvent).data);
+        handleMessage('full-state', event.data);
       } catch (err) {
         console.error('Error parsing full-state SSE message:', err);
       }
     });
-    es.addEventListener('delta', (event) => {
+    es.addEventListener('delta', (event: MessageEvent) => {
       try {
-        console.log('SSE delta received');
-        handleMessage('delta', (event as MessageEvent).data);
+        handleMessage('delta', event.data);
       } catch (err) {
         console.error('Error parsing delta SSE message:', err);
       }
