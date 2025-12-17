@@ -44,6 +44,11 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
+// Constants for viewport reporting
+const VIEWPORT_CHANGE_THRESHOLD = 10; // pixels - minimum change to trigger viewport update
+const VIEWPORT_ZOOM_THRESHOLD = 0.01; // minimum zoom change to trigger viewport update
+const VIEWPORT_DEBOUNCE_MS = 200; // milliseconds - debounce delay for viewport updates
+
 // Constants for rendering
 const BORDER_WIDTH = 0.5;
 const BORDER_COLOR = 0x000000;
@@ -195,11 +200,11 @@ export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRe
       
       // Check if viewport has changed significantly
       const hasChanged = !lastViewportReportRef.current ||
-        Math.abs(viewport.minX - lastViewportReportRef.current.minX) > 10 ||
-        Math.abs(viewport.maxX - lastViewportReportRef.current.maxX) > 10 ||
-        Math.abs(viewport.minY - lastViewportReportRef.current.minY) > 10 ||
-        Math.abs(viewport.maxY - lastViewportReportRef.current.maxY) > 10 ||
-        Math.abs(viewport.zoom - lastViewportReportRef.current.zoom) > 0.01;
+        Math.abs(viewport.minX - lastViewportReportRef.current.minX) > VIEWPORT_CHANGE_THRESHOLD ||
+        Math.abs(viewport.maxX - lastViewportReportRef.current.maxX) > VIEWPORT_CHANGE_THRESHOLD ||
+        Math.abs(viewport.minY - lastViewportReportRef.current.minY) > VIEWPORT_CHANGE_THRESHOLD ||
+        Math.abs(viewport.maxY - lastViewportReportRef.current.maxY) > VIEWPORT_CHANGE_THRESHOLD ||
+        Math.abs(viewport.zoom - lastViewportReportRef.current.zoom) > VIEWPORT_ZOOM_THRESHOLD;
       
       if (hasChanged) {
         // Clear existing timer
@@ -207,11 +212,11 @@ export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRe
           clearTimeout(viewportReportTimerRef.current);
         }
         
-        // Debounce viewport updates (wait 200ms after last change)
+        // Debounce viewport updates
         viewportReportTimerRef.current = setTimeout(() => {
           onViewportChangeRef.current?.(viewport);
           lastViewportReportRef.current = viewport;
-        }, 200);
+        }, VIEWPORT_DEBOUNCE_MS);
       }
     }
   }, [updateContainer]);

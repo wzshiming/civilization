@@ -89,9 +89,12 @@ export class SSEBroadcaster {
 
     if (viewport) {
       // Filter parcels based on viewport
-      parcelsToSend = Array.from(worldMap.parcels.values()).filter(parcel =>
-        this.isParcelVisible(parcel, viewport, worldMap)
-      );
+      parcelsToSend = [];
+      for (const parcel of worldMap.parcels.values()) {
+        if (this.isParcelVisible(parcel, viewport, worldMap)) {
+          parcelsToSend.push(parcel);
+        }
+      }
       console.log(`Sending ${parcelsToSend.length} visible parcels out of ${worldMap.parcels.size} total`);
     } else {
       // No viewport yet, send empty state
