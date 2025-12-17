@@ -155,6 +155,36 @@
   text-align: right;
 }
 
+.resource-attributes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attribute-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(74, 158, 255, 0.15);
+  border-radius: 12px;
+  font-size: 0.8em;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.attribute-name {
+  color: #4a9eff;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.attribute-efficiency {
+  color: #7eb8ff;
+}
+
 /* Scrollbar styling */
 .panel-content::-webkit-scrollbar {
   width: 8px;

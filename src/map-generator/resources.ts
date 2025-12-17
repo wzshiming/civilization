@@ -2,7 +2,7 @@
  * Resource generation and placement
  */
 
-import type { Parcel, Resource } from '../types/map';
+import type { Parcel, Resource, ResourceAttribute } from '../types/map';
 import { ResourceType, TerrainType } from '../types/map';
 import { SeededRandom } from '../utils/random';
 
@@ -55,17 +55,79 @@ const RESOURCE_RULES: Record<TerrainType, { types: ResourceType[]; probability: 
 /**
  * Base resource properties
  */
-const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: number }> = {
-  [ResourceType.WATER]: { max: 1000, changeRate: 0 },
-  [ResourceType.WOOD]: { max: 500, changeRate: 0.5 },
-  [ResourceType.STONE]: { max: 800, changeRate: 0 },
-  [ResourceType.IRON]: { max: 300, changeRate: 0 },
-  [ResourceType.GOLD]: { max: 150, changeRate: 0 },
-  [ResourceType.OIL]: { max: 400, changeRate: 0 },
-  [ResourceType.COAL]: { max: 600, changeRate: 0 },
-  [ResourceType.FERTILE_SOIL]: { max: 100, changeRate: 0.2 },
-  [ResourceType.FISH]: { max: 300, changeRate: 0.3 },
-  [ResourceType.GAME]: { max: 200, changeRate: 0.4 },
+const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: number; attributes: ResourceAttribute[] }> = {
+  [ResourceType.WATER]: { 
+    max: 1000, 
+    changeRate: 0,
+    attributes: [
+      { name: 'hydration', efficiency: 1.0 },
+    ]
+  },
+  [ResourceType.WOOD]: { 
+    max: 500, 
+    changeRate: 0.5,
+    attributes: [
+      { name: 'energy', efficiency: 0.8 },
+      { name: 'construction', efficiency: 1.0 },
+    ]
+  },
+  [ResourceType.STONE]: { 
+    max: 800, 
+    changeRate: 0,
+    attributes: [
+      { name: 'construction', efficiency: 1.2 },
+    ]
+  },
+  [ResourceType.IRON]: { 
+    max: 300, 
+    changeRate: 0,
+    attributes: [
+      { name: 'tools', efficiency: 1.0 },
+      { name: 'construction', efficiency: 0.9 },
+    ]
+  },
+  [ResourceType.GOLD]: { 
+    max: 150, 
+    changeRate: 0,
+    attributes: [
+      { name: 'wealth', efficiency: 1.0 },
+    ]
+  },
+  [ResourceType.OIL]: { 
+    max: 400, 
+    changeRate: 0,
+    attributes: [
+      { name: 'energy', efficiency: 1.5 },
+    ]
+  },
+  [ResourceType.COAL]: { 
+    max: 600, 
+    changeRate: 0,
+    attributes: [
+      { name: 'energy', efficiency: 1.2 },
+    ]
+  },
+  [ResourceType.FERTILE_SOIL]: { 
+    max: 100, 
+    changeRate: 0.2,
+    attributes: [
+      { name: 'food', efficiency: 1.0 },
+    ]
+  },
+  [ResourceType.FISH]: { 
+    max: 300, 
+    changeRate: 0.3,
+    attributes: [
+      { name: 'food', efficiency: 0.9 },
+    ]
+  },
+  [ResourceType.GAME]: { 
+    max: 200, 
+    changeRate: 0.4,
+    attributes: [
+      { name: 'food', efficiency: 1.2 },
+    ]
+  },
 };
 
 /**
@@ -80,6 +142,7 @@ function createResource(type: ResourceType, random: SeededRandom): Resource {
     current: initial,
     maximum: props.max,
     changeRate: props.changeRate,
+    attributes: props.attributes,
   };
 }
 
