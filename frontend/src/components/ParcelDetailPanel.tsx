@@ -2,7 +2,8 @@
  * Detail panel showing information about a selected parcel
  */
 
-import type { Parcel, ResourceType, TerrainType } from '../types/map';
+import type { ResourceType, TerrainType } from '../types/map';
+import type { Parcel } from '@civilization/shared';
 import { useI18n } from '../i18n';
 import './ParcelDetailPanel.css';
 

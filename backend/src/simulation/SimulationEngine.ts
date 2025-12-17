@@ -4,16 +4,19 @@
 
 import type { WorldMap, Resource } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
+import type { SSEBroadcaster } from '../sse/SSEBroadcaster';
 
 export class SimulationEngine {
   private stateManager: StateManager;
+  private sseBroadcaster: SSEBroadcaster;
   private isRunning: boolean = false;
   private intervalId: NodeJS.Timeout | null = null;
   private speed: number = 1.0;
   private lastUpdateTime: number = Date.now();
   private tickInterval: number = 1000;
-  constructor(stateManager: StateManager) {
+  constructor(stateManager: StateManager, sseBroadcaster: SSEBroadcaster) {
     this.stateManager = stateManager;
+    this.sseBroadcaster = sseBroadcaster;
   }
 
   /**
@@ -95,36 +98,53 @@ export class SimulationEngine {
     const now = Date.now();
     const deltaTime = ((now - this.lastUpdateTime) / 1000) * this.speed;
 
-    this.simulateWorld(worldMap, deltaTime);
-    this.stateManager.updateTimestamp();
+    // Simulate and get the results (changed parcel IDs)
+    const changedParcelIds = this.simulateWorld(worldMap, deltaTime);
+
+    // Broadcast only the simulation results (changed parcels) through SSE
+    if (changedParcelIds.length > 0) {
+      this.sseBroadcaster.broadcastSimulationResults(changedParcelIds);
+    }
 
     this.lastUpdateTime = now;
   }
 
   /**
    * Simulate world state for a given time step
+   * Returns the IDs of parcels that were changed during simulation
    */
-  private simulateWorld(world: WorldMap, deltaTime: number): void {
-    // Update resources for all parcels
-    world.parcels.forEach(parcel => {
-      this.updateResources(parcel.resources, deltaTime);
+  private simulateWorld(world: WorldMap, deltaTime: number): string[] {
+    const changedParcelIds: string[] = [];
+
+    // Update resources for all parcels and track changes
+    world.parcels.forEach((parcel, id) => {
+      const hasChanges = this.updateResources(parcel.resources, deltaTime);
+      if (hasChanges) {
+        changedParcelIds.push(id);
+      }
     });
-
-    // Update boundary resources
-    for (const boundary of world.boundaries) {
-      this.updateResources(boundary.resources, deltaTime);
-    }
-
-    world.lastUpdate = Date.now();
+    return changedParcelIds;
   }
 
   /**
    * Update resources with regeneration/depletion
+   * Returns true if any resource was changed
    */
-  private updateResources(resources: Resource[], deltaTime: number): void {
+  private updateResources(resources: Resource[], deltaTime: number): boolean {
+    let hasChanges = false;
+    
     for (const resource of resources) {
-      resource.current += resource.changeRate * deltaTime;
-      resource.current = Math.max(0, Math.min(resource.maximum, resource.current));
+      if (resource.changeRate !== 0) {
+        const oldValue = resource.current;
+        resource.current += resource.changeRate * deltaTime;
+        resource.current = Math.max(0, Math.min(resource.maximum, resource.current));
+        
+        if (oldValue !== resource.current) {
+          hasChanges = true;
+        }
+      }
     }
+    
+    return hasChanges;
   }
 }

@@ -78,7 +78,6 @@ Generated maps are saved as JSON files in the specified output directory (defaul
 ```json
 {
   "parcels": [...],
-  "boundaries": [...],
   "width": 1200,
   "height": 800,
   "lastUpdate": 1234567890
@@ -96,7 +95,7 @@ Generated maps are saved as JSON files in the specified output directory (defaul
 ## Map Statistics
 
 After generation, the tool displays:
-- Total parcels and boundaries
+- Total parcels
 - Terrain distribution (percentage of each terrain type)
 - Resource statistics
 - File size and location

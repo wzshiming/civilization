@@ -7,7 +7,13 @@
 import fs from 'fs';
 import path from 'path';
 import { program } from 'commander';
-import { generateWorldMap, type SerializableWorldMap, type MapConfig } from '@civilization/shared';
+import { TerrainType } from '@civilization/shared';
+import type { SerializableWorldMap, Parcel } from '@civilization/shared';
+import { SeededRandom } from './utils/random';
+import { generateVoronoi, relaxVoronoi } from './voronoi';
+import { generateTerrain } from './terrain';
+import { generateResources } from './resources';
+
 
 program
   .name('generate-map')
@@ -25,8 +31,70 @@ program
 
 const options = program.opts();
 
+/** Configuration for map generation */
+export interface MapConfig {
+  width: number;
+  height: number;
+  numParcels: number;
+  seed?: number;
+  waterLevel?: number;
+  numContinents?: number;
+}
+
+/**
+ * Generate a complete world map with all features
+ */
+function generateWorldMap(config: MapConfig): SerializableWorldMap {
+  const {
+    width,
+    height,
+    numParcels,
+    seed = Date.now(),
+  } = config;
+
+  console.log(`Generating world map with seed: ${seed}`);
+
+  const random = new SeededRandom(seed);
+
+  // Step 1: Generate Voronoi diagram
+  console.log('Generating Voronoi cells...');
+  let cells = generateVoronoi(width, height, numParcels, random);
+
+  // Step 2: Relax the diagram for more uniform cells
+  console.log('Relaxing Voronoi cells...');
+  cells = relaxVoronoi(width, height, cells, 2);
+
+  // Step 3: Convert cells to parcels
+  console.log('Creating parcels...');
+  const parcels: Parcel[] = cells.map(cell => ({
+    id: cell.id,
+    vertices: cell.vertices,
+    center: cell.site,
+    terrain: TerrainType.GRASSLAND, // Will be set in generateTerrain
+    resources: [],
+    neighbors: cell.neighbors,
+    elevation: 0,
+    moisture: 0,
+    temperature: 0,
+  }));
+
+  // Step 4: Generate terrain
+  console.log('Generating terrain...');
+  generateTerrain(parcels, width, height, random);
+
+  // Step 5: Generate resources
+  console.log('Generating resources...');
+  generateResources(parcels, random);
+
+  return {
+    parcels: parcels,
+    width,
+    height,
+  };
+}
+
 // Parse options
-const config: MapConfig = {
+const config = {
   width: parseInt(options.width),
   height: parseInt(options.height),
   numParcels: parseInt(options.parcels),
@@ -65,14 +133,6 @@ try {
   // Generate the map
   const worldMap = generateWorldMap(config);
 
-  // Convert to serializable format
-  const serializable: SerializableWorldMap = {
-    parcels: Array.from(worldMap.parcels.values()),
-    boundaries: worldMap.boundaries,
-    width: worldMap.width,
-    height: worldMap.height,
-    lastUpdate: worldMap.lastUpdate,
-  };
 
   // Ensure output directory exists
   const outputDir = options.outputDir;
@@ -85,43 +145,12 @@ try {
   const outputPath = path.join(outputDir, outputFileName);
 
   // Save to file
-  fs.writeFileSync(outputPath, JSON.stringify(serializable, null, 2), 'utf-8');
+  fs.writeFileSync(outputPath, JSON.stringify(worldMap, null, 2), 'utf-8');
 
   console.log('\n✓ Map generation complete!');
-  console.log(`\nMap Statistics:`);
-  console.log(`  Total parcels: ${worldMap.parcels.size}`);
-  console.log(`  Total boundaries: ${worldMap.boundaries.length}`);
-  
-  // Count terrain types
-  const terrainCounts: Record<string, number> = {};
-  worldMap.parcels.forEach(parcel => {
-    terrainCounts[parcel.terrain] = (terrainCounts[parcel.terrain] || 0) + 1;
-  });
-  
-  console.log(`\nTerrain Distribution:`);
-  Object.entries(terrainCounts)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([terrain, count]) => {
-      const percentage = ((count / worldMap.parcels.size) * 100).toFixed(1);
-      console.log(`  ${terrain}: ${count} (${percentage}%)`);
-    });
-
-  // Count total resources
-  let totalResources = 0;
-  worldMap.parcels.forEach(parcel => {
-    totalResources += parcel.resources.length;
-  });
-
-  console.log(`\nResource Statistics:`);
-  console.log(`  Total resources: ${totalResources}`);
-  console.log(`  Average per parcel: ${(totalResources / worldMap.parcels.size).toFixed(2)}`);
-
-  console.log(`\n✓ Map saved to: ${outputPath}`);
-  console.log(`  File size: ${(fs.statSync(outputPath).size / 1024).toFixed(2)} KB`);
-
-  console.log('\nYou can now load this map in the backend server.');
-
 } catch (error) {
   console.error('\n✗ Error generating map:', error);
   process.exit(1);
 }
+
+
