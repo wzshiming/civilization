@@ -32,22 +32,24 @@ export function useSSE(options: UseSSEOptions) {
 
       case 'delta': {
         const delta = JSON.parse(data) as StateDelta;
-        if (!worldMap) return;
+        setWorldMap((prevWorldMap) => {
+          if (!prevWorldMap) return prevWorldMap;
 
-        // Create a new map to trigger re-render
-        const updatedMap = { ...worldMap };
-        updatedMap.parcels = new Map(worldMap.parcels);
+          // Create a new map to trigger re-render
+          const updatedMap = { ...prevWorldMap };
+          updatedMap.parcels = new Map(prevWorldMap.parcels);
 
-        // Apply deltas
-        delta.parcels.forEach((parcelDelta) => {
-          const parcel = updatedMap.parcels.get(parcelDelta.id);
-          if (parcel && parcelDelta.resources) {
-            const updatedParcel = { ...parcel, resources: parcelDelta.resources };
-            updatedMap.parcels.set(parcelDelta.id, updatedParcel);
-          }
+          // Apply deltas
+          delta.parcels.forEach((parcelDelta) => {
+            const parcel = updatedMap.parcels.get(parcelDelta.id);
+            if (parcel && parcelDelta.resources) {
+              const updatedParcel = { ...parcel, resources: parcelDelta.resources };
+              updatedMap.parcels.set(parcelDelta.id, updatedParcel);
+            }
+          });
+
+          return updatedMap;
         });
-
-        setWorldMap(updatedMap)
         break;
       }
 

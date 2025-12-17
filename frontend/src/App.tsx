@@ -16,19 +16,25 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 function AppSSE() {
   const { t } = useI18n();
-  const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null);
+  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
   const { worldMap, isConnected, error, connect, disconnect } = useSSE({
     url: `${BACKEND_URL}/events`,
     autoConnect: true,
   });
 
+  // Get the current parcel from worldMap based on selectedParcelId
+  const selectedParcel = useMemo(() => {
+    if (!selectedParcelId || !worldMap) return null;
+    return worldMap.parcels.get(selectedParcelId) || null;
+  }, [selectedParcelId, worldMap]);
+
   const handleParcelClick = useCallback((parcel: Parcel) => {
-    setSelectedParcel(parcel);
+    setSelectedParcelId(parcel.id);
   }, []);
 
   const handleClosePanel = useCallback(() => {
-    setSelectedParcel(null);
+    setSelectedParcelId(null);
   }, []);
 
   const handleReconnect = useCallback(() => {
