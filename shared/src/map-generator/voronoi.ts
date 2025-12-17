@@ -32,12 +32,12 @@ function getLatitudeFactor(y: number, height: number): number {
  */
 function getMinDistanceForLatitude(y: number, height: number, baseDistance: number): number {
   const latFactor = getLatitudeFactor(y, height);
-  // Use aggressive exponential scaling to make cells much larger near poles
+  // Use very aggressive exponential scaling to make cells much larger near poles
   // At equator (latFactor=0): scale = 1
-  // At mid-latitudes (latFactor=0.5): scale ≈ 2.5x
-  // At poles (latFactor=1): scale = 6x
-  // This causes cells to merge into very large blocks at poles
-  const xScale = Math.pow(6, latFactor);
+  // At mid-latitudes (latFactor=0.5): scale ≈ 5x
+  // At poles (latFactor=1): scale = 15x
+  // This causes cells to merge into very large blocks at poles, approaching a single block
+  const xScale = Math.pow(15, latFactor);
   return baseDistance * xScale;
 }
 
@@ -125,7 +125,7 @@ export function generateVoronoi(
       // Calculate placement probability based on latitude
       // Sites near poles should be much less likely to be placed
       const latFactor = getLatitudeFactor(candidate.y, height);
-      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+      const placementProbability = 1 - latFactor * 0.95; // Only 5% at poles, 100% at equator
       
       if (random.randomFloat(0, 1) < placementProbability) {
         accepted = true;

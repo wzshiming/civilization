@@ -15,18 +15,18 @@ export function determineTerrainType(
   moisture: number,
   temperature: number
 ): TerrainType {
-  // Deep ocean
-  if (elevation < 0.3) {
+  // Deep ocean - increased threshold for vast oceans
+  if (elevation < 0.35) {
     return TerrainType.OCEAN;
   }
   
   // Shallow water
-  if (elevation < 0.35) {
+  if (elevation < 0.40) {
     return TerrainType.SHALLOW_WATER;
   }
   
   // Beach/coast
-  if (elevation < 0.38) {
+  if (elevation < 0.43) {
     return TerrainType.BEACH;
   }
 
@@ -38,8 +38,8 @@ export function determineTerrainType(
     return TerrainType.MOUNTAIN;
   }
 
-  // Cold regions
-  if (temperature < 0.25) {
+  // Cold regions - increased threshold for more tundra at poles
+  if (temperature < 0.35) {
     return TerrainType.TUNDRA;
   }
 
@@ -88,8 +88,9 @@ export function generateTerrain(
     // but maintain some land at poles (no distance-from-center penalty)
     const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
     
-    // Slight reduction at extreme latitudes to create more ocean at poles
-    elevation = elevation * (1 - latitude * 0.3);
+    // More aggressive reduction at extreme latitudes to create more ocean at poles
+    // This helps create vast oceans while allowing some polar land for tundra
+    elevation = elevation * (1 - latitude * 0.4);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -99,25 +100,31 @@ export function generateTerrain(
     let moisture = moistureNoise.octaveNoise(x * scale * 1.5, y * scale * 1.5, 4, 0.5);
     moisture = (moisture + 1) / 2;
     
-    // Moisture is higher near water
-    if (elevation < 0.35) {
+    // Moisture is higher near water - adjusted for new water thresholds
+    if (elevation < 0.40) {
       moisture = 1.0;
-    } else if (elevation < 0.45) {
+    } else if (elevation < 0.50) {
       moisture = Math.max(moisture, 0.7);
     }
 
     // Generate temperature based on latitude (spherical projection)
     let temperature = temperatureNoise.octaveNoise(x * scale * 0.8, y * scale * 0.8, 3, 0.5);
     
+    // Normalize noise to 0-1 first
+    temperature = (temperature + 1) / 2;
+    
     // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
-    temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
+    // Apply strong polar cooling - at poles (latitude=1), base temperature becomes very low
+    // Formula: temp = noise_variation * (1 - latitude) + base_for_latitude
+    // At equator (lat=0): temp = noise * 1 + 0.5 = 0.5-1.5 (warm)
+    // At poles (lat=1): temp = noise * 0 + 0.0 = 0.0 (very cold)
+    temperature = temperature * 0.3 * (1 - latitude) + (1 - latitude) * 0.7;
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;
     
-    // Normalize
-    temperature = (temperature + 1) / 2;
+    // Clamp to valid range
     temperature = Math.max(0, Math.min(1, temperature));
 
     parcel.elevation = elevation;
