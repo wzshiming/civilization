@@ -133,6 +133,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     let cleanup = false;
     const localParcelGraphics = new Map<number, Graphics[]>();
     const localHighlightGraphics = new Map<number, Graphics[]>();
+    
+    // Store reference to container element
+    const container = canvasRef.current;
 
     // Create Pixi application
     const app = new Application();
@@ -140,9 +143,13 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     (async () => {
       try {
+        // Use window dimensions instead of map dimensions for adaptive sizing
+        const containerWidth = container.clientWidth || window.innerWidth;
+        const containerHeight = container.clientHeight || window.innerHeight;
+        
         await app.init({
-          width: worldMap.width,
-          height: worldMap.height,
+          width: containerWidth,
+          height: containerHeight,
           backgroundColor: 0x1a1a1a,
           antialias: true,
           resolution: window.devicePixelRatio || 1,
@@ -153,9 +160,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           return;
         }
 
-        if (canvasRef.current) {
-          canvasRef.current.appendChild(app.canvas);
-        }
+        container.appendChild(app.canvas);
 
         // Create main container for all map tiles (terrain layer)
         const mainContainer = new Container();
@@ -237,6 +242,15 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       }
     })();
     
+    // Helper to handle window resize
+    const handleResize = () => {
+      if (appRef.current) {
+        const newWidth = container.clientWidth || window.innerWidth;
+        const newHeight = container.clientHeight || window.innerHeight;
+        appRef.current.renderer.resize(newWidth, newHeight);
+      }
+    };
+    
     // Helper to adjust zoom level
     const adjustZoom = (delta: number) => {
       targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + delta));
@@ -291,12 +305,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('resize', handleResize);
     
-    // Capture canvas element for cleanup
-    const canvasElement = canvasRef.current;
-    if (canvasElement) {
-      canvasElement.addEventListener('wheel', handleWheel, { passive: false });
-    }
+    // Add wheel listener to container
+    container.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       cleanup = true;
@@ -304,11 +316,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       // Cleanup keyboard listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('resize', handleResize);
       
       // Cleanup wheel listener
-      if (canvasElement) {
-        canvasElement.removeEventListener('wheel', handleWheel);
-      }
+      container.removeEventListener('wheel', handleWheel);
       
       try {
         if (app) {
