@@ -53,11 +53,17 @@ const RESOURCE_RADIUS = 3;
 const RESOURCE_OFFSET = 8;
 
 // Tile offsets for toroidal wrapping (center + 8 surrounding tiles)
+// Ordered intentionally: center tile first, then cardinal directions, then diagonals
 const TILE_OFFSETS = [
-  { x: 0, y: 0 }, { x: -1, y: 0 }, { x: 1, y: 0 },
-  { x: 0, y: -1 }, { x: 0, y: 1 },
-  { x: -1, y: -1 }, { x: 1, y: -1 },
-  { x: -1, y: 1 }, { x: 1, y: 1 },
+  { x: 0, y: 0 },     // center
+  { x: -1, y: 0 },    // left
+  { x: 1, y: 0 },     // right
+  { x: 0, y: -1 },    // top
+  { x: 0, y: 1 },     // bottom
+  { x: -1, y: -1 },   // top-left
+  { x: 1, y: -1 },    // top-right
+  { x: -1, y: 1 },    // bottom-left
+  { x: 1, y: 1 },     // bottom-right
 ] as const;
 
 // Resource colors lookup table
@@ -433,7 +439,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const vertices = parcel.vertices.flatMap(v => [v.x, v.y]);
+  // Build vertices array efficiently
+  const vertexCount = parcel.vertices.length;
+  const vertices = new Array(vertexCount * 2);
+  for (let i = 0; i < vertexCount; i++) {
+    const vertex = parcel.vertices[i];
+    vertices[i * 2] = vertex.x;
+    vertices[i * 2 + 1] = vertex.y;
+  }
 
   // Fill the polygon with terrain color
   graphics.poly(vertices);
@@ -449,14 +462,15 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
     const { x: centerX, y: centerY } = parcel.center;
     const angleStep = (Math.PI * 2) / resourceCount;
     
-    parcel.resources.forEach((resource, index) => {
-      const angle = index * angleStep;
+    for (let i = 0; i < resourceCount; i++) {
+      const resource = parcel.resources[i];
+      const angle = i * angleStep;
       const x = centerX + Math.cos(angle) * RESOURCE_OFFSET;
       const y = centerY + Math.sin(angle) * RESOURCE_OFFSET;
       
       graphics.circle(x, y, RESOURCE_RADIUS);
       graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
-    });
+    }
   }
 }
 
@@ -466,7 +480,15 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
 function renderHighlight(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const vertices = parcel.vertices.flatMap(v => [v.x, v.y]);
+  // Build vertices array efficiently
+  const vertexCount = parcel.vertices.length;
+  const vertices = new Array(vertexCount * 2);
+  for (let i = 0; i < vertexCount; i++) {
+    const vertex = parcel.vertices[i];
+    vertices[i * 2] = vertex.x;
+    vertices[i * 2 + 1] = vertex.y;
+  }
+  
   graphics.poly(vertices);
   graphics.stroke({ width: HIGHLIGHT_WIDTH, color: HIGHLIGHT_COLOR, alpha: 1 });
 }
