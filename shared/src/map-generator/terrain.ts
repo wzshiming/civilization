@@ -62,6 +62,15 @@ export function determineTerrainType(
   return TerrainType.GRASSLAND;
 }
 
+// Terrain generation constants
+const NOISE_SCALE = 0.003; // Frequency of the noise
+const DEFAULT_OCEAN_PROPORTION = 0.3; // Default ocean coverage
+const WATER_LEVEL_SCALE_FACTOR = 0.5; // Scale factor for water level adjustment
+const MERCATOR_BOOST_FACTOR = 0.15; // Elevation boost near poles for Mercator projection
+const POLAR_ICE_LATITUDE_THRESHOLD = 0.6; // Latitude threshold for polar ice (60%)
+const POLAR_ICE_TEMPERATURE_SCALE = 0.95; // Temperature scale reduction at poles
+const POLAR_ICE_TEMPERATURE_OFFSET = 0.5; // Temperature offset subtraction at poles
+
 /**
  * Generate terrain properties for all parcels
  */
@@ -75,21 +84,19 @@ export function generateTerrain(
   const elevationNoise = new SimplexNoise(random);
   const moistureNoise = new SimplexNoise(random);
   const temperatureNoise = new SimplexNoise(random);
-
-  const scale = 0.003; // Frequency of the noise
   
   // Ocean proportion: adjust water level threshold
   // Default ocean proportion is ~0.3 (elevation < 0.3 = ocean)
   // We adjust the base elevation to achieve the desired ocean proportion
-  const oceanProportion = config?.oceanProportion !== undefined ? config.oceanProportion : 0.3;
-  const waterLevelAdjustment = (oceanProportion - 0.3) * 0.5; // Scale adjustment factor
+  const oceanProportion = config?.oceanProportion !== undefined ? config.oceanProportion : DEFAULT_OCEAN_PROPORTION;
+  const waterLevelAdjustment = (oceanProportion - DEFAULT_OCEAN_PROPORTION) * WATER_LEVEL_SCALE_FACTOR;
 
   for (const parcel of parcels) {
     const x = parcel.center.x;
     const y = parcel.center.y;
 
     // Generate base elevation with multiple octaves
-    let elevation = elevationNoise.octaveNoise(x * scale, y * scale, 6, 0.5);
+    let elevation = elevationNoise.octaveNoise(x * NOISE_SCALE, y * NOISE_SCALE, 6, 0.5);
     
     // For spherical projection: reduce elevation toward poles (top/bottom edges)
     // but maintain some land at poles (no distance-from-center penalty)
@@ -102,7 +109,7 @@ export function generateTerrain(
     if (config?.mercator) {
       // Mercator scale factor increases dramatically near poles
       // We apply a gentler version: boost elevation at high latitudes
-      const mercatorBoost = latitude * latitude * 0.15; // Quadratic increase toward poles
+      const mercatorBoost = latitude * latitude * MERCATOR_BOOST_FACTOR; // Quadratic increase toward poles
       elevation = elevation + mercatorBoost;
     }
     
@@ -119,7 +126,7 @@ export function generateTerrain(
     elevation = Math.max(0, Math.min(1, elevation));
 
     // Generate moisture
-    let moisture = moistureNoise.octaveNoise(x * scale * 1.5, y * scale * 1.5, 4, 0.5);
+    let moisture = moistureNoise.octaveNoise(x * NOISE_SCALE * 1.5, y * NOISE_SCALE * 1.5, 4, 0.5);
     moisture = (moisture + 1) / 2;
     
     // Moisture is higher near water
@@ -130,18 +137,19 @@ export function generateTerrain(
     }
 
     // Generate temperature based on latitude (spherical projection)
-    let temperature = temperatureNoise.octaveNoise(x * scale * 0.8, y * scale * 0.8, 3, 0.5);
+    let temperature = temperatureNoise.octaveNoise(x * NOISE_SCALE * 0.8, y * NOISE_SCALE * 0.8, 3, 0.5);
     
     // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
     temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
     
     // Polar ice: force very cold temperatures at poles
-    if (config?.polarIce && latitude > 0.6) {
+    if (config?.polarIce && latitude > POLAR_ICE_LATITUDE_THRESHOLD) {
       // At high latitudes (>60% toward poles), dramatically reduce temperature
-      const polarEffect = (latitude - 0.6) / 0.4; // 0 at 60% latitude, 1 at poles
+      const polarEffect = (latitude - POLAR_ICE_LATITUDE_THRESHOLD) / (1 - POLAR_ICE_LATITUDE_THRESHOLD);
       // Force temperatures to be very low at poles - scale down and subtract
-      temperature = temperature * (1 - polarEffect * 0.95) - polarEffect * 0.5;
+      // Note: This can produce negative values, which are normalized to 0 in the next step
+      temperature = temperature * (1 - polarEffect * POLAR_ICE_TEMPERATURE_SCALE) - polarEffect * POLAR_ICE_TEMPERATURE_OFFSET;
     }
     
     // Higher elevations are colder
