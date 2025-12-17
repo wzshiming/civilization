@@ -4,16 +4,19 @@
 
 import type { WorldMap, Resource } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
+import type { SSEBroadcaster } from '../sse/SSEBroadcaster';
 
 export class SimulationEngine {
   private stateManager: StateManager;
+  private sseBroadcaster: SSEBroadcaster | null = null;
   private isRunning: boolean = false;
   private intervalId: NodeJS.Timeout | null = null;
   private speed: number = 1.0;
   private lastUpdateTime: number = Date.now();
   private tickInterval: number = 1000;
-  constructor(stateManager: StateManager) {
+  constructor(stateManager: StateManager, sseBroadcaster?: SSEBroadcaster) {
     this.stateManager = stateManager;
+    this.sseBroadcaster = sseBroadcaster || null;
   }
 
   /**
@@ -97,6 +100,11 @@ export class SimulationEngine {
 
     this.simulateWorld(worldMap, deltaTime);
     this.stateManager.updateTimestamp();
+
+    // Push updated plots through SSE immediately after simulation update
+    if (this.sseBroadcaster) {
+      this.sseBroadcaster.broadcastImmediate();
+    }
 
     this.lastUpdateTime = now;
   }

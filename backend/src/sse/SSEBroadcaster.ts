@@ -230,4 +230,18 @@ export class SSEBroadcaster {
 
     this.broadcastMessage(message);
   }
+
+  /**
+   * Immediately broadcast current state to all clients
+   * Used to push updates right after simulation updates
+   */
+  broadcastImmediate(): void {
+    if (this.clients.size === 0) return;
+
+    if (this.sendFullState) {
+      this.broadcastFullState();
+    } else {
+      this.broadcastDelta();
+    }
+  }
 }

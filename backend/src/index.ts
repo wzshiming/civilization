@@ -17,8 +17,8 @@ const MAPS_DIR = process.env.MAPS_DIR || './maps';
 const stateManager = new StateManager();
 const settingsManager = new SettingsManager();
 const mapLoader = new MapLoader(MAPS_DIR);
-const simulationEngine = new SimulationEngine(stateManager);
 const sseBroadcaster = new SSEBroadcaster(stateManager);
+const simulationEngine = new SimulationEngine(stateManager, sseBroadcaster);
 
 // Create Express app
 const app = express();
