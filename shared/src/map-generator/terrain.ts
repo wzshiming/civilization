@@ -88,7 +88,7 @@ export function generateTerrain(
   // Ocean proportion: adjust water level threshold
   // Default ocean proportion is ~0.3 (elevation < 0.3 = ocean)
   // We adjust the base elevation to achieve the desired ocean proportion
-  const oceanProportion = config?.oceanProportion !== undefined ? config.oceanProportion : DEFAULT_OCEAN_PROPORTION;
+  const oceanProportion = config?.oceanProportion ?? DEFAULT_OCEAN_PROPORTION;
   const waterLevelAdjustment = (oceanProportion - DEFAULT_OCEAN_PROPORTION) * WATER_LEVEL_SCALE_FACTOR;
 
   for (const parcel of parcels) {
@@ -148,15 +148,16 @@ export function generateTerrain(
       // At high latitudes (>60% toward poles), dramatically reduce temperature
       const polarEffect = (latitude - POLAR_ICE_LATITUDE_THRESHOLD) / (1 - POLAR_ICE_LATITUDE_THRESHOLD);
       // Force temperatures to be very low at poles - scale down and subtract
-      // Note: This can produce negative values, which are normalized to 0 in the next step
       temperature = temperature * (1 - polarEffect * POLAR_ICE_TEMPERATURE_SCALE) - polarEffect * POLAR_ICE_TEMPERATURE_OFFSET;
     }
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;
     
-    // Normalize
+    // Normalize temperature to 0-1 range
+    // First normalize from noise range [-1, 1] to [0, 1]
     temperature = (temperature + 1) / 2;
+    // Then clamp to ensure we stay in valid range (handles edge cases where temperature might be outside [-1, 1])
     temperature = Math.max(0, Math.min(1, temperature));
 
     parcel.elevation = elevation;

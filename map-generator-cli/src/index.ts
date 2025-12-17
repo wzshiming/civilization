@@ -55,9 +55,15 @@ if (isNaN(config.numParcels) || config.numParcels <= 0) {
   process.exit(1);
 }
 
-if (config.oceanProportion !== undefined && (isNaN(config.oceanProportion) || config.oceanProportion < 0 || config.oceanProportion > 1)) {
-  console.error('Error: Invalid ocean-proportion value (must be between 0 and 1)');
-  process.exit(1);
+if (config.oceanProportion !== undefined) {
+  if (isNaN(config.oceanProportion)) {
+    console.error('Error: ocean-proportion must be a number');
+    process.exit(1);
+  }
+  if (config.oceanProportion < 0 || config.oceanProportion > 1) {
+    console.error('Error: ocean-proportion must be between 0 and 1');
+    process.exit(1);
+  }
 }
 
 console.log('╔═══════════════════════════════════════════════════════════╗');
