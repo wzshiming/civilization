@@ -251,6 +251,18 @@ export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRe
 
         container.appendChild(app.canvas);
 
+        // Send initial viewport immediately after canvas is ready
+        if (onViewportChangeRef.current) {
+          const state = viewStateRef.current;
+          const minX = -state.camera.x / state.zoom;
+          const maxX = (containerWidth - state.camera.x) / state.zoom;
+          const minY = -state.camera.y / state.zoom;
+          const maxY = (containerHeight - state.camera.y) / state.zoom;
+          const viewport = { minX, maxX, minY, maxY, zoom: state.zoom };
+          lastViewportReportRef.current = viewport;
+          onViewportChangeRef.current(viewport);
+        }
+
         // Create main container for all map tiles (terrain layer)
         const mainContainer = new Container();
         app.stage.addChild(mainContainer);

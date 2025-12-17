@@ -37,10 +37,11 @@ app.get('/events', (req, res) => {
     clientResponses.delete(clientId);
   });
   
-  // Send client ID back as a comment
-  res.write(`: clientId: ${clientId}\n\n`);
-  
+  // Add client first (sets headers)
   sseBroadcaster.addClient(res);
+  
+  // Then send client ID back as a comment
+  res.write(`: clientId: ${clientId}\n\n`);
 });
 
 // Viewport update endpoint
