@@ -5,12 +5,12 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
-import type { WorldMap, Parcel } from '../types/map';
+import type { WorldMap, Parcel } from '@civilization/shared';
 import { TerrainType } from '../types/map';
 
 // Extended Graphics type to store parcel ID
 interface ParcelGraphics extends Graphics {
-  parcelId?: number;
+  parcelId?: string;
 }
 
 interface MapRendererProps {
@@ -67,12 +67,12 @@ const TILE_OFFSETS = [
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
-  const parcelGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
+  const parcelGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
   const parcelContainerRef = useRef<Container | null>(null);
   const highlightContainerRef = useRef<Container | null>(null);
-  const highlightGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
-  const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
-  
+  const highlightGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
+  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
     camera: { x: 0, y: 0 },
@@ -93,21 +93,21 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
     const state = viewStateRef.current;
-    
+
     // Calculate movement based on pressed keys
     const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
-                  (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
+      (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
     const moveY = (keysRef.current.has('s') || keysRef.current.has('S') || keysRef.current.has('ArrowDown') ? -MOVE_SPEED : 0) +
-                  (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? MOVE_SPEED : 0);
-    
+      (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? MOVE_SPEED : 0);
+
     state.targetCamera.x += moveX;
     state.targetCamera.y += moveY;
-    
+
     // Apply wrapping for circular map (toroidal topology)
     const { width: mapWidth, height: mapHeight } = worldMap;
     const halfWidth = mapWidth / 2;
     const halfHeight = mapHeight / 2;
-    
+
     // Wrap horizontally and vertically
     if (state.targetCamera.x > halfWidth) {
       state.targetCamera.x -= mapWidth;
@@ -116,7 +116,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       state.targetCamera.x += mapWidth;
       state.camera.x += mapWidth;
     }
-    
+
     if (state.targetCamera.y > halfHeight) {
       state.targetCamera.y -= mapHeight;
       state.camera.y -= mapHeight;
@@ -124,19 +124,19 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       state.targetCamera.y += mapHeight;
       state.camera.y += mapHeight;
     }
-    
+
     // Smooth zoom with easing
     const oldZoom = state.zoom;
     state.zoom += (state.targetZoom - state.zoom) * ZOOM_SMOOTH_FACTOR;
-    
+
     // Adjust camera position when zooming to keep zoom point fixed
     const isZooming = state.zoomPoint !== null && Math.abs(state.zoom - oldZoom) > ZOOM_CHANGE_THRESHOLD;
-    
+
     if (isZooming && state.zoomPoint) {
       const { x: pointX, y: pointY } = state.zoomPoint;
       const worldX = (pointX - state.camera.x) / oldZoom;
       const worldY = (pointY - state.camera.y) / oldZoom;
-      
+
       state.camera.x = pointX - worldX * state.zoom;
       state.camera.y = pointY - worldY * state.zoom;
       state.targetCamera.x = state.camera.x;
@@ -146,7 +146,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       state.camera.x += (state.targetCamera.x - state.camera.x) * SMOOTH_FACTOR;
       state.camera.y += (state.targetCamera.y - state.camera.y) * SMOOTH_FACTOR;
     }
-    
+
     // Update containers
     if (parcelContainerRef.current) {
       updateContainer(parcelContainerRef.current, state.camera.x, state.camera.y, state.zoom);
@@ -154,15 +154,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
-  }, [worldMap, updateContainer]);
+
+    if (selectedParcelId) {
+      const parcel = worldMap.parcels.get(selectedParcelId);
+      if (parcel) {
+        console.log(parcel)
+        onParcelClick?.(parcel);
+      }
+    }
+  }, [worldMap, updateContainer, selectedParcelId, onParcelClick]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
     let cleanup = false;
-    const localParcelGraphics = new Map<number, Graphics[]>();
-    const localHighlightGraphics = new Map<number, Graphics[]>();
-    
+    const localParcelGraphics = new Map<string, Graphics[]>();
+    const localHighlightGraphics = new Map<string, Graphics[]>();
+
     // Store reference to container element
     const container = canvasRef.current;
 
@@ -175,7 +183,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         // Use window dimensions instead of map dimensions for adaptive sizing
         const containerWidth = container.clientWidth || window.innerWidth;
         const containerHeight = container.clientHeight || window.innerHeight;
-        
+
         await app.init({
           width: containerWidth,
           height: containerHeight,
@@ -194,29 +202,32 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         // Create main container for all map tiles (terrain layer)
         const mainContainer = new Container();
         app.stage.addChild(mainContainer);
-        
+
         // Create highlight container on top of terrain (selection layer)
         const highlightContainer = new Container();
         app.stage.addChild(highlightContainer);
-        
+
         // Create tile containers for toroidal wrapping (3x3 grid)
-        // This allows seamless wrapping when camera crosses map boundaries
         const createTileContainers = (offsetX: number, offsetY: number) => {
+          if (!worldMap) {
+            throw new Error('worldMap is null');
+          }
           const tileContainer = new Container();
           tileContainer.x = offsetX * worldMap.width;
           tileContainer.y = offsetY * worldMap.height;
           mainContainer.addChild(tileContainer);
-          
+
           const highlightTileContainer = new Container();
           highlightTileContainer.x = offsetX * worldMap.width;
           highlightTileContainer.y = offsetY * worldMap.height;
           highlightContainer.addChild(highlightTileContainer);
-          
+
           return { tileContainer, highlightTileContainer };
         };
-        
+
         // Shared click handler for all parcel graphics
         const handleParcelClick = (event: FederatedPointerEvent) => {
+          if (!worldMap) return;
           const graphics = event.currentTarget as ParcelGraphics;
           const parcelId = graphics.parcelId;
           if (parcelId !== undefined) {
@@ -228,10 +239,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             }
           }
         };
-        
+
         TILE_OFFSETS.forEach(({ x, y }) => {
+          if (!worldMap) return;
           const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
-          
+
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
             // Create and configure parcel graphics
@@ -241,14 +253,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             graphics.cursor = 'pointer';
             graphics.parcelId = parcel.id; // Store parcel ID on graphics object
             graphics.on('pointerdown', handleParcelClick);
-            
+
             // Store and add to container
             if (!localParcelGraphics.has(parcel.id)) {
               localParcelGraphics.set(parcel.id, []);
             }
             localParcelGraphics.get(parcel.id)!.push(graphics);
             tileContainer.addChild(graphics);
-            
+
             // Create highlight graphics
             const highlightGraphics = new Graphics();
             if (!localHighlightGraphics.has(parcel.id)) {
@@ -258,21 +270,21 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             highlightTileContainer.addChild(highlightGraphics);
           });
         });
-        
+
         parcelContainerRef.current = mainContainer;
         highlightContainerRef.current = highlightContainer;
 
         // Store in ref for use in other effect
         parcelGraphicsRef.current = localParcelGraphics;
         highlightGraphicsRef.current = localHighlightGraphics;
-        
+
         // Use Pixi's ticker for camera updates
         app.ticker.add(updateCameraLoop);
       } catch (error) {
         console.error('Failed to initialize Pixi application:', error);
       }
     })();
-    
+
     // Helper to handle window resize
     const handleResize = () => {
       if (appRef.current) {
@@ -281,7 +293,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         appRef.current.renderer.resize(newWidth, newHeight);
       }
     };
-    
+
     // Helper to adjust zoom level
     const adjustZoom = (delta: number) => {
       const state = viewStateRef.current;
@@ -301,12 +313,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     // Keyboard event handlers
     const handleKeyDown = (e: KeyboardEvent) => {
       const { key } = e;
-      
+
       // Prevent default scrolling for arrow keys
       if (key.startsWith('Arrow')) {
         e.preventDefault();
       }
-      
+
       // Handle zoom with + and - keys
       if (key === '+' || key === '=') {
         e.preventDefault();
@@ -314,49 +326,49 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         adjustZoom(ZOOM_SPEED);
         return;
       }
-      
+
       if (key === '-' || key === '_') {
         e.preventDefault();
         setZoomPointToCenter();
         adjustZoom(-ZOOM_SPEED);
         return;
       }
-      
+
       keysRef.current.add(key);
     };
-    
+
     const handleKeyUp = (e: KeyboardEvent) => {
       keysRef.current.delete(e.key);
     };
-    
+
     // Mouse wheel event handler for zoom
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      
+
       if (!appRef.current?.canvas) return;
-      
+
       const rect = appRef.current.canvas.getBoundingClientRect();
       viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      
+
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('resize', handleResize);
-    
+
     // Add wheel listener to container
     container.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       cleanup = true;
-      
+
       // Cleanup event listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('wheel', handleWheel);
-      
+
       // Cleanup Pixi application
       try {
         if (app?.ticker) {
@@ -368,7 +380,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       } catch {
         // Silently ignore cleanup errors
       }
-      
+
       // Clear all graphics maps
       localParcelGraphics.clear();
       localHighlightGraphics.clear();
@@ -378,27 +390,29 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   }, [worldMap, onParcelClick, updateCameraLoop]);
 
   // Update selected parcel highlighting
-  const prevSelectedParcelIdRef = useRef<number | null>(null);
-  
+  const prevSelectedParcelIdRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (!worldMap) return;
     const prevId = prevSelectedParcelIdRef.current;
-    
+
+
     // Clear previous selection highlight
     if (prevId !== null) {
       const prevHighlightArray = highlightGraphicsRef.current.get(prevId);
       prevHighlightArray?.forEach(graphics => graphics.clear());
     }
-    
+
     // Draw highlight for new selected parcel
     if (selectedParcelId !== null) {
       const parcel = worldMap.parcels.get(selectedParcelId);
       const highlightArray = highlightGraphicsRef.current.get(selectedParcelId);
-      
+
       if (parcel && highlightArray) {
         highlightArray.forEach(graphics => renderHighlight(graphics, parcel));
       }
     }
-    
+
     prevSelectedParcelIdRef.current = selectedParcelId;
   }, [selectedParcelId, worldMap]);
 
@@ -455,7 +469,7 @@ function renderHighlight(graphics: Graphics, parcel: Parcel): void {
     vertices[i * 2] = vertex.x;
     vertices[i * 2 + 1] = vertex.y;
   }
-  
+
   graphics.poly(vertices);
   graphics.stroke({ width: HIGHLIGHT_WIDTH, color: HIGHLIGHT_COLOR, alpha: 1 });
 }

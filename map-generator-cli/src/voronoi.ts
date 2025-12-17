@@ -6,14 +6,14 @@
  */
 
 import { Delaunay } from 'd3-delaunay';
-import type { Point } from '../types';
-import { SeededRandom } from '../utils/random';
+import type { Point } from '@civilization/shared';
+import { SeededRandom } from './utils/random';
 
 export interface VoronoiCell {
-  id: number;
+  id: string;
   site: Point;
   vertices: Point[];
-  neighbors: number[];
+  neighbors: string[];
 }
 
 /**
@@ -203,10 +203,10 @@ export function generateVoronoi(
     }
 
     cells.push({
-      id: i,
+      id: `${i}`,
       site: sites[i],
       vertices,
-      neighbors: Array.from(neighborSet),
+      neighbors: Array.from(neighborSet).map(n => `${n}`) ,
     });
   }
 
@@ -296,10 +296,10 @@ export function relaxVoronoi(
       }
 
       currentCells.push({
-        id: i,
+        id: `${i}`,
         site: newSites[i],
         vertices,
-        neighbors: Array.from(neighborSet),
+        neighbors: Array.from(neighborSet).map(n => `${n}`) ,
       });
     }
   }

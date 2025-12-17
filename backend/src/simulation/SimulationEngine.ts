@@ -8,15 +8,15 @@ import type { SSEBroadcaster } from '../sse/SSEBroadcaster';
 
 export class SimulationEngine {
   private stateManager: StateManager;
-  private sseBroadcaster: SSEBroadcaster | null = null;
+  private sseBroadcaster: SSEBroadcaster;
   private isRunning: boolean = false;
   private intervalId: NodeJS.Timeout | null = null;
   private speed: number = 1.0;
   private lastUpdateTime: number = Date.now();
   private tickInterval: number = 1000;
-  constructor(stateManager: StateManager, sseBroadcaster?: SSEBroadcaster) {
+  constructor(stateManager: StateManager, sseBroadcaster: SSEBroadcaster) {
     this.stateManager = stateManager;
-    this.sseBroadcaster = sseBroadcaster || null;
+    this.sseBroadcaster = sseBroadcaster;
   }
 
   /**
@@ -100,10 +100,9 @@ export class SimulationEngine {
 
     // Simulate and get the results (changed parcel IDs)
     const changedParcelIds = this.simulateWorld(worldMap, deltaTime);
-    this.stateManager.updateTimestamp();
 
     // Broadcast only the simulation results (changed parcels) through SSE
-    if (this.sseBroadcaster && changedParcelIds.length > 0) {
+    if (changedParcelIds.length > 0) {
       this.sseBroadcaster.broadcastSimulationResults(changedParcelIds);
     }
 
@@ -114,8 +113,8 @@ export class SimulationEngine {
    * Simulate world state for a given time step
    * Returns the IDs of parcels that were changed during simulation
    */
-  private simulateWorld(world: WorldMap, deltaTime: number): number[] {
-    const changedParcelIds: number[] = [];
+  private simulateWorld(world: WorldMap, deltaTime: number): string[] {
+    const changedParcelIds: string[] = [];
 
     // Update resources for all parcels and track changes
     world.parcels.forEach((parcel, id) => {
@@ -124,14 +123,6 @@ export class SimulationEngine {
         changedParcelIds.push(id);
       }
     });
-
-    // Update boundary resources
-    for (const boundary of world.boundaries) {
-      this.updateResources(boundary.resources, deltaTime);
-    }
-
-    world.lastUpdate = Date.now();
-    
     return changedParcelIds;
   }
 
@@ -143,7 +134,6 @@ export class SimulationEngine {
     let hasChanges = false;
     
     for (const resource of resources) {
-      // Only process resources with non-zero change rates
       if (resource.changeRate !== 0) {
         const oldValue = resource.current;
         resource.current += resource.changeRate * deltaTime;

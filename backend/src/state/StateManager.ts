@@ -6,7 +6,7 @@ import type { WorldMap, Parcel, Resource, ParcelDelta } from '@civilization/shar
 
 export class StateManager {
   private worldMap: WorldMap | null = null;
-  private previousState: Map<number, Parcel> = new Map();
+  private previousState: Map<string, Parcel> = new Map();
 
   /**
    * Load a world map into the state manager
@@ -29,30 +29,6 @@ export class StateManager {
   updateParcel(parcel: Parcel): void {
     if (!this.worldMap) return;
     this.worldMap.parcels.set(parcel.id, parcel);
-  }
-
-  /**
-   * Get all parcels
-   */
-  getAllParcels(): Parcel[] {
-    if (!this.worldMap) return [];
-    return Array.from(this.worldMap.parcels.values());
-  }
-
-  /**
-   * Get a specific parcel by ID
-   */
-  getParcel(id: number): Parcel | undefined {
-    return this.worldMap?.parcels.get(id);
-  }
-
-  /**
-   * Update the last update timestamp
-   */
-  updateTimestamp(): void {
-    if (this.worldMap) {
-      this.worldMap.lastUpdate = Date.now();
-    }
   }
 
   /**
@@ -86,7 +62,6 @@ export class StateManager {
 
     // Update previous state snapshot (deep clone to track changes)
     this.previousState = this.cloneParcels(this.worldMap.parcels);
-
     return deltas;
   }
 
@@ -116,8 +91,8 @@ export class StateManager {
    * (500 parcels, called once per simulation tick at 1Hz), this is performant.
    * For larger scales, consider optimizations like dirty flags or immutable data structures.
    */
-  private cloneParcels(parcels: Map<number, Parcel>): Map<number, Parcel> {
-    const cloned = new Map<number, Parcel>();
+  private cloneParcels(parcels: Map<string, Parcel>): Map<string, Parcel> {
+    const cloned = new Map<string, Parcel>();
     parcels.forEach((parcel, id) => {
       cloned.set(id, {
         ...parcel,

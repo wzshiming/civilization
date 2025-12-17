@@ -39,11 +39,9 @@ export class MapLoader {
       
       // Convert serializable format to WorldMap with Map structure
       const worldMap: WorldMap = {
-        parcels: new Map(serializable.parcels.map(p => [p.id, p])),
-        boundaries: serializable.boundaries,
+        parcels: new Map(serializable.parcels.map((p) => [p.id, p])),
         width: serializable.width,
-        height: serializable.height,
-        lastUpdate: Date.now(),
+        height: serializable.height, 
       };
 
       return worldMap;
@@ -61,10 +59,8 @@ export class MapLoader {
     // Convert WorldMap to serializable format
     const serializable: SerializableWorldMap = {
       parcels: Array.from(worldMap.parcels.values()),
-      boundaries: worldMap.boundaries,
       width: worldMap.width,
       height: worldMap.height,
-      lastUpdate: worldMap.lastUpdate,
     };
 
     try {

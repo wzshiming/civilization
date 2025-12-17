@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { Parcel } from './types/map';
+import type { Parcel } from '@civilization/shared';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
 import { TabPanel } from './components/TabPanel';

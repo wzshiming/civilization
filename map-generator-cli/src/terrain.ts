@@ -2,10 +2,10 @@
  * Terrain generation using noise functions
  */
 
-import type { Parcel } from '../types';
-import { TerrainType } from '../types';
-import { SimplexNoise } from '../utils/noise';
-import { SeededRandom } from '../utils/random';
+import type { Parcel } from '@civilization/shared';
+import { TerrainType } from '@civilization/shared';
+import { SimplexNoise } from './utils/noise';
+import { SeededRandom } from './utils/random';
 
 /**
  * Assign terrain type based on elevation, moisture, and temperature

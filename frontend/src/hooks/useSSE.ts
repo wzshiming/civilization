@@ -3,8 +3,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorldMap, Parcel } from '../types/map';
-import type { SerializableWorldMap, SSEMessage, StateDelta } from '@civilization/shared';
+import type { WorldMap, Parcel } from '@civilization/shared';
+import type { SerializableWorldMap, StateDelta } from '@civilization/shared';
 
 interface UseSSEOptions {
   url: string;
@@ -16,55 +16,43 @@ export function useSSE(options: UseSSEOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleMessage = useCallback((message: SSEMessage) => {
-    switch (message.type) {
+  const handleMessage = useCallback((event: string, data: string) => {
+    switch (event) {
       case 'full-state': {
         // Received full state from backend
-        const serializable = message.data as SerializableWorldMap;
+        const serializable = JSON.parse(data) as SerializableWorldMap;
         const newWorldMap: WorldMap = {
           parcels: new Map(serializable.parcels.map((p: Parcel) => [p.id, p])),
-          boundaries: serializable.boundaries,
           width: serializable.width,
           height: serializable.height,
-          lastUpdate: serializable.lastUpdate,
         };
         setWorldMap(newWorldMap);
         break;
       }
 
       case 'delta': {
-        // Received delta update
-        const delta = message.data as StateDelta;
-        setWorldMap((prevMap) => {
-          if (!prevMap) return prevMap;
+        const delta = JSON.parse(data) as StateDelta;
+        if (!worldMap) return;
 
-          // Create a new map to trigger re-render
-          const updatedMap = { ...prevMap };
-          updatedMap.parcels = new Map(prevMap.parcels);
+        // Create a new map to trigger re-render
+        const updatedMap = { ...worldMap };
+        updatedMap.parcels = new Map(worldMap.parcels);
 
-          // Apply deltas
-          delta.parcels.forEach((parcelDelta) => {
-            const parcel = updatedMap.parcels.get(parcelDelta.id);
-            if (parcel && parcelDelta.resources) {
-              const updatedParcel = { ...parcel, resources: parcelDelta.resources };
-              updatedMap.parcels.set(parcelDelta.id, updatedParcel);
-            }
-          });
-
-          updatedMap.lastUpdate = delta.lastUpdate;
-          return updatedMap;
+        // Apply deltas
+        delta.parcels.forEach((parcelDelta) => {
+          const parcel = updatedMap.parcels.get(parcelDelta.id);
+          if (parcel && parcelDelta.resources) {
+            const updatedParcel = { ...parcel, resources: parcelDelta.resources };
+            updatedMap.parcels.set(parcelDelta.id, updatedParcel);
+          }
         });
+
+        setWorldMap(updatedMap)
         break;
       }
 
-      case 'simulation-started':
-      case 'simulation-paused':
-      case 'settings-updated':
-        console.log('Backend event:', message.type, message.data);
-        break;
-
       default:
-        console.log('Unknown SSE message type:', message.type);
+        console.log('Unknown SSE message type:', event);
     }
   }, []);
 
@@ -92,15 +80,22 @@ export function useSSE(options: UseSSEOptions) {
       es.close();
       eventSourceRef.current = null;
     };
-
-    es.onmessage = (event) => {
+    es.addEventListener('full-state', (event) => {
       try {
-        const message: SSEMessage = JSON.parse(event.data);
-        handleMessage(message);
+        console.log('SSE full-state received');
+        handleMessage('full-state', (event as MessageEvent).data);
       } catch (err) {
-        console.error('Error parsing SSE message:', err);
+        console.error('Error parsing full-state SSE message:', err);
       }
-    };
+    });
+    es.addEventListener('delta', (event) => {
+      try {
+        console.log('SSE delta received');
+        handleMessage('delta', (event as MessageEvent).data);
+      } catch (err) {
+        console.error('Error parsing delta SSE message:', err);
+      }
+    });
 
     eventSourceRef.current = es;
   }, [options.url, handleMessage]);

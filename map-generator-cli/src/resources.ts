@@ -2,9 +2,9 @@
  * Resource generation and placement
  */
 
-import type { Parcel, Resource, ResourceAttribute } from '../types';
-import { ResourceType, TerrainType } from '../types';
-import { SeededRandom } from '../utils/random';
+import type { Parcel, Resource, ResourceAttribute } from '@civilization/shared';
+import { ResourceType, TerrainType } from '@civilization/shared';
+import { SeededRandom } from './utils/random';
 
 /**
  * Resource spawn rules based on terrain

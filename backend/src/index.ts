@@ -6,7 +6,6 @@ import express from 'express';
 import cors from 'cors';
 import { SimulationEngine } from './simulation/SimulationEngine';
 import { StateManager } from './state/StateManager';
-import { SettingsManager } from './settings/SettingsManager';
 import { MapLoader } from './map-loader/MapLoader';
 import { SSEBroadcaster } from './sse/SSEBroadcaster';
 
@@ -15,7 +14,6 @@ const MAPS_DIR = process.env.MAPS_DIR || './maps';
 
 // Initialize components
 const stateManager = new StateManager();
-const settingsManager = new SettingsManager();
 const mapLoader = new MapLoader(MAPS_DIR);
 const sseBroadcaster = new SSEBroadcaster(stateManager);
 const simulationEngine = new SimulationEngine(stateManager, sseBroadcaster);
@@ -39,21 +37,12 @@ app.get('/health', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║     Civilization Simulation Backend Server               ║
-╠═══════════════════════════════════════════════════════════╣
-║  Server running on: http://localhost:${PORT}              ║
-║  SSE endpoint: http://localhost:${PORT}/events            ║
-║  API endpoint: http://localhost:${PORT}/api               ║
-║  Maps directory: ${MAPS_DIR}                              ║
-╚═══════════════════════════════════════════════════════════╝
-  `);
+  console.log(`Server running on: http://localhost:${PORT}`);
 
   // Load default map if available
   const maps = mapLoader.listMaps();
   if (maps.length > 0) {
-    const defaultMap = settingsManager.getMapFile();
+    const defaultMap = 'default-map.json';
     if (mapLoader.mapExists(defaultMap)) {
       console.log(`Loading default map: ${defaultMap}`);
       try {
@@ -74,7 +63,6 @@ app.listen(PORT, () => {
     console.log('No maps found. Please generate a map using the map-generator-cli tool.');
   }
 });
-
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
