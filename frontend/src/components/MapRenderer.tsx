@@ -49,8 +49,6 @@ const BORDER_COLOR = 0x000000;
 const BORDER_ALPHA = 0.3;
 const HIGHLIGHT_WIDTH = 3;
 const HIGHLIGHT_COLOR = 0xffff00;
-const RESOURCE_RADIUS = 3;
-const RESOURCE_OFFSET = 8;
 
 // Tile offsets for toroidal wrapping (center + 8 surrounding tiles)
 // Ordered intentionally: center tile first, then cardinal directions, then diagonals
@@ -65,20 +63,6 @@ const TILE_OFFSETS = [
   { x: -1, y: 1 },    // bottom-left
   { x: 1, y: 1 },     // bottom-right
 ] as const;
-
-// Resource colors lookup table
-const RESOURCE_COLORS: Record<string, number> = {
-  water: 0x4a9eff,
-  wood: 0x8b4513,
-  stone: 0x808080,
-  iron: 0xb87333,
-  gold: 0xffd700,
-  oil: 0x1a1a1a,
-  coal: 0x2f2f2f,
-  fertile_soil: 0x654321,
-  fish: 0x00bfff,
-  game: 0x8b6914,
-};
 
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -455,23 +439,6 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
   // Draw subtle border
   graphics.poly(vertices);
   graphics.stroke({ width: BORDER_WIDTH, color: BORDER_COLOR, alpha: BORDER_ALPHA });
-
-  // Draw resource indicators
-  const resourceCount = parcel.resources.length;
-  if (resourceCount > 0) {
-    const { x: centerX, y: centerY } = parcel.center;
-    const angleStep = (Math.PI * 2) / resourceCount;
-    
-    for (let i = 0; i < resourceCount; i++) {
-      const resource = parcel.resources[i];
-      const angle = i * angleStep;
-      const x = centerX + Math.cos(angle) * RESOURCE_OFFSET;
-      const y = centerY + Math.sin(angle) * RESOURCE_OFFSET;
-      
-      graphics.circle(x, y, RESOURCE_RADIUS);
-      graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
-    }
-  }
 }
 
 /**
@@ -492,12 +459,3 @@ function renderHighlight(graphics: Graphics, parcel: Parcel): void {
   graphics.poly(vertices);
   graphics.stroke({ width: HIGHLIGHT_WIDTH, color: HIGHLIGHT_COLOR, alpha: 1 });
 }
-
-/**
- * Get color for resource type
- */
-function getResourceColor(type: string): number {
-  return RESOURCE_COLORS[type] || 0xffffff;
-}
-
-
