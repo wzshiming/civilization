@@ -221,9 +221,9 @@ export class SSEBroadcaster {
   /**
    * Broadcast a custom event
    */
-  broadcastEvent(type: string, data: any): void {
+  broadcastEvent(type: string, data: Record<string, unknown>): void {
     const message: SSEMessage = {
-      type: type as any,
+      type: type as SSEEventType,
       timestamp: Date.now(),
       data,
     };

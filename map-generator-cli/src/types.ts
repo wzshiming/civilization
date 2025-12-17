@@ -120,7 +120,7 @@ export type SSEEventType = 'full-state' | 'delta' | 'simulation-started' | 'simu
 export interface SSEMessage {
   type: SSEEventType;
   timestamp: number;
-  data: any;
+  data: SerializableWorldMap | StateDelta | Record<string, unknown>;
 }
 
 /** Delta update for parcels */

@@ -2,18 +2,26 @@
  * Custom hook for Server-Sent Events connection to backend
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import type { WorldMap, Parcel } from '../types/map';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { WorldMap, Parcel, Resource } from '../types/map';
+
+interface SerializableWorldMap {
+  parcels: Parcel[];
+  boundaries: unknown[];
+  width: number;
+  height: number;
+  lastUpdate: number;
+}
 
 interface SSEMessage {
   type: 'full-state' | 'delta' | 'simulation-started' | 'simulation-paused' | 'settings-updated';
   timestamp: number;
-  data: any;
+  data: SerializableWorldMap | StateDelta | Record<string, unknown>;
 }
 
 interface ParcelDelta {
   id: number;
-  resources?: any[];
+  resources?: Resource[];
 }
 
 interface StateDelta {
@@ -30,57 +38,12 @@ export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
-
-  const connect = useCallback(() => {
-    if (eventSource) {
-      console.log('Already connected to SSE');
-      return;
-    }
-
-    console.log(`Connecting to SSE at ${options.url}`);
-    const es = new EventSource(options.url);
-
-    es.onopen = () => {
-      console.log('SSE connection opened');
-      setIsConnected(true);
-      setError(null);
-    };
-
-    es.onerror = (err) => {
-      console.error('SSE error:', err);
-      setIsConnected(false);
-      setError('Connection error');
-      es.close();
-      setEventSource(null);
-    };
-
-    es.onmessage = (event) => {
-      try {
-        const message: SSEMessage = JSON.parse(event.data);
-        handleMessage(message);
-      } catch (err) {
-        console.error('Error parsing SSE message:', err);
-      }
-    };
-
-    setEventSource(es);
-  }, [options.url, eventSource]);
-
-  const disconnect = useCallback(() => {
-    if (eventSource) {
-      console.log('Closing SSE connection');
-      eventSource.close();
-      setEventSource(null);
-      setIsConnected(false);
-    }
-  }, [eventSource]);
 
   const handleMessage = useCallback((message: SSEMessage) => {
     switch (message.type) {
-      case 'full-state':
+      case 'full-state': {
         // Received full state from backend
-        const serializable = message.data;
+        const serializable = message.data as SerializableWorldMap;
         const newWorldMap: WorldMap = {
           parcels: new Map(serializable.parcels.map((p: Parcel) => [p.id, p])),
           boundaries: serializable.boundaries,
@@ -90,10 +53,11 @@ export function useSSE(options: UseSSEOptions) {
         };
         setWorldMap(newWorldMap);
         break;
+      }
 
-      case 'delta':
+      case 'delta': {
         // Received delta update
-        const delta: StateDelta = message.data;
+        const delta = message.data as StateDelta;
         setWorldMap((prevMap) => {
           if (!prevMap) return prevMap;
 
@@ -114,6 +78,7 @@ export function useSSE(options: UseSSEOptions) {
           return updatedMap;
         });
         break;
+      }
 
       case 'simulation-started':
       case 'simulation-paused':
@@ -126,15 +91,65 @@ export function useSSE(options: UseSSEOptions) {
     }
   }, []);
 
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  const connect = useCallback(() => {
+    if (eventSourceRef.current) {
+      console.log('Already connected to SSE');
+      return;
+    }
+
+    console.log(`Connecting to SSE at ${options.url}`);
+    const es = new EventSource(options.url);
+
+    es.onopen = () => {
+      console.log('SSE connection opened');
+      setIsConnected(true);
+      setError(null);
+    };
+
+    es.onerror = (err) => {
+      console.error('SSE error:', err);
+      setIsConnected(false);
+      setError('Connection error');
+      es.close();
+      eventSourceRef.current = null;
+    };
+
+    es.onmessage = (event) => {
+      try {
+        const message: SSEMessage = JSON.parse(event.data);
+        handleMessage(message);
+      } catch (err) {
+        console.error('Error parsing SSE message:', err);
+      }
+    };
+
+    eventSourceRef.current = es;
+  }, [options.url, handleMessage]);
+
+  const disconnect = useCallback(() => {
+    if (eventSourceRef.current) {
+      console.log('Closing SSE connection');
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+      setIsConnected(false);
+    }
+  }, []);
+
   // Auto-connect on mount if enabled
   useEffect(() => {
-    if (options.autoConnect) {
+    let mounted = true;
+
+    if (options.autoConnect && mounted) {
       connect();
     }
 
     return () => {
+      mounted = false;
       disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.autoConnect]);
 
   return {
