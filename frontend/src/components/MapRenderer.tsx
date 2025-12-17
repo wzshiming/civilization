@@ -38,6 +38,29 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
+// Constants for rendering
+const BORDER_WIDTH = 0.5;
+const BORDER_COLOR = 0x000000;
+const BORDER_ALPHA = 0.3;
+const HIGHLIGHT_WIDTH = 3;
+const HIGHLIGHT_COLOR = 0xffff00;
+const RESOURCE_RADIUS = 3;
+const RESOURCE_OFFSET = 8;
+
+// Resource colors lookup table
+const RESOURCE_COLORS: Record<string, number> = {
+  water: 0x4a9eff,
+  wood: 0x8b4513,
+  stone: 0x808080,
+  iron: 0xb87333,
+  gold: 0xffd700,
+  oil: 0x1a1a1a,
+  coal: 0x2f2f2f,
+  fertile_soil: 0x654321,
+  fish: 0x00bfff,
+  game: 0x8b6914,
+};
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -399,13 +422,13 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
 
   const vertices = parcel.vertices.flatMap(v => [v.x, v.y]);
 
-  // Fill the polygon
+  // Fill the polygon with terrain color
   graphics.poly(vertices);
   graphics.fill({ color: TERRAIN_COLORS[parcel.terrain], alpha: 1 });
 
   // Draw subtle border
   graphics.poly(vertices);
-  graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.3 });
+  graphics.stroke({ width: BORDER_WIDTH, color: BORDER_COLOR, alpha: BORDER_ALPHA });
 
   // Draw resource indicators
   const resourceCount = parcel.resources.length;
@@ -415,10 +438,10 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
     
     parcel.resources.forEach((resource, index) => {
       const angle = index * angleStep;
-      const x = centerX + Math.cos(angle) * 8;
-      const y = centerY + Math.sin(angle) * 8;
+      const x = centerX + Math.cos(angle) * RESOURCE_OFFSET;
+      const y = centerY + Math.sin(angle) * RESOURCE_OFFSET;
       
-      graphics.circle(x, y, 3);
+      graphics.circle(x, y, RESOURCE_RADIUS);
       graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
     });
   }
@@ -432,26 +455,14 @@ function renderHighlight(graphics: Graphics, parcel: Parcel): void {
 
   const vertices = parcel.vertices.flatMap(v => [v.x, v.y]);
   graphics.poly(vertices);
-  graphics.stroke({ width: 3, color: 0xffff00, alpha: 1 });
+  graphics.stroke({ width: HIGHLIGHT_WIDTH, color: HIGHLIGHT_COLOR, alpha: 1 });
 }
 
 /**
  * Get color for resource type
  */
 function getResourceColor(type: string): number {
-  const colors: Record<string, number> = {
-    water: 0x4a9eff,
-    wood: 0x8b4513,
-    stone: 0x808080,
-    iron: 0xb87333,
-    gold: 0xffd700,
-    oil: 0x1a1a1a,
-    coal: 0x2f2f2f,
-    fertile_soil: 0x654321,
-    fish: 0x00bfff,
-    game: 0x8b6914,
-  };
-  return colors[type] || 0xffffff;
+  return RESOURCE_COLORS[type] || 0xffffff;
 }
 
 
