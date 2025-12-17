@@ -20,10 +20,48 @@ interface TabPanelProps {
 
 export function TabPanel({ tabs }: TabPanelProps) {
   const [expandedTabId, setExpandedTabId] = useState<string | null>(null);
+  const [focusedTabIndex, setFocusedTabIndex] = useState<number>(0);
 
   const handleTabClick = (tabId: string) => {
     // Toggle: if already expanded, collapse it; otherwise expand the clicked tab
     setExpandedTabId(prevId => prevId === tabId ? null : tabId);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent, tabId: string, index: number) => {
+    let newIndex = index;
+    
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        event.preventDefault();
+        newIndex = (index + 1) % tabs.length;
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        event.preventDefault();
+        newIndex = (index - 1 + tabs.length) % tabs.length;
+        break;
+      case 'Home':
+        event.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        newIndex = tabs.length - 1;
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        handleTabClick(tabId);
+        return;
+      default:
+        return;
+    }
+    
+    setFocusedTabIndex(newIndex);
+    // Focus the new tab button
+    const newTabButton = document.getElementById(`tab-${tabs[newIndex].id}`);
+    newTabButton?.focus();
   };
 
   const expandedTab = tabs.find(tab => tab.id === expandedTabId);
@@ -32,16 +70,18 @@ export function TabPanel({ tabs }: TabPanelProps) {
     <div className="tab-panel-container">
       {/* Tab buttons - always visible on the left */}
       <div className="tab-buttons" role="tablist" aria-label="Sidebar tabs">
-        {tabs.map(tab => (
+        {tabs.map((tab, index) => (
           <button
             key={tab.id}
             className={`tab-button ${expandedTabId === tab.id ? 'active' : ''}`}
             onClick={() => handleTabClick(tab.id)}
+            onKeyDown={(e) => handleKeyDown(e, tab.id, index)}
             title={tab.label}
             role="tab"
             aria-selected={expandedTabId === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
             id={`tab-${tab.id}`}
+            tabIndex={index === focusedTabIndex ? 0 : -1}
           >
             {tab.icon && <span className="tab-icon" aria-hidden="true">{tab.icon}</span>}
             <span className="tab-label">{tab.label}</span>
