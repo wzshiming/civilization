@@ -130,7 +130,9 @@ export function generateVoronoi(
       // Calculate placement probability based on latitude
       // Sites near poles should be much less likely to be placed
       const latFactor = getLatitudeFactor(candidate.y, height);
-      // Apply mercatorProportion: interpolate between 1 (flat, no reduction) and 0.15 (spherical, 85% reduction at poles)
+      // Apply mercatorProportion to control latitude-based reduction
+      // mercatorProportion=0 (flat): minProbability=1, no reduction at poles
+      // mercatorProportion=1 (spherical): minProbability=0.15, 85% reduction at poles
       const minProbability = 1 - 0.85 * mercatorProportion;
       const placementProbability = 1 - latFactor * (1 - minProbability);
       
