@@ -60,8 +60,9 @@ const customResourceConfig: ResourceConfig = {
       }
     },
     
-    // Include all default resources (wood, stone, etc.)
-    // Or copy them from DEFAULT_RESOURCE_CONFIG
+    // NOTE: This is a partial example. In a real implementation, you would
+    // include all default resources from DEFAULT_RESOURCE_CONFIG or define
+    // a complete set of resources for all terrain types
   },
   
   terrainRules: {
@@ -73,37 +74,40 @@ const customResourceConfig: ResourceConfig = {
       resourceIds: ['stone', 'iron', 'gems', 'uranium'], // Mountains have rare resources
       probability: 0.85,
     },
-    // Define rules for other terrains...
+    // Other terrain types would need their resource definitions too
+    // NOTE: Empty arrays mean no resources will spawn in these terrains
+    // In a complete implementation, you would define appropriate resources
+    // for each terrain type or copy from DEFAULT_RESOURCE_CONFIG
     [TerrainType.GRASSLAND]: {
-      resourceIds: [],
+      resourceIds: [], // Should include appropriate resources
       probability: 0.5,
     },
     [TerrainType.OCEAN]: {
-      resourceIds: [],
+      resourceIds: [], // Should include fish, oil, etc.
       probability: 0.3,
     },
     [TerrainType.SHALLOW_WATER]: {
-      resourceIds: [],
+      resourceIds: [], // Should include fish, water, etc.
       probability: 0.4,
     },
     [TerrainType.BEACH]: {
-      resourceIds: [],
+      resourceIds: [], // Should include stone, etc.
       probability: 0.2,
     },
     [TerrainType.JUNGLE]: {
-      resourceIds: [],
+      resourceIds: [], // Should include wood, game, etc.
       probability: 0.6,
     },
     [TerrainType.DESERT]: {
-      resourceIds: [],
+      resourceIds: [], // Should include oil, stone, etc.
       probability: 0.3,
     },
     [TerrainType.TUNDRA]: {
-      resourceIds: [],
+      resourceIds: [], // Should include game, iron, etc.
       probability: 0.3,
     },
     [TerrainType.SNOW]: {
-      resourceIds: [],
+      resourceIds: [], // Should include water, etc.
       probability: 0.2,
     },
   },

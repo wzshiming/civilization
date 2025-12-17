@@ -4,6 +4,14 @@
 
 The resource system in Civilization has been refactored to support configurable and extensible resource types. Resources are no longer hardcoded and can have various custom attributes.
 
+### Backward Compatibility
+
+The refactored system maintains backward compatibility with existing code:
+- All original resource types (water, wood, stone, iron, gold, oil, coal, fertile_soil, fish, game) are still defined with the same properties
+- The `ResourceType` enum is preserved for type safety with default resources
+- The `Resource.type` field now accepts any string, allowing custom resource types while still supporting the original enum values
+- Existing code using the default resources will continue to work without changes
+
 ## Resource Configuration
 
 ### Resource Definition

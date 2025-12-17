@@ -2,7 +2,7 @@
  * Detail panel showing information about a selected parcel
  */
 
-import type { Parcel, ResourceType, TerrainType } from '../types/map';
+import type { Parcel, TerrainType } from '../types/map';
 import { useI18n } from '../i18n';
 import './ParcelDetailPanel.css';
 
@@ -24,7 +24,8 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
 
   const formatResourceType = (type: string): string => {
     // Try to get translation, fallback to the type itself
-    return t.resourceTypes[type as ResourceType] || type;
+    // Use optional chaining for safer access with custom resource types
+    return (t.resourceTypes as Record<string, string>)[type] ?? type;
   };
 
   return (
