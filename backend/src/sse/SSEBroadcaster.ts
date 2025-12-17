@@ -3,7 +3,7 @@
  */
 
 import type { Response } from 'express';
-import type { SSEMessage, SerializableWorldMap, StateDelta } from '../types';
+import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType } from '../types';
 import { StateManager } from '../state/StateManager';
 
 export class SSEBroadcaster {
@@ -221,9 +221,9 @@ export class SSEBroadcaster {
   /**
    * Broadcast a custom event
    */
-  broadcastEvent(type: string, data: Record<string, unknown>): void {
+  broadcastEvent(type: SSEEventType, data: Record<string, unknown>): void {
     const message: SSEMessage = {
-      type: type as SSEEventType,
+      type,
       timestamp: Date.now(),
       data,
     };

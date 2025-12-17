@@ -6,7 +6,7 @@ import AppSSE from './App-SSE.tsx'
 import { I18nProvider } from './i18n'
 
 // Use SSE mode if backend URL is configured, otherwise use standalone mode
-const USE_SSE_MODE = import.meta.env.VITE_BACKEND_URL !== undefined;
+const USE_SSE_MODE = import.meta.env.VITE_BACKEND_URL && import.meta.env.VITE_BACKEND_URL !== '';
 const AppComponent = USE_SSE_MODE ? AppSSE : App;
 
 createRoot(document.getElementById('root')!).render(
