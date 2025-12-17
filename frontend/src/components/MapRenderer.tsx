@@ -197,27 +197,33 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
           { x: -1, y: 1 }, { x: 1, y: 1 },
         ];
         
+        // Shared click handler for all parcel graphics
+        const handleParcelClick = (parcel: Parcel) => (event: FederatedPointerEvent) => {
+          event.stopPropagation();
+          setSelectedParcelId(parcel.id);
+          onParcelClick?.(parcel);
+        };
+        
         tileOffsets.forEach(({ x, y }) => {
           const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
           
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
+            // Create and configure parcel graphics
             const graphics = new Graphics();
             renderParcel(graphics, parcel);
             graphics.eventMode = 'static';
             graphics.cursor = 'pointer';
-            graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-              event.stopPropagation();
-              setSelectedParcelId(parcel.id);
-              onParcelClick?.(parcel);
-            });
+            graphics.on('pointerdown', handleParcelClick(parcel));
             
+            // Store and add to container
             if (!localParcelGraphics.has(parcel.id)) {
               localParcelGraphics.set(parcel.id, []);
             }
             localParcelGraphics.get(parcel.id)!.push(graphics);
             tileContainer.addChild(graphics);
             
+            // Create highlight graphics
             const highlightGraphics = new Graphics();
             if (!localHighlightGraphics.has(parcel.id)) {
               localHighlightGraphics.set(parcel.id, []);
@@ -319,27 +325,25 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     return () => {
       cleanup = true;
       
-      // Cleanup keyboard listeners
+      // Cleanup event listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
-      
-      // Cleanup wheel listener
       container.removeEventListener('wheel', handleWheel);
       
+      // Cleanup Pixi application
       try {
-        if (app) {
-          // Remove ticker before destroying
-          if (app.ticker) {
-            app.ticker.remove(updateCameraLoop);
-          }
-          if (app.stage) {
-            app.destroy(true, { children: true, texture: true });
-          }
+        if (app?.ticker) {
+          app.ticker.remove(updateCameraLoop);
+        }
+        if (app?.stage) {
+          app.destroy(true, { children: true, texture: true });
         }
       } catch {
-        // Ignore cleanup errors
+        // Silently ignore cleanup errors
       }
+      
+      // Clear all graphics maps
       localParcelGraphics.clear();
       localHighlightGraphics.clear();
       parcelGraphicsRef.current.clear();
