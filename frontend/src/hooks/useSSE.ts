@@ -45,6 +45,8 @@ export function useSSE(options: UseSSEOptions) {
           let hasChanges = false;
 
           // Apply deltas more efficiently
+          // Note: Currently only resource updates are handled as that's what the backend sends
+          // If other parcel properties need updates in the future, extend this logic
           for (const parcelDelta of delta.parcels) {
             if (parcelDelta.resources) {
               const parcel = updatedParcels.get(parcelDelta.id);

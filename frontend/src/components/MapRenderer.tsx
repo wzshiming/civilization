@@ -71,12 +71,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
   const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
-  // Helper to update container position and scale - removed useCallback as it's a simple inline operation
-  const updateContainer = (container: Container, x: number, y: number, scale: number) => {
+  // Helper to update container position and scale
+  const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
     container.x = x;
     container.y = y;
     container.scale.set(scale);
-  };
+  }, []);
 
   // Camera movement update function for Pixi ticker - useMemo to prevent recreation on every render
   const updateCameraLoop = useCallback(() => {
@@ -136,7 +136,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     // Update containers - now safe to call since we checked at the start
     updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
     updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
-  }, [worldMap]);
+  }, [worldMap, updateContainer]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -404,8 +404,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
   const color = TERRAIN_COLORS[parcel.terrain];
+  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
 
   // Fill the polygon
   graphics.poly(vertices);

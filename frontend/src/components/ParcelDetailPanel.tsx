@@ -125,5 +125,3 @@ function ParcelDetailPanelComponent({ parcel, onClose }: ParcelDetailPanelProps)
 
 // Memoize to prevent unnecessary re-renders when parcel or onClose haven't changed
 export const ParcelDetailPanel = memo(ParcelDetailPanelComponent);
-
-
