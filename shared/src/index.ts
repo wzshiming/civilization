@@ -100,3 +100,17 @@ export interface ParcelDelta {
 export interface StateDelta {
   parcels: ParcelDelta[];
 }
+
+/** Viewport bounds for client-side view */
+export interface ViewportBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  zoom: number;
+}
+
+/** Viewport update message from client */
+export interface ViewportUpdate {
+  viewport: ViewportBounds;
+}

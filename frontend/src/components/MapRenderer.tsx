@@ -16,6 +16,7 @@ interface ParcelGraphics extends Graphics {
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
+  onViewportChange?: (viewport: { minX: number; maxX: number; minY: number; maxY: number; zoom: number }) => void;
 }
 
 // Color scheme for different terrain types
@@ -64,7 +65,7 @@ const TILE_OFFSETS = [
   { x: 1, y: 1 },     // bottom-right
 ] as const;
 
-export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
+export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
@@ -75,11 +76,23 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
-  worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
 
-  // Store onParcelClick in ref to avoid recreating click handlers
+  // Store callbacks in refs to avoid recreating handlers
   const onParcelClickRef = useRef(onParcelClick);
-  onParcelClickRef.current = onParcelClick;
+  const onViewportChangeRef = useRef(onViewportChange);
+
+  // Update refs when values change (done in useEffect to avoid ref updates during render)
+  useEffect(() => {
+    worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
+  }, [worldMap.width, worldMap.height]);
+
+  useEffect(() => {
+    onParcelClickRef.current = onParcelClick;
+  }, [onParcelClick]);
+
+  useEffect(() => {
+    onViewportChangeRef.current = onViewportChange;
+  }, [onViewportChange]);
 
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
@@ -90,6 +103,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     zoomPoint: null as { x: number; y: number } | null,
   });
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
+  const lastViewportReportRef = useRef<{ minX: number; maxX: number; minY: number; maxY: number; zoom: number } | null>(null);
+  const viewportReportTimerRef = useRef<number | null>(null);
 
   // Helper to update container position and scale
   const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
@@ -163,6 +178,41 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     }
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
+    }
+
+    // Calculate and report viewport bounds (debounced)
+    if (appRef.current && onViewportChangeRef.current) {
+      const screenWidth = appRef.current.screen.width;
+      const screenHeight = appRef.current.screen.height;
+      
+      // Calculate world coordinates of viewport bounds
+      const minX = -state.camera.x / state.zoom;
+      const maxX = (screenWidth - state.camera.x) / state.zoom;
+      const minY = -state.camera.y / state.zoom;
+      const maxY = (screenHeight - state.camera.y) / state.zoom;
+      
+      const viewport = { minX, maxX, minY, maxY, zoom: state.zoom };
+      
+      // Check if viewport has changed significantly
+      const hasChanged = !lastViewportReportRef.current ||
+        Math.abs(viewport.minX - lastViewportReportRef.current.minX) > 10 ||
+        Math.abs(viewport.maxX - lastViewportReportRef.current.maxX) > 10 ||
+        Math.abs(viewport.minY - lastViewportReportRef.current.minY) > 10 ||
+        Math.abs(viewport.maxY - lastViewportReportRef.current.maxY) > 10 ||
+        Math.abs(viewport.zoom - lastViewportReportRef.current.zoom) > 0.01;
+      
+      if (hasChanged) {
+        // Clear existing timer
+        if (viewportReportTimerRef.current) {
+          clearTimeout(viewportReportTimerRef.current);
+        }
+        
+        // Debounce viewport updates (wait 200ms after last change)
+        viewportReportTimerRef.current = setTimeout(() => {
+          onViewportChangeRef.current?.(viewport);
+          lastViewportReportRef.current = viewport;
+        }, 200);
+      }
     }
   }, [updateContainer]);
 
@@ -364,6 +414,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     return () => {
       cleanup = true;
+
+      // Cleanup viewport report timer
+      if (viewportReportTimerRef.current) {
+        clearTimeout(viewportReportTimerRef.current);
+        viewportReportTimerRef.current = null;
+      }
 
       // Cleanup event listeners
       window.removeEventListener('keydown', handleKeyDown);

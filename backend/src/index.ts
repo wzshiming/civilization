@@ -2,7 +2,7 @@
  * Main backend server entry point
  */
 
-import express from 'express';
+import express, { Response } from 'express';
 import cors from 'cors';
 import { SimulationEngine } from './simulation/SimulationEngine';
 import { StateManager } from './state/StateManager';
@@ -25,9 +25,40 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Store SSE responses per client to allow viewport updates
+const clientResponses = new Map<string, Response>();
+
 // SSE endpoint
 app.get('/events', (req, res) => {
+  const clientId = req.query.clientId as string || `client-${Date.now()}-${Math.random()}`;
+  clientResponses.set(clientId, res);
+  
+  res.on('close', () => {
+    clientResponses.delete(clientId);
+  });
+  
+  // Send client ID back as a comment
+  res.write(`: clientId: ${clientId}\n\n`);
+  
   sseBroadcaster.addClient(res);
+});
+
+// Viewport update endpoint
+app.post('/viewport', (req, res) => {
+  const { clientId, viewport } = req.body;
+  
+  if (!clientId || !viewport) {
+    res.status(400).json({ error: 'Missing clientId or viewport' });
+    return;
+  }
+  
+  const clientResponse = clientResponses.get(clientId);
+  if (clientResponse) {
+    sseBroadcaster.updateClientViewport(clientResponse, viewport);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Client not found' });
+  }
 });
 
 // Health check

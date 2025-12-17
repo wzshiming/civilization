@@ -3,11 +3,16 @@
  */
 
 import type { Response } from 'express';
-import type { SerializableWorldMap, StateDelta, ParcelDelta } from '@civilization/shared';
+import type { SerializableWorldMap, StateDelta, ParcelDelta, ViewportBounds, Parcel } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
 
+interface ClientInfo {
+  response: Response;
+  viewport: ViewportBounds | null;
+}
+
 export class SSEBroadcaster {
-  private clients: Set<Response> = new Set();
+  private clients: Map<Response, ClientInfo> = new Map();
   private stateManager: StateManager;
   private broadcastInterval: NodeJS.Timeout | null = null;
 
@@ -25,13 +30,19 @@ export class SSEBroadcaster {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
 
-    // Send initial full state
+    // Create client info with no viewport initially
+    const clientInfo: ClientInfo = {
+      response: res,
+      viewport: null,
+    };
+
+    this.clients.set(res, clientInfo);
+
+    // Send initial full state (will be empty until viewport is reported)
     const worldMap = this.stateManager.getWorldMap();
     if (worldMap) {
-      this.sendFullStateToClient(res);
+      this.sendFullStateToClient(res, null);
     }
-
-    this.clients.add(res);
 
     // Handle client disconnect
     res.on('close', () => {
@@ -40,6 +51,20 @@ export class SSEBroadcaster {
     });
 
     console.log(`SSE client connected. Active clients: ${this.clients.size}`);
+  }
+
+  /**
+   * Update viewport for a specific client
+   */
+  updateClientViewport(res: Response, viewport: ViewportBounds): void {
+    const clientInfo = this.clients.get(res);
+    if (clientInfo) {
+      clientInfo.viewport = viewport;
+      console.log(`Updated viewport for client: ${JSON.stringify(viewport)}`);
+      
+      // Send full state for new viewport
+      this.sendFullStateToClient(res, viewport);
+    }
   }
 
   /**
@@ -56,17 +81,58 @@ export class SSEBroadcaster {
   /**
    * Send full state to a specific client
    */
-  private sendFullStateToClient(res: Response): void {
+  private sendFullStateToClient(res: Response, viewport: ViewportBounds | null): void {
     const worldMap = this.stateManager.getWorldMap();
     if (!worldMap) return;
 
+    let parcelsToSend: Parcel[];
+
+    if (viewport) {
+      // Filter parcels based on viewport
+      parcelsToSend = Array.from(worldMap.parcels.values()).filter(parcel =>
+        this.isParcelVisible(parcel, viewport, worldMap)
+      );
+      console.log(`Sending ${parcelsToSend.length} visible parcels out of ${worldMap.parcels.size} total`);
+    } else {
+      // No viewport yet, send empty state
+      parcelsToSend = [];
+    }
+
     const serializable: SerializableWorldMap = {
-      parcels: Array.from(worldMap.parcels.values()),
+      parcels: parcelsToSend,
       width: worldMap.width,
       height: worldMap.height,
     };
 
     this.sendMessage(res, 'full-state', serializable);
+  }
+
+  /**
+   * Check if a parcel is visible within the given viewport considering toroidal wrapping
+   */
+  private isParcelVisible(parcel: Parcel, viewport: ViewportBounds, worldMap: { width: number; height: number }): boolean {
+    // Check parcel visibility with toroidal wrapping
+    // The map wraps around, so we need to check all possible positions
+    const { minX, maxX, minY, maxY } = viewport;
+    const { width, height } = worldMap;
+
+    // Check if parcel center is visible (considering wrapping)
+    const centerX = parcel.center.x;
+    const centerY = parcel.center.y;
+
+    // Check all possible wrapped positions of the parcel
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const wrappedX = centerX + dx * width;
+        const wrappedY = centerY + dy * height;
+
+        if (wrappedX >= minX && wrappedX <= maxX && wrappedY >= minY && wrappedY <= maxY) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -87,17 +153,36 @@ export class SSEBroadcaster {
   }
 
   /**
-   * Broadcast a message to all clients
+   * Broadcast a message to all clients (with per-client filtering)
    */
   private broadcastMessage(type: string, message: StateDelta | SerializableWorldMap): void {
-    const data = `event: ${type}\ndata: ${JSON.stringify(message)}\n\n`;
-    
-    this.clients.forEach(client => {
+    this.clients.forEach((clientInfo) => {
       try {
-        client.write(data);
+        // For delta messages, filter by viewport if available
+        if (type === 'delta' && clientInfo.viewport) {
+          const delta = message as StateDelta;
+          const worldMap = this.stateManager.getWorldMap();
+          if (worldMap) {
+            const filteredParcels = delta.parcels.filter(parcelDelta => {
+              const parcel = worldMap.parcels.get(parcelDelta.id);
+              return parcel && this.isParcelVisible(parcel, clientInfo.viewport!, worldMap);
+            });
+            
+            // Only send if there are visible changes
+            if (filteredParcels.length > 0) {
+              const filteredDelta: StateDelta = { parcels: filteredParcels };
+              const data = `event: ${type}\ndata: ${JSON.stringify(filteredDelta)}\n\n`;
+              clientInfo.response.write(data);
+            }
+          }
+        } else {
+          // For other message types, send as-is
+          const data = `event: ${type}\ndata: ${JSON.stringify(message)}\n\n`;
+          clientInfo.response.write(data);
+        }
       } catch (error) {
         console.error('Error sending to client:', error);
-        this.clients.delete(client);
+        this.clients.delete(clientInfo.response);
       }
     });
   }
@@ -116,7 +201,7 @@ export class SSEBroadcaster {
 
   /**
    * Broadcast simulation results (changed parcels only) to all clients
-   * This sends only the parcels that were modified during simulation
+   * This sends only the parcels that were modified during simulation and are visible to each client
    */
   broadcastSimulationResults(changedParcelIds: string[]): void {
     if (this.clients.size === 0 || changedParcelIds.length === 0) return;
@@ -141,6 +226,7 @@ export class SSEBroadcaster {
       parcels: deltas,
     };
 
+    // broadcastMessage will filter per-client based on viewport
     this.broadcastMessage('delta', delta);
   }
 }

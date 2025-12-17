@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorldMap, Parcel } from '@civilization/shared';
+import type { WorldMap, Parcel, ViewportBounds } from '@civilization/shared';
 import type { SerializableWorldMap, StateDelta } from '@civilization/shared';
 
 interface UseSSEOptions {
@@ -11,11 +11,14 @@ interface UseSSEOptions {
   autoConnect?: boolean;
 }
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
 export function useSSE(options: UseSSEOptions) {
   const [worldMap, setWorldMap] = useState<WorldMap | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updateCounter, setUpdateCounter] = useState(0);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   const handleMessage = useCallback((event: string, data: string) => {
     switch (event) {
@@ -73,8 +76,12 @@ export function useSSE(options: UseSSEOptions) {
       return;
     }
 
-    console.log(`Connecting to SSE at ${options.url}`);
-    const es = new EventSource(options.url);
+    // Generate a unique client ID
+    const newClientId = `client-${Date.now()}-${Math.random()}`;
+    setClientId(newClientId);
+
+    console.log(`Connecting to SSE at ${options.url} with clientId: ${newClientId}`);
+    const es = new EventSource(`${options.url}?clientId=${newClientId}`);
 
     es.onopen = () => {
       console.log('SSE connection opened');
@@ -88,6 +95,7 @@ export function useSSE(options: UseSSEOptions) {
       setError('Connection error');
       es.close();
       eventSourceRef.current = null;
+      setClientId(null);
     };
     es.addEventListener('full-state', (event: MessageEvent) => {
       try {
@@ -113,6 +121,7 @@ export function useSSE(options: UseSSEOptions) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
       setIsConnected(false);
+      setClientId(null);
     }
   }, []);
 
@@ -131,6 +140,32 @@ export function useSSE(options: UseSSEOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.autoConnect]);
 
+  const updateViewport = useCallback(async (viewport: ViewportBounds) => {
+    if (!clientId) {
+      console.warn('Cannot update viewport: no clientId');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/viewport`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientId,
+          viewport,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update viewport:', response.statusText);
+      }
+    } catch (err) {
+      console.error('Error updating viewport:', err);
+    }
+  }, [clientId]);
+
   return {
     worldMap,
     isConnected,
@@ -138,5 +173,7 @@ export function useSSE(options: UseSSEOptions) {
     connect,
     disconnect,
     updateCounter, // Used to trigger re-renders when worldMap is updated in place
+    clientId,
+    updateViewport,
   };
 }

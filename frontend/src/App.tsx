@@ -18,7 +18,7 @@ function AppSSE() {
   const { t } = useI18n();
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
-  const { worldMap, isConnected, error, connect, disconnect, updateCounter } = useSSE({
+  const { worldMap, isConnected, error, connect, disconnect, updateCounter, updateViewport } = useSSE({
     url: `${BACKEND_URL}/events`,
     autoConnect: true,
   });
@@ -28,6 +28,7 @@ function AppSSE() {
   const selectedParcel = useMemo(() => {
     if (!selectedParcelId || !worldMap) return null;
     return worldMap.parcels.get(selectedParcelId) || null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedParcelId, worldMap, updateCounter]);
 
   const handleParcelClick = useCallback((parcel: Parcel) => {
@@ -75,7 +76,11 @@ function AppSSE() {
       ) : (
         <>
           <TabPanel tabs={tabs} />
-          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
+          <MapRenderer 
+            worldMap={worldMap} 
+            onParcelClick={handleParcelClick} 
+            onViewportChange={updateViewport}
+          />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
         </>
       )}
