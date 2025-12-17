@@ -102,6 +102,7 @@ export interface MapConfig {
   seed?: number;
   waterLevel?: number;
   numContinents?: number;
+  mercatorProportion?: number; // 0 = flat map, 1 = full Mercator projection (default: 1)
 }
 
 /** Simulation settings */

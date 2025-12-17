@@ -18,6 +18,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
     height,
     numParcels,
     seed = Date.now(),
+    mercatorProportion = 1.0,
   } = config;
 
   console.log(`Generating world map with seed: ${seed}`);
@@ -26,7 +27,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
 
   // Step 1: Generate Voronoi diagram
   console.log('Generating Voronoi cells...');
-  let cells = generateVoronoi(width, height, numParcels, random);
+  let cells = generateVoronoi(width, height, numParcels, random, mercatorProportion);
 
   // Step 2: Relax the diagram for more uniform cells
   console.log('Relaxing Voronoi cells...');
@@ -48,7 +49,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
 
   // Step 4: Generate terrain
   console.log('Generating terrain...');
-  generateTerrain(parcels, width, height, random);
+  generateTerrain(parcels, width, height, random, mercatorProportion);
 
   // Step 5: Generate resources
   console.log('Generating resources...');

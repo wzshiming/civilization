@@ -64,12 +64,14 @@ export function determineTerrainType(
 
 /**
  * Generate terrain properties for all parcels
+ * @param mercatorProportion - 0 = flat map, 1 = full Mercator projection
  */
 export function generateTerrain(
   parcels: Parcel[],
   _width: number,
   height: number,
-  random: SeededRandom
+  random: SeededRandom,
+  mercatorProportion: number = 1.0
 ): void {
   const elevationNoise = new SimplexNoise(random);
   const moistureNoise = new SimplexNoise(random);
@@ -89,7 +91,8 @@ export function generateTerrain(
     const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
     
     // Slight reduction at extreme latitudes to create more ocean at poles
-    elevation = elevation * (1 - latitude * 0.3);
+    // Apply mercatorProportion: interpolate between no reduction (flat) and 30% reduction (spherical)
+    elevation = elevation * (1 - latitude * 0.3 * mercatorProportion);
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -111,7 +114,8 @@ export function generateTerrain(
     
     // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
-    temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
+    // Apply mercatorProportion to latitude effects
+    temperature = temperature * (1 - latitude * 0.8 * mercatorProportion) + (1 - latitude * mercatorProportion) * 0.5;
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;

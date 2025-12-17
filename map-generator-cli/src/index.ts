@@ -19,6 +19,7 @@ program
   .option('-h, --height <number>', 'Map height', '800')
   .option('-p, --parcels <number>', 'Number of parcels', '500')
   .option('-s, --seed <number>', 'Random seed for reproducibility')
+  .option('-m, --mercator-proportion <number>', 'Mercator projection proportion (0=flat, 1=full spherical, default: 1)', '1')
   .option('-o, --output <path>', 'Output file path', './default-map.json')
   .option('-d, --output-dir <path>', 'Output directory', './maps')
   .parse(process.argv);
@@ -31,6 +32,7 @@ const config: MapConfig = {
   height: parseInt(options.height),
   numParcels: parseInt(options.parcels),
   seed: options.seed ? parseInt(options.seed) : undefined,
+  mercatorProportion: parseFloat(options.mercatorProportion),
 };
 
 // Validate configuration
@@ -49,6 +51,11 @@ if (isNaN(config.numParcels) || config.numParcels <= 0) {
   process.exit(1);
 }
 
+if (config.mercatorProportion !== undefined && (isNaN(config.mercatorProportion) || config.mercatorProportion < 0 || config.mercatorProportion > 1)) {
+  console.error('Error: Invalid mercator-proportion value (must be between 0 and 1)');
+  process.exit(1);
+}
+
 console.log('╔═══════════════════════════════════════════════════════════╗');
 console.log('║     Civilization Map Generator                            ║');
 console.log('╚═══════════════════════════════════════════════════════════╝\n');
@@ -57,7 +64,8 @@ console.log('Configuration:');
 console.log(`  Width: ${config.width}`);
 console.log(`  Height: ${config.height}`);
 console.log(`  Parcels: ${config.numParcels}`);
-console.log(`  Seed: ${config.seed || 'random'}\n`);
+console.log(`  Seed: ${config.seed || 'random'}`);
+console.log(`  Mercator Proportion: ${config.mercatorProportion ?? 1}\n`);
 
 console.log('Generating map...\n');
 

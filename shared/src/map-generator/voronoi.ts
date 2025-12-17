@@ -29,15 +29,18 @@ function getLatitudeFactor(y: number, height: number): number {
  * Calculate minimum distance based on latitude for spherical projection
  * Sites near poles should be further apart in x-direction to create larger cells
  * At the poles, cells should converge into very large blocks
+ * @param mercatorProportion - 0 = no distortion, 1 = full Mercator distortion
  */
-function getMinDistanceForLatitude(y: number, height: number, baseDistance: number): number {
+function getMinDistanceForLatitude(y: number, height: number, baseDistance: number, mercatorProportion: number = 1.0): number {
   const latFactor = getLatitudeFactor(y, height);
   // Use aggressive exponential scaling to make cells much larger near poles
   // At equator (latFactor=0): scale = 1
   // At mid-latitudes (latFactor=0.5): scale ≈ 2.5x
   // At poles (latFactor=1): scale = 6x
   // This causes cells to merge into very large blocks at poles
-  const xScale = Math.pow(6, latFactor);
+  // Apply mercatorProportion: interpolate between 1 (flat) and 6^latFactor (spherical)
+  const sphericalScale = Math.pow(6, latFactor);
+  const xScale = 1 + (sphericalScale - 1) * mercatorProportion;
   return baseDistance * xScale;
 }
 
@@ -95,12 +98,14 @@ function createMirrorSites(sites: Point[], width: number, height: number): { all
 
 /**
  * Generate Voronoi diagram from a set of points with spherical projection
+ * @param mercatorProportion - 0 = flat map, 1 = full Mercator projection
  */
 export function generateVoronoi(
   width: number,
   height: number,
   numSites: number,
-  random: SeededRandom
+  random: SeededRandom,
+  mercatorProportion: number = 1.0
 ): VoronoiCell[] {
   // Generate random sites with latitude-aware spacing
   const sites: Point[] = [];
@@ -125,7 +130,9 @@ export function generateVoronoi(
       // Calculate placement probability based on latitude
       // Sites near poles should be much less likely to be placed
       const latFactor = getLatitudeFactor(candidate.y, height);
-      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+      // Apply mercatorProportion: interpolate between 1 (flat, no reduction) and 0.15 (spherical, 85% reduction at poles)
+      const minProbability = 1 - 0.85 * mercatorProportion;
+      const placementProbability = 1 - latFactor * (1 - minProbability);
       
       if (random.randomFloat(0, 1) < placementProbability) {
         accepted = true;
@@ -138,7 +145,7 @@ export function generateVoronoi(
       continue;
     }
 
-    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance);
+    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance, mercatorProportion);
     let valid = true;
     
     for (const site of sites) {
@@ -215,7 +222,8 @@ export function generateVoronoi(
 
 /**
  * Relax Voronoi diagram using Lloyd's algorithm with wrapping support
- * This creates more evenly distributed cells while respecting spherical projection
+ * This creates more evenly distributed cells
+ * Note: Relaxation operates on existing sites, so mercator proportion is not applied here
  */
 export function relaxVoronoi(
   width: number,
