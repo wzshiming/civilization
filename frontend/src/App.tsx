@@ -5,11 +5,12 @@ import { ParcelDetailPanel } from './components/ParcelDetailPanel';
 import { TabPanel } from './components/TabPanel';
 import type { Tab } from './components/TabPanel';
 import { ConfigurationTabContent } from './components/ConfigurationTabContent';
-import { LanguageSelector } from './components/LanguageSelector';
+import { SettingsTabContent } from './components/SettingsTabContent';
 import { useSSE } from './hooks/useSSE';
 import { useI18n } from './i18n';
 import './App.css';
 import './components/ConfigurationTabContent.css';
+import './components/SettingsTabContent.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -48,12 +49,16 @@ function AppSSE() {
         />
       ),
     },
-    // Additional tabs can be added here in the future
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: '🔧',
+      content: <SettingsTabContent />,
+    },
   ];
 
   return (
     <div className="app">
-      <LanguageSelector />
       {!worldMap ? (
         <div className="loading-screen">
           <div className="loading-spinner" />

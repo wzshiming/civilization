@@ -6,13 +6,6 @@
   background: #1a1a1a;
 }
 
-.app > .language-selector {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1000;
-}
-
 .loading-screen,
 .error-screen {
   display: flex;
