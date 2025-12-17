@@ -6,47 +6,30 @@
   "workspaces": [
     "shared",
     "backend",
-    "map-generator-cli"
+    "map-generator-cli",
+    "frontend"
   ],
   "scripts": {
-    "dev:frontend": "vite",
+    "dev:frontend": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
     "dev:generator": "npm run dev -w map-generator-cli",
-    "build:frontend": "tsc -b && vite build",
+    "build:frontend": "npm run build -w frontend",
     "build:backend": "npm run build -w backend",
     "build:generator": "npm run build -w map-generator-cli",
     "build:shared": "npm run build -w shared",
     "build": "npm run build:shared && npm run build:backend && npm run build:generator && npm run build:frontend",
-    "lint": "eslint .",
-    "preview": "vite preview",
+    "lint": "npm run lint -w frontend && npm run lint -w backend",
+    "preview": "npm run preview -w frontend",
     "postinstall": "npm run build:shared"
   },
   "dependencies": {
     "@civilization/shared": "file:./shared",
-    "d3-delaunay": "^6.0.4",
-    "pixi.js": "^8.14.3",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "commander": "^11.1.0"
+    "d3-delaunay": "^6.0.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@types/cors": "^2.8.17",
     "@types/d3-delaunay": "^6.0.4",
-    "@types/express": "^4.17.21",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "tsx": "^4.7.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "tsx": "^4.7.0"
   }
 }

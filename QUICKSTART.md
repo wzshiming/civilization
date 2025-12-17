@@ -62,7 +62,7 @@ In a new terminal:
 cd /path/to/civilization
 
 # Create environment file
-echo "VITE_BACKEND_URL=http://localhost:3001" > .env
+echo "VITE_BACKEND_URL=http://localhost:3001" > frontend/.env
 
 # Start the frontend
 npm run dev:frontend

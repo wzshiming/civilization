@@ -116,6 +116,13 @@ npm run dev
 Backend runs at [http://localhost:3001](http://localhost:3001)
 
 3. **Start the frontend (in a new terminal):**
+
+Create `.env` file in frontend directory:
+```bash
+echo "VITE_BACKEND_URL=http://localhost:3001" > frontend/.env
+```
+
+Start frontend:
 ```bash
 npm run dev:frontend
 ```
@@ -126,7 +133,7 @@ Frontend runs at [http://localhost:5173](http://localhost:5173)
 
 Create `.env` files from examples:
 
-**Frontend** (`.env`):
+**Frontend** (`frontend/.env`):
 ```
 VITE_BACKEND_URL=http://localhost:3001
 ```
@@ -268,16 +275,20 @@ civilization/
 │   │   └── index.ts              # CLI entry point
 │   ├── package.json              # Workspace package
 │   └── README.md
-├── src/                          # Frontend application (API-only)
-│   ├── components/               # React UI components
-│   │   ├── MapRenderer.tsx       # Pixi.js map renderer
-│   │   ├── ReadOnlyControlPanel.tsx  # Status display
-│   │   └── ParcelDetailPanel.tsx     # Parcel details
-│   ├── hooks/                    # Custom React hooks
-│   │   └── useSSE.ts             # SSE connection hook
-│   ├── types/                    # Frontend-only types
-│   ├── App.tsx                   # Main App (SSE only)
-│   └── main.tsx                  # Application entry point
+├── frontend/                     # Frontend application (API-only)
+│   ├── src/
+│   │   ├── components/           # React UI components
+│   │   │   ├── MapRenderer.tsx   # Pixi.js map renderer
+│   │   │   ├── ReadOnlyControlPanel.tsx  # Status display
+│   │   │   └── ParcelDetailPanel.tsx     # Parcel details
+│   │   ├── hooks/                # Custom React hooks
+│   │   │   └── useSSE.ts         # SSE connection hook
+│   │   ├── types/                # Frontend-only types
+│   │   ├── App.tsx               # Main App (SSE only)
+│   │   └── main.tsx              # Application entry point
+│   ├── package.json              # Workspace package
+│   ├── index.html
+│   └── vite.config.ts
 ├── ARCHITECTURE.md               # Detailed architecture
 ├── QUICKSTART.md                 # Quick start guide
 └── README.md                     # This file

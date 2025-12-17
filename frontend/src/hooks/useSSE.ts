@@ -3,31 +3,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorldMap, Parcel, Resource } from '../types/map';
-
-interface SerializableWorldMap {
-  parcels: Parcel[];
-  boundaries: unknown[];
-  width: number;
-  height: number;
-  lastUpdate: number;
-}
-
-interface SSEMessage {
-  type: 'full-state' | 'delta' | 'simulation-started' | 'simulation-paused' | 'settings-updated';
-  timestamp: number;
-  data: SerializableWorldMap | StateDelta | Record<string, unknown>;
-}
-
-interface ParcelDelta {
-  id: number;
-  resources?: Resource[];
-}
-
-interface StateDelta {
-  parcels: ParcelDelta[];
-  lastUpdate: number;
-}
+import type { WorldMap, Parcel } from '../types/map';
+import type { SerializableWorldMap, SSEMessage, StateDelta } from '@civilization/shared';
 
 interface UseSSEOptions {
   url: string;

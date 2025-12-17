@@ -13,8 +13,9 @@ The project uses npm workspaces to manage multiple packages:
   - `shared` - Common types, utilities, and logic
   - `backend` - Backend server
   - `map-generator-cli` - Map generation CLI tool
+  - `frontend` - Frontend application
   
-The frontend code lives in the root `src/` directory and has **no independent logic** - it only consumes the backend API.
+The frontend lives in the `frontend/` workspace and has **no independent logic** - it only consumes the backend API.
 
 ## System Components
 
@@ -135,14 +136,14 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 
 ### 3. Frontend Application
 
-**Location:** `/src/` (root)
+**Location:** `/frontend/` (workspace)
 
 **Purpose:** Visualize simulation state in real-time (read-only, API-only)
 
 **Critical:** Frontend has **NO independent logic**. It completely relies on backend API.
 
 #### 3.1 SSE Listener
-- **File:** `src/hooks/useSSE.ts`
+- **File:** `frontend/src/hooks/useSSE.ts`
 - **Responsibilities:**
   - Connect to backend SSE stream
   - Receive and parse state updates
@@ -151,7 +152,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Connection:** Auto-connects on mount to configured backend URL
 
 #### 3.2 Renderer
-- **File:** `src/components/MapRenderer.tsx`
+- **File:** `frontend/src/components/MapRenderer.tsx`
 - **Responsibilities:**
   - Render simulation state using Pixi.js
   - Display terrain colors and resource indicators
@@ -160,7 +161,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Performance:** GPU-accelerated via WebGL
 
 #### 3.3 UI Components
-- **File:** `src/components/ReadOnlyControlPanel.tsx`
+- **File:** `frontend/src/components/ReadOnlyControlPanel.tsx`
 - **Responsibilities:**
   - Display connection status
   - Show read-only information
@@ -169,7 +170,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - **Limitations:** Cannot control simulation, speed, or map generation
 
 #### 3.4 Detail Panel
-- **File:** `src/components/ParcelDetailPanel.tsx`
+- **File:** `frontend/src/components/ParcelDetailPanel.tsx`
 - **Responsibilities:**
   - Show selected parcel information
   - Display terrain type, resources, properties
@@ -182,6 +183,7 @@ npm run dev -- --width 1200 --height 800 --parcels 500 --output my-map.json
 - ❌ No resource update logic
 - ❌ No standalone mode
 - ✅ Only SSE connection and rendering
+- ✅ Imports types from `@civilization/shared` for SSE messages
 
 ---
 

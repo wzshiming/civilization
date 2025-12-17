@@ -11,5 +11,13 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@civilization/shared": "file:../shared",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "tsx": "^4.7.0"
   }
 }
