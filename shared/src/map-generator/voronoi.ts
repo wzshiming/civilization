@@ -100,14 +100,15 @@ export function generateVoronoi(
   width: number,
   height: number,
   numSites: number,
-  random: SeededRandom
+  random: SeededRandom,
+  mercatorProjection: boolean = true
 ): VoronoiCell[] {
   // Generate random sites with latitude-aware spacing
   const sites: Point[] = [];
   const baseMinDistance = Math.sqrt((width * height) / numSites) * 0.7;
 
   // Try to place sites with minimum spacing (considering wrapping and latitude)
-  // Use density weighting to place fewer sites near poles
+  // Use density weighting to place fewer sites near poles (if Mercator projection is enabled)
   let attempts = 0;
   const maxAttempts = numSites * 50;
 
@@ -122,12 +123,18 @@ export function generateVoronoi(
         y: random.randomFloat(0, height),
       };
       
-      // Calculate placement probability based on latitude
-      // Sites near poles should be much less likely to be placed
-      const latFactor = getLatitudeFactor(candidate.y, height);
-      const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
-      
-      if (random.randomFloat(0, 1) < placementProbability) {
+      if (mercatorProjection) {
+        // Calculate placement probability based on latitude
+        // Sites near poles should be much less likely to be placed
+        const latFactor = getLatitudeFactor(candidate.y, height);
+        const placementProbability = 1 - latFactor * 0.85; // Only 15% at poles, 100% at equator
+        
+        if (random.randomFloat(0, 1) < placementProbability) {
+          accepted = true;
+          break;
+        }
+      } else {
+        // Without Mercator projection, all latitudes have equal probability
         accepted = true;
         break;
       }
@@ -138,7 +145,9 @@ export function generateVoronoi(
       continue;
     }
 
-    const minDist = getMinDistanceForLatitude(candidate!.y, height, baseMinDistance);
+    const minDist = mercatorProjection 
+      ? getMinDistanceForLatitude(candidate!.y, height, baseMinDistance)
+      : baseMinDistance;
     let valid = true;
     
     for (const site of sites) {

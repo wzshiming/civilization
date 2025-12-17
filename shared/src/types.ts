@@ -102,6 +102,14 @@ export interface MapConfig {
   seed?: number;
   waterLevel?: number;
   numContinents?: number;
+  // Mercator projection - cells near poles are larger
+  mercatorProjection?: boolean;
+  // Polar ice caps - cover poles with ice and snow
+  polarIceCaps?: boolean;
+  // Ocean proportion - percentage of map that should be ocean (0-1)
+  oceanProportion?: number;
+  // Resource richness - abundance of resources (0-1, default 0.5)
+  resourceRichness?: number;
 }
 
 /** Simulation settings */

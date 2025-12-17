@@ -13,20 +13,28 @@ import { SeededRandom } from '../utils/random';
 export function determineTerrainType(
   elevation: number,
   moisture: number,
-  temperature: number
+  temperature: number,
+  waterLevel: number = 0.35,
+  polarIceCaps: boolean = true,
+  latitude: number = 0
 ): TerrainType {
+  // Polar ice caps - force snow/ice at high latitudes if enabled
+  if (polarIceCaps && latitude > 0.85) {
+    return TerrainType.SNOW;
+  }
+  
   // Deep ocean
-  if (elevation < 0.3) {
+  if (elevation < waterLevel - 0.05) {
     return TerrainType.OCEAN;
   }
   
   // Shallow water
-  if (elevation < 0.35) {
+  if (elevation < waterLevel) {
     return TerrainType.SHALLOW_WATER;
   }
   
   // Beach/coast
-  if (elevation < 0.38) {
+  if (elevation < waterLevel + 0.03) {
     return TerrainType.BEACH;
   }
 
@@ -69,7 +77,9 @@ export function generateTerrain(
   parcels: Parcel[],
   _width: number,
   height: number,
-  random: SeededRandom
+  random: SeededRandom,
+  oceanProportion: number = 0.35,
+  polarIceCaps: boolean = true
 ): void {
   const elevationNoise = new SimplexNoise(random);
   const moistureNoise = new SimplexNoise(random);
@@ -93,6 +103,11 @@ export function generateTerrain(
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
+    
+    // Adjust elevation based on desired ocean proportion
+    // If oceanProportion is 0.35 (35% ocean), we want elevation threshold around 0.35
+    // Scale elevation to match the desired ocean proportion
+    elevation = elevation * (1 - oceanProportion * 0.3) + oceanProportion * 0.3;
     elevation = Math.max(0, Math.min(1, elevation));
 
     // Generate moisture
@@ -100,9 +115,9 @@ export function generateTerrain(
     moisture = (moisture + 1) / 2;
     
     // Moisture is higher near water
-    if (elevation < 0.35) {
+    if (elevation < oceanProportion) {
       moisture = 1.0;
-    } else if (elevation < 0.45) {
+    } else if (elevation < oceanProportion + 0.1) {
       moisture = Math.max(moisture, 0.7);
     }
 
@@ -123,7 +138,7 @@ export function generateTerrain(
     parcel.elevation = elevation;
     parcel.moisture = moisture;
     parcel.temperature = temperature;
-    parcel.terrain = determineTerrainType(elevation, moisture, temperature);
+    parcel.terrain = determineTerrainType(elevation, moisture, temperature, oceanProportion, polarIceCaps, latitude);
   }
 }
 

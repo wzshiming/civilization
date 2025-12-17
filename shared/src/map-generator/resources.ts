@@ -133,14 +133,17 @@ const RESOURCE_PROPERTIES: Record<ResourceType, { max: number; changeRate: numbe
 /**
  * Create a new resource instance
  */
-function createResource(type: ResourceType, random: SeededRandom): Resource {
+function createResource(type: ResourceType, random: SeededRandom, resourceRichness: number = 0.5): Resource {
   const props = RESOURCE_PROPERTIES[type];
-  const initial = random.randomFloat(0.3, 0.9) * props.max;
+  // Richness affects initial amount and maximum capacity
+  const richnessMultiplier = Math.max(0.5, Math.min(1.5, 0.5 + resourceRichness));
+  const initial = random.randomFloat(0.3, 0.9) * props.max * richnessMultiplier;
+  const maximum = props.max * richnessMultiplier;
   
   return {
     type,
     current: initial,
-    maximum: props.max,
+    maximum: maximum,
     changeRate: props.changeRate,
     attributes: props.attributes,
   };
@@ -150,17 +153,24 @@ function createResource(type: ResourceType, random: SeededRandom): Resource {
  * Generate resources for all parcels
  * Each parcel can have multiple resources
  */
-export function generateResources(parcels: Parcel[], random: SeededRandom): void {
+export function generateResources(parcels: Parcel[], random: SeededRandom, resourceRichness: number = 0.5): void {
+  // Scale probabilities based on richness (0 = no resources, 1 = abundant)
+  const richnessMultiplier = Math.max(0, Math.min(2, resourceRichness * 2));
+  
   for (const parcel of parcels) {
     const rules = RESOURCE_RULES[parcel.terrain];
     
     // Skip if terrain doesn't support resources or probability check fails
-    if (!random.chance(rules.probability)) {
+    const adjustedProbability = Math.min(1, rules.probability * richnessMultiplier);
+    if (!random.chance(adjustedProbability)) {
       continue;
     }
 
     // Determine how many resource types this parcel will have (1-3)
-    const numResources = random.chance(0.4) ? 2 : random.chance(0.1) ? 3 : 1;
+    // Higher richness = more resources per parcel
+    const multiResourceChance = 0.4 * richnessMultiplier;
+    const tripleResourceChance = 0.1 * richnessMultiplier;
+    const numResources = random.chance(multiResourceChance) ? 2 : random.chance(tripleResourceChance) ? 3 : 1;
     
     // Shuffle available resource types
     const availableTypes = [...rules.types];
@@ -174,16 +184,16 @@ export function generateResources(parcels: Parcel[], random: SeededRandom): void
     for (let i = 0; i < Math.min(numResources, availableTypes.length); i++) {
       const type = availableTypes[i];
       if (!resourcesAdded.has(type)) {
-        parcel.resources.push(createResource(type, random));
+        parcel.resources.push(createResource(type, random, resourceRichness));
         resourcesAdded.add(type);
       }
     }
 
     // Special case: add water resource to parcels near water
     if (parcel.terrain === TerrainType.GRASSLAND || parcel.terrain === TerrainType.FOREST) {
-      if (parcel.moisture > 0.7 && random.chance(0.5)) {
+      if (parcel.moisture > 0.7 && random.chance(0.5 * richnessMultiplier)) {
         if (!resourcesAdded.has(ResourceType.WATER)) {
-          parcel.resources.push(createResource(ResourceType.WATER, random));
+          parcel.resources.push(createResource(ResourceType.WATER, random, resourceRichness));
         }
       }
     }

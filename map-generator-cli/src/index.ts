@@ -21,6 +21,12 @@ program
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('-o, --output <path>', 'Output file path', './default-map.json')
   .option('-d, --output-dir <path>', 'Output directory', './maps')
+  .option('--mercator', 'Enable Mercator projection (larger cells at poles)', true)
+  .option('--no-mercator', 'Disable Mercator projection')
+  .option('--polar-ice', 'Enable polar ice caps', true)
+  .option('--no-polar-ice', 'Disable polar ice caps')
+  .option('--ocean-proportion <number>', 'Ocean proportion (0-1)', '0.35')
+  .option('--resource-richness <number>', 'Resource richness (0-1)', '0.5')
   .parse(process.argv);
 
 const options = program.opts();
@@ -31,6 +37,10 @@ const config: MapConfig = {
   height: parseInt(options.height),
   numParcels: parseInt(options.parcels),
   seed: options.seed ? parseInt(options.seed) : undefined,
+  mercatorProjection: options.mercator,
+  polarIceCaps: options.polarIce,
+  oceanProportion: parseFloat(options.oceanProportion),
+  resourceRichness: parseFloat(options.resourceRichness),
 };
 
 // Validate configuration
@@ -49,6 +59,16 @@ if (isNaN(config.numParcels) || config.numParcels <= 0) {
   process.exit(1);
 }
 
+if (isNaN(config.oceanProportion) || config.oceanProportion < 0 || config.oceanProportion > 1) {
+  console.error('Error: Ocean proportion must be between 0 and 1');
+  process.exit(1);
+}
+
+if (isNaN(config.resourceRichness) || config.resourceRichness < 0 || config.resourceRichness > 1) {
+  console.error('Error: Resource richness must be between 0 and 1');
+  process.exit(1);
+}
+
 console.log('╔═══════════════════════════════════════════════════════════╗');
 console.log('║     Civilization Map Generator                            ║');
 console.log('╚═══════════════════════════════════════════════════════════╝\n');
@@ -57,7 +77,11 @@ console.log('Configuration:');
 console.log(`  Width: ${config.width}`);
 console.log(`  Height: ${config.height}`);
 console.log(`  Parcels: ${config.numParcels}`);
-console.log(`  Seed: ${config.seed || 'random'}\n`);
+console.log(`  Seed: ${config.seed || 'random'}`);
+console.log(`  Mercator Projection: ${config.mercatorProjection ? 'enabled' : 'disabled'}`);
+console.log(`  Polar Ice Caps: ${config.polarIceCaps ? 'enabled' : 'disabled'}`);
+console.log(`  Ocean Proportion: ${(config.oceanProportion * 100).toFixed(0)}%`);
+console.log(`  Resource Richness: ${(config.resourceRichness * 100).toFixed(0)}%\n`);
 
 console.log('Generating map...\n');
 
