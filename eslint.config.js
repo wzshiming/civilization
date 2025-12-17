@@ -1,19 +1,16 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import { defineConfig } from 'eslint/config'
 
-export default defineConfig([
+export default [
   {
     ignores: ['**/dist/**', '**/node_modules/**'],
   },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx,js,mjs,cjs}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-    ],
     languageOptions: {
       ecmaVersion: 2020,
     },
   },
-])
+]
