@@ -24,7 +24,7 @@ export function ConfigurationTabContent({
         <div className="status-indicator">
           <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
           <span className="status-text">
-            {isConnected ? 'Connected to backend' : 'Disconnected'}
+            {isConnected ? t.connectedStatus : t.disconnectedStatus}
           </span>
         </div>
 
@@ -33,16 +33,16 @@ export function ConfigurationTabContent({
             className="control-button secondary"
             onClick={onReconnect}
           >
-            🔄 Reconnect
+            {'🔄 ' + t.reconnect}
           </button>
         )}
 
         <div className="info-panel">
           <p>
-            <strong>Note:</strong> Simulation controls (start/stop, speed) are managed by the backend server.
+            <strong>{t.configNote}</strong> {t.configNoteText}
           </p>
           <p>
-            Maps are pre-generated using the map-generator-cli tool and loaded by the backend.
+            {t.configMapInfo}
           </p>
         </div>
       </div>

@@ -65,4 +65,16 @@ export const zhCN: TranslationKeys = {
   
   // Language selector
   language: '语言',
+  
+  // Tab labels
+  config: '配置',
+  settings: '设置',
+  
+  // Configuration tab
+  connectedStatus: '已连接到后端',
+  disconnectedStatus: '已断开连接',
+  reconnect: '重新连接',
+  configNote: '注意：',
+  configNoteText: '模拟控制（启动/停止、速度）由后端服务器管理。',
+  configMapInfo: '地图使用 map-generator-cli 工具预生成并由后端加载。',
 };

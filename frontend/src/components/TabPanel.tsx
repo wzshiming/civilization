@@ -31,15 +31,19 @@ export function TabPanel({ tabs }: TabPanelProps) {
   return (
     <div className="tab-panel-container">
       {/* Tab buttons - always visible on the left */}
-      <div className="tab-buttons">
+      <div className="tab-buttons" role="tablist" aria-label="Sidebar tabs">
         {tabs.map(tab => (
           <button
             key={tab.id}
             className={`tab-button ${expandedTabId === tab.id ? 'active' : ''}`}
             onClick={() => handleTabClick(tab.id)}
             title={tab.label}
+            role="tab"
+            aria-selected={expandedTabId === tab.id}
+            aria-controls={`tabpanel-${tab.id}`}
+            id={`tab-${tab.id}`}
           >
-            {tab.icon && <span className="tab-icon">{tab.icon}</span>}
+            {tab.icon && <span className="tab-icon" aria-hidden="true">{tab.icon}</span>}
             <span className="tab-label">{tab.label}</span>
           </button>
         ))}
@@ -47,7 +51,12 @@ export function TabPanel({ tabs }: TabPanelProps) {
 
       {/* Expanded content - shows when a tab is selected */}
       {expandedTab && (
-        <div className="tab-content-panel">
+        <div 
+          className="tab-content-panel"
+          role="tabpanel"
+          id={`tabpanel-${expandedTab.id}`}
+          aria-labelledby={`tab-${expandedTab.id}`}
+        >
           <div className="tab-content-header">
             <h2>{expandedTab.label}</h2>
             <button

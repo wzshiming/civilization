@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Parcel } from './types/map';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
@@ -37,10 +37,10 @@ function AppSSE() {
   }, [connect, disconnect]);
 
   // Define tabs for the left sidebar
-  const tabs: Tab[] = [
+  const tabs: Tab[] = useMemo(() => [
     {
       id: 'config',
-      label: 'Config',
+      label: t.config,
       icon: '⚙️',
       content: (
         <ConfigurationTabContent
@@ -51,11 +51,11 @@ function AppSSE() {
     },
     {
       id: 'settings',
-      label: 'Settings',
+      label: t.settings,
       icon: '🔧',
       content: <SettingsTabContent />,
     },
-  ];
+  ], [isConnected, handleReconnect, t.config, t.settings]);
 
   return (
     <div className="app">

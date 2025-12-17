@@ -1,0 +1,12 @@
+/**
+ * Global CSS custom properties
+ */
+
+:root {
+  /* Panel dimensions */
+  --tab-buttons-width: 76px;
+  --panel-width: 33.33vw;
+  
+  /* Responsive breakpoints */
+  --breakpoint-mobile: 768px;
+}

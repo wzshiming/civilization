@@ -64,6 +64,18 @@ export const en = {
   
   // Language selector
   language: 'Language',
+  
+  // Tab labels
+  config: 'Config',
+  settings: 'Settings',
+  
+  // Configuration tab
+  connectedStatus: 'Connected to backend',
+  disconnectedStatus: 'Disconnected',
+  reconnect: 'Reconnect',
+  configNote: 'Note:',
+  configNoteText: 'Simulation controls (start/stop, speed) are managed by the backend server.',
+  configMapInfo: 'Maps are pre-generated using the map-generator-cli tool and loaded by the backend.',
 };
 
 export type TranslationKeys = typeof en;

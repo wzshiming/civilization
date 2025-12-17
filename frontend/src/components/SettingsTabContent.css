@@ -44,6 +44,10 @@
 }
 
 .settings-tab-content .language-selector select:focus {
+  outline: none;
+}
+
+.settings-tab-content .language-selector select:focus-visible {
   border-color: #4a9eff;
 }
 

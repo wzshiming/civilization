@@ -1,7 +1,3 @@
-:root {
-  --panel-width: 33.33vw;
-}
-
 .parcel-detail-panel {
   position: fixed;
   right: 0;
@@ -218,4 +214,15 @@
 
 .panel-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: var(--breakpoint-mobile)) {
+  .parcel-detail-panel {
+    left: 0;
+    right: 0;
+    width: 100vw;
+    min-width: 0;
+    max-width: 100vw;
+  }
 }
