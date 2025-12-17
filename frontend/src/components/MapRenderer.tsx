@@ -144,13 +144,20 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     if (isZooming && state.zoomPoint) {
       const { x: pointX, y: pointY } = state.zoomPoint;
+      
+      // Calculate world position at zoom point
       const worldX = (pointX - state.camera.x) / oldZoom;
       const worldY = (pointY - state.camera.y) / oldZoom;
 
-      state.camera.x = pointX - worldX * state.zoom;
-      state.camera.y = pointY - worldY * state.zoom;
-      state.targetCamera.x = state.camera.x;
-      state.targetCamera.y = state.camera.y;
+      // Calculate the zoom transformation offset
+      const deltaX = state.camera.x - (pointX - worldX * state.zoom);
+      const deltaY = state.camera.y - (pointY - worldY * state.zoom);
+
+      // Apply zoom transformation to both camera and target camera
+      state.camera.x -= deltaX;
+      state.camera.y -= deltaY;
+      state.targetCamera.x -= deltaX;
+      state.targetCamera.y -= deltaY;
     } else {
       // Apply smooth camera movement when not zooming
       state.camera.x += (state.targetCamera.x - state.camera.x) * SMOOTH_FACTOR;
