@@ -99,6 +99,8 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   }, []);
 
   // Camera movement update function for Pixi ticker
+  // Note: worldMapDimensionsRef and onParcelClickRef are intentionally not in dependencies
+  // to keep this callback stable and prevent MapRenderer re-initialization on clicks/updates
   const updateCameraLoop = useCallback(() => {
     const state = viewStateRef.current;
 
