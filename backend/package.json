@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "echo 'No linting configured for backend'"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@civilization/shared": "file:../shared",

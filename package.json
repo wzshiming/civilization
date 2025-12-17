@@ -19,7 +19,7 @@
     "build:generator": "npm run build -w map-generator-cli",
     "build:shared": "npm run build -w shared",
     "build": "npm run build:shared && npm run build:backend && npm run build:generator && npm run build:frontend",
-    "lint": "npm run lint -w frontend && npm run lint -w backend",
+    "lint": "npm run lint -w shared && npm run lint -w backend && npm run lint -w map-generator-cli && npm run lint -w frontend",
     "preview": "npm run preview -w frontend",
     "postinstall": "npm run build:shared"
   },
@@ -28,9 +28,13 @@
     "d3-delaunay": "^6.0.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/d3-delaunay": "^6.0.4",
     "@types/node": "^24.10.1",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "tsx": "^4.7.0",
     "typescript": "~5.9.3",
-    "tsx": "^4.7.0"
+    "typescript-eslint": "^8.50.0"
   }
 }
