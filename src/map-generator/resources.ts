@@ -59,7 +59,7 @@ const RESOURCE_RULES: Record<TerrainType, { types: ResourceType[]; probability: 
 function createResource(type: ResourceType, random: SeededRandom): Resource | null {
   const definition = getResourceDefinition(type);
   if (!definition) {
-    console.warn(`Resource definition not found for type: ${type}`);
+    console.warn(`Resource definition not found for type: ${type}. Register the resource using registerResource() or check if the type is correct.`);
     return null;
   }
 

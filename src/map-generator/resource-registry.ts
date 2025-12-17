@@ -211,9 +211,9 @@ export class ResourceRegistry {
   }
 
   /**
-   * Get resources by attribute
+   * Get resources where the specified attribute is true
    */
-  getByAttribute(attribute: keyof ResourceDefinition['attributes']): ResourceDefinition[] {
+  getResourcesWithAttribute(attribute: keyof ResourceDefinition['attributes']): ResourceDefinition[] {
     return this.getAllDefinitions().filter(def => def.attributes[attribute] === true);
   }
 
@@ -221,28 +221,28 @@ export class ResourceRegistry {
    * Get edible resources
    */
   getEdibleResources(): ResourceDefinition[] {
-    return this.getByAttribute('edible');
+    return this.getResourcesWithAttribute('edible');
   }
 
   /**
    * Get renewable resources
    */
   getRenewableResources(): ResourceDefinition[] {
-    return this.getByAttribute('renewable');
+    return this.getResourcesWithAttribute('renewable');
   }
 
   /**
    * Get strategic resources
    */
   getStrategicResources(): ResourceDefinition[] {
-    return this.getByAttribute('strategic');
+    return this.getResourcesWithAttribute('strategic');
   }
 
   /**
    * Get luxury resources
    */
   getLuxuryResources(): ResourceDefinition[] {
-    return this.getByAttribute('luxury');
+    return this.getResourcesWithAttribute('luxury');
   }
 }
 

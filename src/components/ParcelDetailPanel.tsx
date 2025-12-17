@@ -63,12 +63,21 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
           ) : (
             <div className="resources-list">
               {parcel.resources.map((resource, index) => {
-                const attributes = [];
-                if (resource.attributes.edible) attributes.push(t.edible || 'Edible');
-                if (resource.attributes.renewable) attributes.push(t.renewable || 'Renewable');
-                if (resource.attributes.luxury) attributes.push(t.luxury || 'Luxury');
-                if (resource.attributes.strategic) attributes.push(t.strategic || 'Strategic');
-                if (resource.attributes.energy) attributes.push(t.energy || 'Energy');
+                // Build attribute list based on available attributes
+                const attributeMapping = [
+                  { key: 'edible', label: t.edible || 'Edible' },
+                  { key: 'consumable', label: t.consumable || 'Consumable' },
+                  { key: 'renewable', label: t.renewable || 'Renewable' },
+                  { key: 'tradeable', label: t.tradeable || 'Tradeable' },
+                  { key: 'luxury', label: t.luxury || 'Luxury' },
+                  { key: 'strategic', label: t.strategic || 'Strategic' },
+                  { key: 'storable', label: t.storable || 'Storable' },
+                  { key: 'energy', label: t.energy || 'Energy' },
+                ] as const;
+                
+                const attributes = attributeMapping
+                  .filter(attr => resource.attributes[attr.key])
+                  .map(attr => attr.label);
                 
                 return (
                   <div key={index} className="resource-item">

@@ -433,7 +433,11 @@ function getResourceColor(type: string): number {
   if (definition && definition.color) {
     // Convert hex string to number (remove # and parse as hex)
     const hex = definition.color.replace('#', '');
-    return parseInt(hex, 16);
+    const color = parseInt(hex, 16);
+    // Validate the parsed color is a valid number
+    if (!isNaN(color) && color >= 0 && color <= 0xffffff) {
+      return color;
+    }
   }
   return 0xffffff; // default white
 }
