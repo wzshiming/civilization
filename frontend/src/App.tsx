@@ -2,11 +2,14 @@ import { useState, useCallback } from 'react';
 import type { Parcel } from './types/map';
 import { MapRenderer } from './components/MapRenderer';
 import { ParcelDetailPanel } from './components/ParcelDetailPanel';
-import { ReadOnlyControlPanel } from './components/ReadOnlyControlPanel';
+import { TabPanel } from './components/TabPanel';
+import type { Tab } from './components/TabPanel';
+import { ConfigurationTabContent } from './components/ConfigurationTabContent';
 import { LanguageSelector } from './components/LanguageSelector';
 import { useSSE } from './hooks/useSSE';
 import { useI18n } from './i18n';
 import './App.css';
+import './components/ConfigurationTabContent.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -32,6 +35,22 @@ function AppSSE() {
     setTimeout(() => connect(), 100);
   }, [connect, disconnect]);
 
+  // Define tabs for the left sidebar
+  const tabs: Tab[] = [
+    {
+      id: 'config',
+      label: 'Config',
+      icon: '⚙️',
+      content: (
+        <ConfigurationTabContent
+          isConnected={isConnected}
+          onReconnect={handleReconnect}
+        />
+      ),
+    },
+    // Additional tabs can be added here in the future
+  ];
+
   return (
     <div className="app">
       <LanguageSelector />
@@ -43,10 +62,7 @@ function AppSSE() {
         </div>
       ) : (
         <>
-          <ReadOnlyControlPanel
-            isConnected={isConnected}
-            onReconnect={handleReconnect}
-          />
+          <TabPanel tabs={tabs} />
           <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
           <div className="map-controls-hint">

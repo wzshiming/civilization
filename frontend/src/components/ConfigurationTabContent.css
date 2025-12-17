@@ -1,0 +1,109 @@
+/* Configuration tab content styles - reuses control panel styles but without positioning */
+.config-tab-content {
+  color: #fff;
+}
+
+.config-section {
+  margin-bottom: 20px;
+}
+
+.config-section:last-child {
+  margin-bottom: 0;
+}
+
+.config-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1em;
+  color: #4a9eff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+.control-button {
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+
+.control-button:last-child {
+  margin-bottom: 0;
+}
+
+.control-button.secondary {
+  background: rgba(100, 100, 100, 0.5);
+  color: white;
+  border: 1px solid #666;
+}
+
+.control-button.secondary:hover {
+  background: rgba(120, 120, 120, 0.6);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot.connected {
+  background: #51cf66;
+  box-shadow: 0 0 10px #51cf66;
+}
+
+.status-dot.disconnected {
+  background: #ff6b6b;
+  box-shadow: 0 0 10px #ff6b6b;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.info-panel {
+  padding: 12px;
+  background: rgba(74, 158, 255, 0.1);
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  border-radius: 6px;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+.info-panel p {
+  margin: 0 0 8px 0;
+}
+
+.info-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.info-panel strong {
+  color: #4a9eff;
+}
