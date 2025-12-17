@@ -104,12 +104,7 @@ Add to your `.vscode/settings.json`:
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "eslint.workingDirectories": [
-    "frontend",
-    "backend",
-    "shared",
-    "map-generator-cli"
-  ]
+  "eslint.workingDirectories": ["frontend", "backend", "shared", "map-generator-cli"]
 }
 ```
 
