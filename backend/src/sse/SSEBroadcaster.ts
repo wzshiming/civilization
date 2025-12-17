@@ -145,6 +145,8 @@ export class SSEBroadcaster {
 
     const allParcels = Array.from(worldMap.parcels.values());
     const visibleParcels = this.filterParcelsByViewport(allParcels, viewport);
+    
+    console.log(`Sending full state: ${visibleParcels.length}/${allParcels.length} parcels (viewport: ${viewport ? 'set' : 'none'})`);
 
     const serializable: SerializableWorldMap = {
       parcels: visibleParcels,
@@ -280,6 +282,7 @@ export class SSEBroadcaster {
   updateClientViewportById(clientId: string, viewport: ViewportBounds): boolean {
     const clientInfo = this.clientsById.get(clientId);
     if (clientInfo) {
+      console.log(`Updating viewport for client ${clientId}:`, viewport);
       clientInfo.viewport = viewport;
       
       // Send updated visible state to the client
