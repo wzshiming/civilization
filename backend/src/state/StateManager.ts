@@ -2,7 +2,7 @@
  * State Manager - Manages the current state of the simulation
  */
 
-import type { WorldMap, Parcel, Resource, ParcelDelta } from '../types';
+import type { WorldMap, Parcel, Resource, ParcelDelta } from '@civilization/shared';
 
 export class StateManager {
   private worldMap: WorldMap | null = null;

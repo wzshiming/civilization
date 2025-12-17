@@ -2,7 +2,7 @@
  * Simulation Engine - Runs the simulation loop and updates the state
  */
 
-import type { WorldMap, Resource } from '../types';
+import type { WorldMap, Resource } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
 
 export class SimulationEngine {

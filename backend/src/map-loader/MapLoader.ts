@@ -4,7 +4,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import type { WorldMap, SerializableWorldMap } from '../types';
+import type { WorldMap, SerializableWorldMap } from '@civilization/shared';
 
 export class MapLoader {
   private mapsDirectory: string;

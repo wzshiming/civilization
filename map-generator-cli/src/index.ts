@@ -7,8 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { program } from 'commander';
-import { generateWorldMap } from './map-generator/index';
-import type { SerializableWorldMap, MapConfig } from './types';
+import { generateWorldMap, type SerializableWorldMap, type MapConfig } from '@civilization/shared';
 
 program
   .name('generate-map')

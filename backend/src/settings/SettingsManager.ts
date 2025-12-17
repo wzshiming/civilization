@@ -2,7 +2,7 @@
  * Settings Manager - Manages simulation settings
  */
 
-import type { SimulationSettings } from '../types';
+import type { SimulationSettings } from '@civilization/shared';
 
 export class SettingsManager {
   private settings: SimulationSettings;

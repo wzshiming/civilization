@@ -1,0 +1,12 @@
+{
+  "name": "@civilization/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared types, utilities, and logic for Civilization simulation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  }
+}

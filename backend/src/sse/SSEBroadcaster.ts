@@ -3,7 +3,7 @@
  */
 
 import type { Response } from 'express';
-import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType } from '../types';
+import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
 
 export class SSEBroadcaster {
