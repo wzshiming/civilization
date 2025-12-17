@@ -5,8 +5,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
-import type { WorldMap, Parcel } from '../types/map';
-import { TerrainType } from '../types/map';
+import type { WorldMap, Parcel } from '@civilization/shared';
+import { TerrainType } from '@civilization/shared';
 
 interface MapRendererProps {
   worldMap: WorldMap;

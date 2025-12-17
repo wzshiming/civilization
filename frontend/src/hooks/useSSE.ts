@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorldMap, Parcel } from '../types/map';
+import type { WorldMap, Parcel } from '@civilization/shared';
 import type { SerializableWorldMap, SSEMessage, StateDelta } from '@civilization/shared';
 
 interface UseSSEOptions {
