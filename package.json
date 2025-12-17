@@ -10,9 +10,10 @@
     "frontend"
   ],
   "scripts": {
+    "dev": "npm run dev:generator && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev -w frontend",
-    "dev:backend": "npm run dev -w backend",
-    "dev:generator": "npm run dev -w map-generator-cli",
+    "dev:backend": "MAPS_DIR=../maps/ npm run dev -w backend",
+    "dev:generator": "npm run dev -w map-generator-cli -- -d ../maps/",
     "build:frontend": "npm run build -w frontend",
     "build:backend": "npm run build -w backend",
     "build:generator": "npm run build -w map-generator-cli",
