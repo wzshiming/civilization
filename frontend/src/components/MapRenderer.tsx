@@ -8,6 +8,11 @@ import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js
 import type { WorldMap, Parcel } from '../types/map';
 import { TerrainType } from '../types/map';
 
+// Extended Graphics type to store parcel ID
+interface ParcelGraphics extends Graphics {
+  parcelId?: number;
+}
+
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
@@ -38,6 +43,43 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
+// Constants for rendering
+const BORDER_WIDTH = 0.5;
+const BORDER_COLOR = 0x000000;
+const BORDER_ALPHA = 0.3;
+const HIGHLIGHT_WIDTH = 3;
+const HIGHLIGHT_COLOR = 0xffff00;
+const RESOURCE_RADIUS = 3;
+const RESOURCE_OFFSET = 8;
+
+// Tile offsets for toroidal wrapping (center + 8 surrounding tiles)
+// Ordered intentionally: center tile first, then cardinal directions, then diagonals
+const TILE_OFFSETS = [
+  { x: 0, y: 0 },     // center
+  { x: -1, y: 0 },    // left
+  { x: 1, y: 0 },     // right
+  { x: 0, y: -1 },    // top
+  { x: 0, y: 1 },     // bottom
+  { x: -1, y: -1 },   // top-left
+  { x: 1, y: -1 },    // top-right
+  { x: -1, y: 1 },    // bottom-left
+  { x: 1, y: 1 },     // bottom-right
+] as const;
+
+// Resource colors lookup table
+const RESOURCE_COLORS: Record<string, number> = {
+  water: 0x4a9eff,
+  wood: 0x8b4513,
+  stone: 0x808080,
+  iron: 0xb87333,
+  gold: 0xffd700,
+  oil: 0x1a1a1a,
+  coal: 0x2f2f2f,
+  fertile_soil: 0x654321,
+  fish: 0x00bfff,
+  game: 0x8b6914,
+};
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -47,15 +89,15 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const highlightGraphicsRef = useRef<Map<number, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<number | null>(null);
   
-  // Camera state
-  const cameraRef = useRef({ x: 0, y: 0 }); // current position
-  const targetCameraRef = useRef({ x: 0, y: 0 }); // target position
+  // Consolidated camera and zoom state
+  const viewStateRef = useRef({
+    camera: { x: 0, y: 0 },
+    targetCamera: { x: 0, y: 0 },
+    zoom: MIN_ZOOM,
+    targetZoom: MIN_ZOOM,
+    zoomPoint: null as { x: number; y: number } | null,
+  });
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
-  
-  // Zoom state
-  const zoomRef = useRef(MIN_ZOOM); // current zoom level
-  const targetZoomRef = useRef(MIN_ZOOM); // target zoom level
-  const zoomPointRef = useRef<{ x: number; y: number } | null>(null); // point to zoom towards
 
   // Helper to update container position and scale
   const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
@@ -66,64 +108,67 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Camera movement update function for Pixi ticker
   const updateCameraLoop = useCallback(() => {
-    // Update target based on keys pressed
+    const state = viewStateRef.current;
+    
+    // Calculate movement based on pressed keys
     const moveX = (keysRef.current.has('d') || keysRef.current.has('D') || keysRef.current.has('ArrowRight') ? -MOVE_SPEED : 0) +
                   (keysRef.current.has('a') || keysRef.current.has('A') || keysRef.current.has('ArrowLeft') ? MOVE_SPEED : 0);
     const moveY = (keysRef.current.has('s') || keysRef.current.has('S') || keysRef.current.has('ArrowDown') ? -MOVE_SPEED : 0) +
                   (keysRef.current.has('w') || keysRef.current.has('W') || keysRef.current.has('ArrowUp') ? MOVE_SPEED : 0);
     
-    targetCameraRef.current.x += moveX;
-    targetCameraRef.current.y += moveY;
+    state.targetCamera.x += moveX;
+    state.targetCamera.y += moveY;
     
     // Apply wrapping for circular map (toroidal topology)
     const { width: mapWidth, height: mapHeight } = worldMap;
+    const halfWidth = mapWidth / 2;
+    const halfHeight = mapHeight / 2;
     
     // Wrap horizontally and vertically
-    while (targetCameraRef.current.x > mapWidth / 2) {
-      targetCameraRef.current.x -= mapWidth;
-      cameraRef.current.x -= mapWidth;
+    if (state.targetCamera.x > halfWidth) {
+      state.targetCamera.x -= mapWidth;
+      state.camera.x -= mapWidth;
+    } else if (state.targetCamera.x < -halfWidth) {
+      state.targetCamera.x += mapWidth;
+      state.camera.x += mapWidth;
     }
-    while (targetCameraRef.current.x < -mapWidth / 2) {
-      targetCameraRef.current.x += mapWidth;
-      cameraRef.current.x += mapWidth;
-    }
-    while (targetCameraRef.current.y > mapHeight / 2) {
-      targetCameraRef.current.y -= mapHeight;
-      cameraRef.current.y -= mapHeight;
-    }
-    while (targetCameraRef.current.y < -mapHeight / 2) {
-      targetCameraRef.current.y += mapHeight;
-      cameraRef.current.y += mapHeight;
+    
+    if (state.targetCamera.y > halfHeight) {
+      state.targetCamera.y -= mapHeight;
+      state.camera.y -= mapHeight;
+    } else if (state.targetCamera.y < -halfHeight) {
+      state.targetCamera.y += mapHeight;
+      state.camera.y += mapHeight;
     }
     
     // Smooth zoom with easing
-    const oldZoom = zoomRef.current;
-    zoomRef.current += (targetZoomRef.current - zoomRef.current) * ZOOM_SMOOTH_FACTOR;
+    const oldZoom = state.zoom;
+    state.zoom += (state.targetZoom - state.zoom) * ZOOM_SMOOTH_FACTOR;
     
     // Adjust camera position when zooming to keep zoom point fixed
-    const isZooming = zoomPointRef.current !== null && Math.abs(zoomRef.current - oldZoom) > ZOOM_CHANGE_THRESHOLD;
+    const isZooming = state.zoomPoint !== null && Math.abs(state.zoom - oldZoom) > ZOOM_CHANGE_THRESHOLD;
     
-    if (isZooming && zoomPointRef.current) {
-      const { x: pointX, y: pointY } = zoomPointRef.current;
-      const worldX = (pointX - cameraRef.current.x) / oldZoom;
-      const worldY = (pointY - cameraRef.current.y) / oldZoom;
+    if (isZooming && state.zoomPoint) {
+      const { x: pointX, y: pointY } = state.zoomPoint;
+      const worldX = (pointX - state.camera.x) / oldZoom;
+      const worldY = (pointY - state.camera.y) / oldZoom;
       
-      cameraRef.current.x = pointX - worldX * zoomRef.current;
-      cameraRef.current.y = pointY - worldY * zoomRef.current;
-      targetCameraRef.current.x = cameraRef.current.x;
-      targetCameraRef.current.y = cameraRef.current.y;
+      state.camera.x = pointX - worldX * state.zoom;
+      state.camera.y = pointY - worldY * state.zoom;
+      state.targetCamera.x = state.camera.x;
+      state.targetCamera.y = state.camera.y;
     } else {
       // Apply smooth camera movement when not zooming
-      cameraRef.current.x += (targetCameraRef.current.x - cameraRef.current.x) * SMOOTH_FACTOR;
-      cameraRef.current.y += (targetCameraRef.current.y - cameraRef.current.y) * SMOOTH_FACTOR;
+      state.camera.x += (state.targetCamera.x - state.camera.x) * SMOOTH_FACTOR;
+      state.camera.y += (state.targetCamera.y - state.camera.y) * SMOOTH_FACTOR;
     }
     
     // Update containers
     if (parcelContainerRef.current) {
-      updateContainer(parcelContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
+      updateContainer(parcelContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
     if (highlightContainerRef.current) {
-      updateContainer(highlightContainerRef.current, cameraRef.current.x, cameraRef.current.y, zoomRef.current);
+      updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
   }, [worldMap, updateContainer]);
 
@@ -170,55 +215,57 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         const highlightContainer = new Container();
         app.stage.addChild(highlightContainer);
         
-        // Create 9 containers for toroidal wrapping (3x3 grid)
-        // Center, and 8 surrounding tiles
-        const tileOffsets = [
-          { x: 0, y: 0 },           // center
-          { x: -1, y: 0 },          // left
-          { x: 1, y: 0 },           // right
-          { x: 0, y: -1 },          // top
-          { x: 0, y: 1 },           // bottom
-          { x: -1, y: -1 },         // top-left
-          { x: 1, y: -1 },          // top-right
-          { x: -1, y: 1 },          // bottom-left
-          { x: 1, y: 1 },           // bottom-right
-        ];
-        
-        tileOffsets.forEach((offset) => {
+        // Create tile containers for toroidal wrapping (3x3 grid)
+        // This allows seamless wrapping when camera crosses map boundaries
+        const createTileContainers = (offsetX: number, offsetY: number) => {
           const tileContainer = new Container();
-          tileContainer.x = offset.x * worldMap.width;
-          tileContainer.y = offset.y * worldMap.height;
+          tileContainer.x = offsetX * worldMap.width;
+          tileContainer.y = offsetY * worldMap.height;
           mainContainer.addChild(tileContainer);
           
-          // Create highlight tile container at same position
           const highlightTileContainer = new Container();
-          highlightTileContainer.x = offset.x * worldMap.width;
-          highlightTileContainer.y = offset.y * worldMap.height;
+          highlightTileContainer.x = offsetX * worldMap.width;
+          highlightTileContainer.y = offsetY * worldMap.height;
           highlightContainer.addChild(highlightTileContainer);
+          
+          return { tileContainer, highlightTileContainer };
+        };
+        
+        // Shared click handler for all parcel graphics
+        const handleParcelClick = (event: FederatedPointerEvent) => {
+          const graphics = event.currentTarget as ParcelGraphics;
+          const parcelId = graphics.parcelId;
+          if (parcelId !== undefined) {
+            event.stopPropagation();
+            setSelectedParcelId(parcelId);
+            const parcel = worldMap.parcels.get(parcelId);
+            if (parcel) {
+              onParcelClick?.(parcel);
+            }
+          }
+        };
+        
+        TILE_OFFSETS.forEach(({ x, y }) => {
+          const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
           
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
-            const graphics = new Graphics();
+            // Create and configure parcel graphics
+            const graphics = new Graphics() as ParcelGraphics;
             renderParcel(graphics, parcel);
-
-            // Make all tiles interactive so clicks work on wrapped tiles too
             graphics.eventMode = 'static';
             graphics.cursor = 'pointer';
-            graphics.on('pointerdown', (event: FederatedPointerEvent) => {
-              event.stopPropagation();
-              setSelectedParcelId(parcel.id);
-              onParcelClick?.(parcel);
-            });
+            graphics.parcelId = parcel.id; // Store parcel ID on graphics object
+            graphics.on('pointerdown', handleParcelClick);
             
-            // Store all graphics instances for each parcel (across all tiles)
+            // Store and add to container
             if (!localParcelGraphics.has(parcel.id)) {
               localParcelGraphics.set(parcel.id, []);
             }
             localParcelGraphics.get(parcel.id)!.push(graphics);
-
             tileContainer.addChild(graphics);
             
-            // Create highlight graphics for this parcel in the highlight layer
+            // Create highlight graphics
             const highlightGraphics = new Graphics();
             if (!localHighlightGraphics.has(parcel.id)) {
               localHighlightGraphics.set(parcel.id, []);
@@ -253,13 +300,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     
     // Helper to adjust zoom level
     const adjustZoom = (delta: number) => {
-      targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoomRef.current + delta));
+      const state = viewStateRef.current;
+      state.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.targetZoom + delta));
     };
 
     // Helper to set zoom point to viewport center
     const setZoomPointToCenter = () => {
       if (appRef.current) {
-        zoomPointRef.current = {
+        viewStateRef.current.zoomPoint = {
           x: appRef.current.screen.width / 2,
           y: appRef.current.screen.height / 2
         };
@@ -268,23 +316,29 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     // Keyboard event handlers
     const handleKeyDown = (e: KeyboardEvent) => {
+      const { key } = e;
+      
       // Prevent default scrolling for arrow keys
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (key.startsWith('Arrow')) {
         e.preventDefault();
       }
       
       // Handle zoom with + and - keys
-      if (e.key === '+' || e.key === '=') {
+      if (key === '+' || key === '=') {
         e.preventDefault();
         setZoomPointToCenter();
         adjustZoom(ZOOM_SPEED);
-      } else if (e.key === '-' || e.key === '_') {
+        return;
+      }
+      
+      if (key === '-' || key === '_') {
         e.preventDefault();
         setZoomPointToCenter();
         adjustZoom(-ZOOM_SPEED);
+        return;
       }
       
-      keysRef.current.add(e.key);
+      keysRef.current.add(key);
     };
     
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -298,7 +352,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       if (!appRef.current?.canvas) return;
       
       const rect = appRef.current.canvas.getBoundingClientRect();
-      zoomPointRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
     };
@@ -313,27 +367,25 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     return () => {
       cleanup = true;
       
-      // Cleanup keyboard listeners
+      // Cleanup event listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
-      
-      // Cleanup wheel listener
       container.removeEventListener('wheel', handleWheel);
       
+      // Cleanup Pixi application
       try {
-        if (app) {
-          // Remove ticker before destroying
-          if (app.ticker) {
-            app.ticker.remove(updateCameraLoop);
-          }
-          if (app.stage) {
-            app.destroy(true, { children: true, texture: true });
-          }
+        if (app?.ticker) {
+          app.ticker.remove(updateCameraLoop);
+        }
+        if (app?.stage) {
+          app.destroy(true, { children: true, texture: true });
         }
       } catch {
-        // Ignore cleanup errors
+        // Silently ignore cleanup errors
       }
+      
+      // Clear all graphics maps
       localParcelGraphics.clear();
       localHighlightGraphics.clear();
       parcelGraphicsRef.current.clear();
@@ -345,30 +397,24 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const prevSelectedParcelIdRef = useRef<number | null>(null);
   
   useEffect(() => {
-    // Clear previous selection highlight if it exists
-    if (prevSelectedParcelIdRef.current !== null) {
-      const prevHighlightArray = highlightGraphicsRef.current.get(prevSelectedParcelIdRef.current);
-      if (prevHighlightArray) {
-        prevHighlightArray.forEach((graphics) => {
-          graphics.clear();
-        });
-      }
+    const prevId = prevSelectedParcelIdRef.current;
+    
+    // Clear previous selection highlight
+    if (prevId !== null) {
+      const prevHighlightArray = highlightGraphicsRef.current.get(prevId);
+      prevHighlightArray?.forEach(graphics => graphics.clear());
     }
     
-    // Draw highlight for new selected parcel if any
+    // Draw highlight for new selected parcel
     if (selectedParcelId !== null) {
       const parcel = worldMap.parcels.get(selectedParcelId);
       const highlightArray = highlightGraphicsRef.current.get(selectedParcelId);
       
       if (parcel && highlightArray) {
-        // Draw highlight on all tile instances
-        highlightArray.forEach((graphics) => {
-          renderHighlight(graphics, parcel);
-        });
+        highlightArray.forEach(graphics => renderHighlight(graphics, parcel));
       }
     }
     
-    // Update previous selection reference
     prevSelectedParcelIdRef.current = selectedParcelId;
   }, [selectedParcelId, worldMap]);
 
@@ -388,37 +434,43 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 }
 
 /**
- * Render a single parcel
+ * Render a single parcel with terrain, border, and resource indicators
  */
 function renderParcel(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const color = TERRAIN_COLORS[parcel.terrain];
-  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
+  // Build vertices array efficiently
+  const vertexCount = parcel.vertices.length;
+  const vertices = new Array(vertexCount * 2);
+  for (let i = 0; i < vertexCount; i++) {
+    const vertex = parcel.vertices[i];
+    vertices[i * 2] = vertex.x;
+    vertices[i * 2 + 1] = vertex.y;
+  }
 
-  // Fill the polygon
+  // Fill the polygon with terrain color
   graphics.poly(vertices);
-  graphics.fill({ color, alpha: 1 });
+  graphics.fill({ color: TERRAIN_COLORS[parcel.terrain], alpha: 1 });
 
-  // Draw border (subtle border for all parcels)
+  // Draw subtle border
   graphics.poly(vertices);
-  graphics.stroke({ width: 0.5, color: 0x000000, alpha: 0.3 });
+  graphics.stroke({ width: BORDER_WIDTH, color: BORDER_COLOR, alpha: BORDER_ALPHA });
 
   // Draw resource indicators
-  if (parcel.resources.length > 0) {
-    const centerX = parcel.center.x;
-    const centerY = parcel.center.y;
-    const radius = 3;
-
-    // Draw a small circle for each resource
-    parcel.resources.forEach((resource, index) => {
-      const angle = (index / parcel.resources.length) * Math.PI * 2;
-      const offsetX = Math.cos(angle) * 8;
-      const offsetY = Math.sin(angle) * 8;
-
-      graphics.circle(centerX + offsetX, centerY + offsetY, radius);
+  const resourceCount = parcel.resources.length;
+  if (resourceCount > 0) {
+    const { x: centerX, y: centerY } = parcel.center;
+    const angleStep = (Math.PI * 2) / resourceCount;
+    
+    for (let i = 0; i < resourceCount; i++) {
+      const resource = parcel.resources[i];
+      const angle = i * angleStep;
+      const x = centerX + Math.cos(angle) * RESOURCE_OFFSET;
+      const y = centerY + Math.sin(angle) * RESOURCE_OFFSET;
+      
+      graphics.circle(x, y, RESOURCE_RADIUS);
       graphics.fill({ color: getResourceColor(resource.type), alpha: 1 });
-    });
+    }
   }
 }
 
@@ -428,30 +480,24 @@ function renderParcel(graphics: Graphics, parcel: Parcel): void {
 function renderHighlight(graphics: Graphics, parcel: Parcel): void {
   if (parcel.vertices.length < 3) return;
 
-  const vertices = parcel.vertices.map(v => [v.x, v.y]).flat();
-
-  // Draw bright yellow border on top of everything
+  // Build vertices array efficiently
+  const vertexCount = parcel.vertices.length;
+  const vertices = new Array(vertexCount * 2);
+  for (let i = 0; i < vertexCount; i++) {
+    const vertex = parcel.vertices[i];
+    vertices[i * 2] = vertex.x;
+    vertices[i * 2 + 1] = vertex.y;
+  }
+  
   graphics.poly(vertices);
-  graphics.stroke({ width: 3, color: 0xffff00, alpha: 1 });
+  graphics.stroke({ width: HIGHLIGHT_WIDTH, color: HIGHLIGHT_COLOR, alpha: 1 });
 }
 
 /**
  * Get color for resource type
  */
 function getResourceColor(type: string): number {
-  const colors: Record<string, number> = {
-    water: 0x4a9eff,
-    wood: 0x8b4513,
-    stone: 0x808080,
-    iron: 0xb87333,
-    gold: 0xffd700,
-    oil: 0x1a1a1a,
-    coal: 0x2f2f2f,
-    fertile_soil: 0x654321,
-    fish: 0x00bfff,
-    game: 0x8b6914,
-  };
-  return colors[type] || 0xffffff;
+  return RESOURCE_COLORS[type] || 0xffffff;
 }
 
 
