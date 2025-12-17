@@ -21,8 +21,8 @@ program
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('-o, --output <path>', 'Output file path', './default-map.json')
   .option('-d, --output-dir <path>', 'Output directory', './maps')
-  .option('--mercator', 'Enable Mercator projection - land near poles appears larger')
-  .option('--polar-ice', 'Add ice and snow at poles')
+  .option('--mercator', 'Enable Mercator projection - continental blocks closer to poles have larger proportions')
+  .option('--polar-ice', 'Poles are covered with ice and snow - controls snow-covered proportions')
   .option('--ocean-proportion <number>', 'Control ocean percentage (0-1)', parseFloat)
   .parse(process.argv);
 
