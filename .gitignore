@@ -14,6 +14,12 @@ dist-ssr
 package-lock.json
 yarn.lock
 tmp
+.env
+
+# Generated maps
+maps/
+backend/maps/
+map-generator-cli/maps/
 
 # Editor directories and files
 .vscode/*
