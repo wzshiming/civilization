@@ -3,7 +3,7 @@
  */
 
 import type { Response } from 'express';
-import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType } from '@civilization/shared';
+import type { SSEMessage, SerializableWorldMap, StateDelta, SSEEventType, ParcelDelta } from '@civilization/shared';
 import { StateManager } from '../state/StateManager';
 
 export class SSEBroadcaster {
@@ -247,5 +247,42 @@ export class SSEBroadcaster {
     } else {
       this.broadcastDelta();
     }
+  }
+
+  /**
+   * Broadcast simulation results (changed parcels only) to all clients
+   * This sends only the parcels that were modified during simulation
+   */
+  broadcastSimulationResults(changedParcelIds: number[]): void {
+    if (this.clients.size === 0 || changedParcelIds.length === 0) return;
+
+    const worldMap = this.stateManager.getWorldMap();
+    if (!worldMap) return;
+
+    // Build delta with only the changed parcels
+    const deltas: ParcelDelta[] = changedParcelIds.map(id => {
+      const parcel = worldMap.parcels.get(id);
+      if (!parcel) return null;
+      
+      return {
+        id,
+        resources: parcel.resources,
+      };
+    }).filter(delta => delta !== null) as ParcelDelta[];
+
+    if (deltas.length === 0) return;
+
+    const delta: StateDelta = {
+      parcels: deltas,
+      lastUpdate: worldMap.lastUpdate,
+    };
+
+    const message: SSEMessage = {
+      type: 'delta',
+      timestamp: Date.now(),
+      data: delta,
+    };
+
+    this.broadcastMessage(message);
   }
 }
