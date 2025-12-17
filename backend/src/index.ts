@@ -9,7 +9,6 @@ import { StateManager } from './state/StateManager';
 import { SettingsManager } from './settings/SettingsManager';
 import { MapLoader } from './map-loader/MapLoader';
 import { SSEBroadcaster } from './sse/SSEBroadcaster';
-import { createRouter } from './api/routes';
 
 const PORT = process.env.PORT || 3001;
 const MAPS_DIR = process.env.MAPS_DIR || './maps';
@@ -32,15 +31,6 @@ app.use(express.json());
 app.get('/events', (req, res) => {
   sseBroadcaster.addClient(res);
 });
-
-// API routes
-app.use('/api', createRouter(
-  simulationEngine,
-  settingsManager,
-  mapLoader,
-  stateManager,
-  sseBroadcaster
-));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -74,6 +64,8 @@ app.listen(PORT, () => {
         // Start broadcasting
         sseBroadcaster.startBroadcasting();
         console.log('✓ SSE broadcasting started');
+
+        simulationEngine.start()
       } catch (error) {
         console.error('Failed to load default map:', error);
       }
@@ -84,6 +76,7 @@ app.listen(PORT, () => {
     console.log('No maps found. Please generate a map using the map-generator-cli tool.');
   }
 });
+
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

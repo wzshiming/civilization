@@ -11,8 +11,7 @@ export class SimulationEngine {
   private intervalId: NodeJS.Timeout | null = null;
   private speed: number = 1.0;
   private lastUpdateTime: number = Date.now();
-  private tickInterval: number = 100; // 100ms tick rate
-
+  private tickInterval: number = 1000;
   constructor(stateManager: StateManager) {
     this.stateManager = stateManager;
   }
