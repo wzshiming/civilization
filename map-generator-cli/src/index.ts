@@ -21,6 +21,9 @@ program
   .option('-s, --seed <number>', 'Random seed for reproducibility')
   .option('-o, --output <path>', 'Output file path', './default-map.json')
   .option('-d, --output-dir <path>', 'Output directory', './maps')
+  .option('--mercator', 'Enable Mercator projection - land near poles appears larger')
+  .option('--polar-ice', 'Add ice and snow at poles')
+  .option('--ocean-proportion <number>', 'Control ocean percentage (0-1)', parseFloat)
   .parse(process.argv);
 
 const options = program.opts();
@@ -31,6 +34,9 @@ const config: MapConfig = {
   height: parseInt(options.height),
   numParcels: parseInt(options.parcels),
   seed: options.seed ? parseInt(options.seed) : undefined,
+  mercator: options.mercator || false,
+  polarIce: options.polarIce || false,
+  oceanProportion: options.oceanProportion,
 };
 
 // Validate configuration
@@ -49,6 +55,11 @@ if (isNaN(config.numParcels) || config.numParcels <= 0) {
   process.exit(1);
 }
 
+if (config.oceanProportion !== undefined && (isNaN(config.oceanProportion) || config.oceanProportion < 0 || config.oceanProportion > 1)) {
+  console.error('Error: Invalid ocean-proportion value (must be between 0 and 1)');
+  process.exit(1);
+}
+
 console.log('╔═══════════════════════════════════════════════════════════╗');
 console.log('║     Civilization Map Generator                            ║');
 console.log('╚═══════════════════════════════════════════════════════════╝\n');
@@ -57,7 +68,10 @@ console.log('Configuration:');
 console.log(`  Width: ${config.width}`);
 console.log(`  Height: ${config.height}`);
 console.log(`  Parcels: ${config.numParcels}`);
-console.log(`  Seed: ${config.seed || 'random'}\n`);
+console.log(`  Seed: ${config.seed || 'random'}`);
+console.log(`  Mercator Projection: ${config.mercator ? 'enabled' : 'disabled'}`);
+console.log(`  Polar Ice: ${config.polarIce ? 'enabled' : 'disabled'}`);
+console.log(`  Ocean Proportion: ${config.oceanProportion !== undefined ? config.oceanProportion : 'default (~0.3)'}\n`);
 
 console.log('Generating map...\n');
 

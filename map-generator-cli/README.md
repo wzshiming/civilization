@@ -51,6 +51,9 @@ npm run dev -- --seed 12345 --output seeded-map.json
 - `-s, --seed <number>` - Random seed for reproducibility
 - `-o, --output <path>` - Output file name (default: default-map.json)
 - `-d, --output-dir <path>` - Output directory (default: ./maps)
+- `--mercator` - Enable Mercator projection - land near poles appears larger
+- `--polar-ice` - Add ice and snow at poles
+- `--ocean-proportion <number>` - Control ocean percentage (0-1, default: ~0.3)
 
 ## Examples
 
@@ -67,6 +70,26 @@ npm run dev -- -w 2000 -h 1500 -p 1000 -o large-map.json
 ### Reproducible Map
 ```bash
 npm run dev -- -s 42 -o reproducible-map.json
+```
+
+### Map with Mercator Projection
+```bash
+npm run dev -- --mercator -o mercator-map.json
+```
+
+### Map with Polar Ice Caps
+```bash
+npm run dev -- --polar-ice -o polar-map.json
+```
+
+### Map with Custom Ocean Coverage
+```bash
+npm run dev -- --ocean-proportion 0.5 -o ocean-heavy-map.json
+```
+
+### Combined Features
+```bash
+npm run dev -- --mercator --polar-ice --ocean-proportion 0.4 -s 42 -o custom-map.json
 ```
 
 ## Output

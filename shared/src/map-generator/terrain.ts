@@ -69,13 +69,20 @@ export function generateTerrain(
   parcels: Parcel[],
   _width: number,
   height: number,
-  random: SeededRandom
+  random: SeededRandom,
+  config?: { mercator?: boolean; polarIce?: boolean; oceanProportion?: number }
 ): void {
   const elevationNoise = new SimplexNoise(random);
   const moistureNoise = new SimplexNoise(random);
   const temperatureNoise = new SimplexNoise(random);
 
   const scale = 0.003; // Frequency of the noise
+  
+  // Ocean proportion: adjust water level threshold
+  // Default ocean proportion is ~0.3 (elevation < 0.3 = ocean)
+  // We adjust the base elevation to achieve the desired ocean proportion
+  const oceanProportion = config?.oceanProportion !== undefined ? config.oceanProportion : 0.3;
+  const waterLevelAdjustment = (oceanProportion - 0.3) * 0.5; // Scale adjustment factor
 
   for (const parcel of parcels) {
     const x = parcel.center.x;
@@ -88,8 +95,24 @@ export function generateTerrain(
     // but maintain some land at poles (no distance-from-center penalty)
     const latitude = Math.abs(y - height / 2) / (height / 2); // 0 at equator, 1 at poles
     
-    // Slight reduction at extreme latitudes to create more ocean at poles
-    elevation = elevation * (1 - latitude * 0.3);
+    // Mercator projection: land near poles appears larger
+    // In Mercator projection, the scale factor increases as you move toward poles
+    // This makes land masses near poles appear stretched/larger
+    // We simulate this by slightly increasing elevation near poles when mercator is enabled
+    if (config?.mercator) {
+      // Mercator scale factor increases dramatically near poles
+      // We apply a gentler version: boost elevation at high latitudes
+      const mercatorBoost = latitude * latitude * 0.15; // Quadratic increase toward poles
+      elevation = elevation + mercatorBoost;
+    }
+    
+    // Slight reduction at extreme latitudes to create more ocean at poles (if not using mercator)
+    if (!config?.mercator) {
+      elevation = elevation * (1 - latitude * 0.3);
+    }
+    
+    // Apply ocean proportion adjustment
+    elevation = elevation - waterLevelAdjustment;
     
     // Normalize to 0-1
     elevation = (elevation + 1) / 2;
@@ -112,6 +135,14 @@ export function generateTerrain(
     // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
     temperature = temperature * (1 - latitude * 0.8) + (1 - latitude) * 0.5;
+    
+    // Polar ice: force very cold temperatures at poles
+    if (config?.polarIce && latitude > 0.6) {
+      // At high latitudes (>60% toward poles), dramatically reduce temperature
+      const polarEffect = (latitude - 0.6) / 0.4; // 0 at 60% latitude, 1 at poles
+      // Force temperatures to be very low at poles - scale down and subtract
+      temperature = temperature * (1 - polarEffect * 0.95) - polarEffect * 0.5;
+    }
     
     // Higher elevations are colder
     temperature -= (elevation - 0.4) * 0.5;

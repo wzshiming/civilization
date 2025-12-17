@@ -102,6 +102,9 @@ export interface MapConfig {
   seed?: number;
   waterLevel?: number;
   numContinents?: number;
+  mercator?: boolean; // Enable Mercator projection - land near poles appears larger
+  polarIce?: boolean; // Add ice and snow at poles
+  oceanProportion?: number; // Control ocean percentage (0-1), default ~0.3
 }
 
 /** Simulation settings */

@@ -48,7 +48,7 @@ export function generateWorldMap(config: MapConfig): WorldMap {
 
   // Step 4: Generate terrain
   console.log('Generating terrain...');
-  generateTerrain(parcels, width, height, random);
+  generateTerrain(parcels, width, height, random, config);
 
   // Step 5: Generate resources
   console.log('Generating resources...');
