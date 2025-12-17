@@ -35,6 +35,16 @@ export const zhCN: TranslationKeys = {
   center: '中心：',
   neighbors: '邻居：',
   
+  // Resource attributes
+  edible: '可食用',
+  consumable: '可消耗',
+  renewable: '可再生',
+  tradeable: '可交易',
+  luxury: '奢侈品',
+  strategic: '战略资源',
+  storable: '可储存',
+  energy: '能源',
+  
   // Terrain types
   terrainTypes: {
     ocean: '海洋',

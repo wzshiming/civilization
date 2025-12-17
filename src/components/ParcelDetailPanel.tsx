@@ -62,32 +62,48 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
             <p className="no-resources">{t.noResources}</p>
           ) : (
             <div className="resources-list">
-              {parcel.resources.map((resource, index) => (
-                <div key={index} className="resource-item">
-                  <div className="resource-header">
-                    <span className="resource-type">
-                      {formatResourceType(resource.type)}
-                    </span>
-                    <span className="resource-change">
-                      {resource.changeRate > 0 ? '+' : ''}
-                      {resource.changeRate.toFixed(2)}/s
-                    </span>
+              {parcel.resources.map((resource, index) => {
+                const attributes = [];
+                if (resource.attributes.edible) attributes.push(t.edible || 'Edible');
+                if (resource.attributes.renewable) attributes.push(t.renewable || 'Renewable');
+                if (resource.attributes.luxury) attributes.push(t.luxury || 'Luxury');
+                if (resource.attributes.strategic) attributes.push(t.strategic || 'Strategic');
+                if (resource.attributes.energy) attributes.push(t.energy || 'Energy');
+                
+                return (
+                  <div key={index} className="resource-item">
+                    <div className="resource-header">
+                      <span className="resource-type">
+                        {formatResourceType(resource.type)}
+                      </span>
+                      <span className="resource-change">
+                        {resource.changeRate > 0 ? '+' : ''}
+                        {resource.changeRate.toFixed(2)}/s
+                      </span>
+                    </div>
+                    {attributes.length > 0 && (
+                      <div className="resource-attributes">
+                        {attributes.map((attr, i) => (
+                          <span key={i} className="resource-tag">{attr}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="resource-bar">
+                      <div
+                        className="resource-fill"
+                        style={{
+                          width: `${(resource.current / resource.maximum) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="resource-stats">
+                      <span>
+                        {resource.current.toFixed(0)} / {resource.maximum}
+                      </span>
+                    </div>
                   </div>
-                  <div className="resource-bar">
-                    <div
-                      className="resource-fill"
-                      style={{
-                        width: `${(resource.current / resource.maximum) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="resource-stats">
-                    <span>
-                      {resource.current.toFixed(0)} / {resource.maximum}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

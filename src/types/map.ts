@@ -18,21 +18,44 @@ export const TerrainType = {
 
 export type TerrainType = typeof TerrainType[keyof typeof TerrainType];
 
-/** Resource types that can exist in parcels */
-export const ResourceType = {
-  WATER: 'water',
-  WOOD: 'wood',
-  STONE: 'stone',
-  IRON: 'iron',
-  GOLD: 'gold',
-  OIL: 'oil',
-  COAL: 'coal',
-  FERTILE_SOIL: 'fertile_soil',
-  FISH: 'fish',
-  GAME: 'game',
-} as const;
+/** Resource type identifier (can be any string) */
+export type ResourceType = string;
 
-export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
+/** Resource attribute flags */
+export interface ResourceAttributes {
+  /** Can be consumed as food */
+  edible?: boolean;
+  /** Can be consumed/used up */
+  consumable?: boolean;
+  /** Regenerates over time */
+  renewable?: boolean;
+  /** Can be traded */
+  tradeable?: boolean;
+  /** Is a luxury resource */
+  luxury?: boolean;
+  /** Is a strategic resource (for military/tech) */
+  strategic?: boolean;
+  /** Can be stored */
+  storable?: boolean;
+  /** Provides energy */
+  energy?: boolean;
+}
+
+/** Configuration for a resource type */
+export interface ResourceDefinition {
+  /** Unique identifier for the resource */
+  id: ResourceType;
+  /** Display name key for i18n */
+  nameKey: string;
+  /** Resource attributes */
+  attributes: ResourceAttributes;
+  /** Maximum capacity */
+  maximum: number;
+  /** Regeneration/depletion rate (positive=regeneration, negative=depletion) */
+  changeRate: number;
+  /** Visual color for rendering */
+  color?: string;
+}
 
 /** Represents a single resource with its attributes */
 export interface Resource {
@@ -40,6 +63,7 @@ export interface Resource {
   current: number;
   maximum: number;
   changeRate: number; // positive for regeneration, negative for depletion
+  attributes: ResourceAttributes;
 }
 
 /** 2D Point coordinate */

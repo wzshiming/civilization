@@ -34,6 +34,16 @@ export const en = {
   center: 'Center:',
   neighbors: 'Neighbors:',
   
+  // Resource attributes
+  edible: 'Edible',
+  consumable: 'Consumable',
+  renewable: 'Renewable',
+  tradeable: 'Tradeable',
+  luxury: 'Luxury',
+  strategic: 'Strategic',
+  storable: 'Storable',
+  energy: 'Energy',
+  
   // Terrain types
   terrainTypes: {
     ocean: 'Ocean',

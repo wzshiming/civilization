@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
 import type { WorldMap, Parcel } from '../types/map';
 import { TerrainType } from '../types/map';
+import { getResourceDefinition } from '../map-generator/resource-registry';
 
 interface MapRendererProps {
   worldMap: WorldMap;
@@ -425,22 +426,16 @@ function renderHighlight(graphics: Graphics, parcel: Parcel): void {
 }
 
 /**
- * Get color for resource type
+ * Get color for resource type from registry
  */
 function getResourceColor(type: string): number {
-  const colors: Record<string, number> = {
-    water: 0x4a9eff,
-    wood: 0x8b4513,
-    stone: 0x808080,
-    iron: 0xb87333,
-    gold: 0xffd700,
-    oil: 0x1a1a1a,
-    coal: 0x2f2f2f,
-    fertile_soil: 0x654321,
-    fish: 0x00bfff,
-    game: 0x8b6914,
-  };
-  return colors[type] || 0xffffff;
+  const definition = getResourceDefinition(type);
+  if (definition && definition.color) {
+    // Convert hex string to number (remove # and parse as hex)
+    const hex = definition.color.replace('#', '');
+    return parseInt(hex, 16);
+  }
+  return 0xffffff; // default white
 }
 
 

@@ -167,6 +167,30 @@ for each resource:
 
 ## Resource System Details
 
+### Flexible Resource System
+
+The resource system has been refactored to be fully extensible and configurable. Resources are no longer hardcoded but instead defined in a flexible registry system.
+
+#### Resource Attributes
+
+Each resource can have various attributes that define its behavior:
+- **edible**: Can be consumed as food (e.g., fish, game)
+- **consumable**: Can be used up over time (e.g., wood, stone, oil)
+- **renewable**: Regenerates over time (e.g., wood, fish, game)
+- **tradeable**: Can be traded between entities (e.g., gold, iron, fish)
+- **luxury**: Provides luxury/happiness benefits (e.g., gold)
+- **strategic**: Important for military/technology (e.g., iron, oil)
+- **storable**: Can be stored for later use (most resources)
+- **energy**: Provides energy/fuel (e.g., wood, oil, coal)
+
+#### Resource Registry
+
+All resources are managed through a centralized `ResourceRegistry` class that allows:
+- Dynamic registration of new resource types
+- Easy modification of resource properties
+- Query resources by attributes (e.g., get all edible resources)
+- Runtime addition/removal of resource types
+
 ### Resource Distribution Rules
 
 Each terrain type has:
@@ -180,11 +204,44 @@ Examples:
 - **Oceans**: Fish, oil (40% spawn chance)
 - **Grasslands**: Fertile soil, game, stone (60% spawn chance)
 
-### Resource Properties
+### Default Resource Properties
 
 - **Regenerating**: Wood (0.5/s), fertile soil (0.2/s), fish (0.3/s), game (0.4/s)
 - **Non-regenerating**: Stone, iron, gold, oil, coal, water (0/s)
 - **Maximum capacities**: Range from 100 (fertile soil) to 1000 (water)
+
+### Adding New Resources
+
+To add a new resource type to the game:
+
+```typescript
+import { registerResource } from './map-generator/resource-registry';
+
+// Register a new resource type
+registerResource({
+  id: 'copper',
+  nameKey: 'copper',
+  attributes: {
+    consumable: true,
+    tradeable: true,
+    strategic: true,
+    storable: true,
+  },
+  maximum: 400,
+  changeRate: 0,
+  color: '#b87333',
+});
+
+// Update translations
+// In en.ts: resourceTypes.copper = 'Copper'
+// In zh-CN.ts: resourceTypes.copper = '铜'
+
+// Add to terrain rules in resources.ts
+// [TerrainType.MOUNTAIN]: {
+//   types: [...existingTypes, 'copper'],
+//   probability: 0.8,
+// }
+```
 
 ## Visual Design
 
