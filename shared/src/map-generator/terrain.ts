@@ -116,9 +116,9 @@ export function generateTerrain(
     // Temperature varies strongly with latitude (coldest at poles, warmest at equator)
     // latitude: 0 at equator (warm), 1 at poles (cold)
     // Apply strong polar cooling - at poles (latitude=1), base temperature becomes very low
-    // Formula: temp = noise_variation * (1 - latitude) + base_for_latitude
-    // At equator (lat=0): temp = noise * 1 + 0.5 = 0.5-1.5 (warm)
-    // At poles (lat=1): temp = noise * 0 + 0.0 = 0.0 (very cold)
+    // Formula: temp = temperature * 0.3 * (1 - latitude) + (1 - latitude) * 0.7
+    // At equator (lat=0): temp = temperature * 0.3 + 0.7 = 0.7-1.0 (warm)
+    // At poles (lat=1): temp = temperature * 0 + 0 = 0.0 (very cold)
     temperature = temperature * 0.3 * (1 - latitude) + (1 - latitude) * 0.7;
     
     // Higher elevations are colder
