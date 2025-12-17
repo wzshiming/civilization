@@ -14,7 +14,7 @@ interface ParcelDetailPanelProps {
 
 export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
   const { t } = useI18n();
-  
+
   if (!parcel) {
     return null;
   }
@@ -69,10 +69,14 @@ export function ParcelDetailPanel({ parcel, onClose }: ParcelDetailPanelProps) {
                     <span className="resource-type">
                       {formatResourceType(resource.type)}
                     </span>
-                    <span className="resource-change">
-                      {resource.changeRate > 0 ? '+' : ''}
-                      {resource.changeRate.toFixed(2)}/s
-                    </span>
+                    {
+                      resource.changeRate !== 0 && (
+                        <span className="resource-change">
+                          {resource.changeRate > 0 ? '+' : ''}
+                          {resource.changeRate.toFixed(2)}
+                        </span>
+                      )
+                    }
                   </div>
                   <div className="resource-bar">
                     <div
