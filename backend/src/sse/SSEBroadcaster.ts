@@ -145,8 +145,6 @@ export class SSEBroadcaster {
 
     const allParcels = Array.from(worldMap.parcels.values());
     const visibleParcels = this.filterParcelsByViewport(allParcels, viewport);
-    
-    console.log(`Sending full state: ${visibleParcels.length}/${allParcels.length} parcels (viewport: ${viewport ? 'set' : 'none'})`);
 
     const serializable: SerializableWorldMap = {
       parcels: visibleParcels,
@@ -186,8 +184,8 @@ export class SSEBroadcaster {
         // If no viewport set, include all deltas
         if (!clientInfo.viewport) return true;
         
-        // Check if parcel is visible
-        return this.filterParcelsByViewport([parcel], clientInfo.viewport).length > 0;
+        // Check if parcel is visible (inline check to avoid array creation)
+        return this.isParcelInViewport(parcel, clientInfo.viewport);
       });
 
       // Only send if there are visible changes
@@ -282,7 +280,6 @@ export class SSEBroadcaster {
   updateClientViewportById(clientId: string, viewport: ViewportBounds): boolean {
     const clientInfo = this.clientsById.get(clientId);
     if (clientInfo) {
-      console.log(`Updating viewport for client ${clientId}:`, viewport);
       clientInfo.viewport = viewport;
       
       // Send updated visible state to the client
@@ -341,6 +338,38 @@ export class SSEBroadcaster {
       point.x <= viewport.maxX &&
       point.y >= viewport.minY &&
       point.y <= viewport.maxY
+    );
+  }
+
+  /**
+   * Check if a single parcel is within viewport bounds (optimized for delta filtering)
+   */
+  private isParcelInViewport(parcel: Parcel, viewport: ViewportBounds): boolean {
+    const { center, vertices } = parcel;
+    
+    // Check center
+    if (this.isPointInViewport(center, viewport)) {
+      return true;
+    }
+    
+    // Check vertices
+    for (const vertex of vertices) {
+      if (this.isPointInViewport(vertex, viewport)) {
+        return true;
+      }
+    }
+    
+    // Check if viewport is inside parcel (for very large parcels)
+    const parcelMinX = Math.min(...vertices.map((v: { x: number }) => v.x));
+    const parcelMaxX = Math.max(...vertices.map((v: { x: number }) => v.x));
+    const parcelMinY = Math.min(...vertices.map((v: { y: number }) => v.y));
+    const parcelMaxY = Math.max(...vertices.map((v: { y: number }) => v.y));
+    
+    return (
+      parcelMinX <= viewport.maxX &&
+      parcelMaxX >= viewport.minX &&
+      parcelMinY <= viewport.maxY &&
+      parcelMaxY >= viewport.minY
     );
   }
 }

@@ -2,6 +2,7 @@
  * Main backend server entry point
  */
 
+import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';
 import { SimulationEngine } from './simulation/SimulationEngine';
@@ -30,8 +31,8 @@ app.use(express.json());
 
 // SSE endpoint
 app.get('/events', (req, res) => {
-  // Generate unique client ID
-  const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate unique client ID using crypto for better uniqueness
+  const clientId = `client-${crypto.randomUUID()}`;
   sseBroadcaster.addClient(res, clientId);
 });
 

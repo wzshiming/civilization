@@ -44,6 +44,12 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
+// Constants for viewport updates
+const VIEWPORT_UPDATE_THROTTLE_MS = 1000; // 1 second between viewport updates
+const VIEWPORT_POSITION_CHANGE_THRESHOLD = 50; // pixels
+const VIEWPORT_ZOOM_CHANGE_THRESHOLD = 0.1; // zoom level
+const VIEWPORT_PADDING = 100; // Extra padding to preload nearby parcels
+
 // Constants for rendering
 const BORDER_WIDTH = 0.5;
 const BORDER_COLOR = 0x000000;
@@ -175,25 +181,24 @@ export function MapRenderer({ worldMap, onParcelClick, onViewportChange }: MapRe
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
     }
 
-    // Send viewport updates (throttled to once per second and significant changes)
+    // Send viewport updates (throttled to avoid excessive API calls)
     const now = Date.now();
     const last = lastViewportUpdateRef.current;
     const timeSinceLastUpdate = now - last.time;
-    const cameraChanged = Math.abs(state.camera.x - last.x) > 50 || 
-                          Math.abs(state.camera.y - last.y) > 50 ||
-                          Math.abs(state.zoom - last.zoom) > 0.1;
+    const cameraChanged = Math.abs(state.camera.x - last.x) > VIEWPORT_POSITION_CHANGE_THRESHOLD || 
+                          Math.abs(state.camera.y - last.y) > VIEWPORT_POSITION_CHANGE_THRESHOLD ||
+                          Math.abs(state.zoom - last.zoom) > VIEWPORT_ZOOM_CHANGE_THRESHOLD;
 
-    if (onViewportChange && appRef.current && (timeSinceLastUpdate > 1000 && cameraChanged)) {
+    if (onViewportChange && appRef.current && (timeSinceLastUpdate > VIEWPORT_UPDATE_THROTTLE_MS && cameraChanged)) {
       // Calculate viewport bounds in world coordinates
       const screenWidth = appRef.current.screen.width;
       const screenHeight = appRef.current.screen.height;
       
-      // Convert screen bounds to world coordinates with some padding
-      const padding = 100; // Extra padding to preload nearby parcels
-      const minX = (-state.camera.x - padding) / state.zoom;
-      const maxX = (screenWidth - state.camera.x + padding) / state.zoom;
-      const minY = (-state.camera.y - padding) / state.zoom;
-      const maxY = (screenHeight - state.camera.y + padding) / state.zoom;
+      // Convert screen bounds to world coordinates with padding for smooth scrolling
+      const minX = (-state.camera.x - VIEWPORT_PADDING) / state.zoom;
+      const maxX = (screenWidth - state.camera.x + VIEWPORT_PADDING) / state.zoom;
+      const minY = (-state.camera.y - VIEWPORT_PADDING) / state.zoom;
+      const maxY = (screenHeight - state.camera.y + VIEWPORT_PADDING) / state.zoom;
 
       onViewportChange(minX, maxX, minY, maxY);
       
