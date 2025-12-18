@@ -97,34 +97,6 @@
   font-weight: bold;
 }
 
-.terrainGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.terrainButton {
-  padding: 8px;
-  border: 2px solid transparent;
-  color: #fff;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 12px;
-  text-align: center;
-  transition: all 0.2s;
-  font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.terrainButton:hover {
-  border-color: #e94560;
-}
-
-.terrainButton.selected {
-  border-color: #e94560;
-  box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-}
-
 .badge {
   background: #e94560;
   color: #fff;
