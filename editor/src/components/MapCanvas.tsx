@@ -283,42 +283,56 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
     return () => window.removeEventListener('resize', resizeCanvas);
   }, []);
 
-  // WASD keyboard controls for panning
+  // WASD keyboard controls for smooth panning
   useEffect(() => {
+    const keysPressed = new Set<string>();
+    let animationFrameId: number | null = null;
+    const panSpeed = 5; // Speed per frame
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      const panSpeed = 20;
-      let dx = 0;
-      let dy = 0;
-
-      switch (e.key.toLowerCase()) {
-        case 'w':
-          dy = panSpeed;
-          break;
-        case 'a':
-          dx = panSpeed;
-          break;
-        case 's':
-          dy = -panSpeed;
-          break;
-        case 'd':
-          dx = -panSpeed;
-          break;
-        default:
-          return;
-      }
-
-      if (dx !== 0 || dy !== 0) {
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd'].includes(key)) {
         e.preventDefault();
-        setCamera((prev) => ({
-          ...prev,
-          x: prev.x + dx,
-          y: prev.y + dy,
-        }));
+        keysPressed.add(key);
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysPressed.delete(e.key.toLowerCase());
+    };
+
+    const animate = () => {
+      if (keysPressed.size > 0) {
+        let dx = 0;
+        let dy = 0;
+
+        if (keysPressed.has('w')) dy += panSpeed;
+        if (keysPressed.has('s')) dy -= panSpeed;
+        if (keysPressed.has('a')) dx += panSpeed;
+        if (keysPressed.has('d')) dx -= panSpeed;
+
+        if (dx !== 0 || dy !== 0) {
+          setCamera((prev) => ({
+            ...prev,
+            x: prev.x + dx,
+            y: prev.y + dy,
+          }));
+        }
+      }
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   const getHoverInfo = (): string => {

@@ -186,6 +186,9 @@ function App() {
           zoom={zoom}
           totalPlots={map?.plots.length ?? 0}
           selectedCount={selectedPlots.size}
+          map={map}
+          currentTool={currentTool}
+          editHistory={editHistory}
         />
       </div>
     </div>
