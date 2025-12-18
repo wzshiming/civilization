@@ -4,10 +4,13 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Application } from '@pixi/react';
-import type { Container, Graphics } from 'pixi.js';
+import { Application, extend } from '@pixi/react';
+import { Container, Graphics } from 'pixi.js';
 import type { WorldMap, Parcel } from '@civilization/shared';
 import { TerrainType } from '../types/map';
+
+// Extend pixi-react with PIXI classes we want to use
+extend({ Container, Graphics });
 
 interface MapRendererProps {
   worldMap: WorldMap;
@@ -168,9 +171,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Setup ticker for camera updates
   useEffect(() => {
-    if (!stageRef.current) return;
+    if (!stageRef.current?.app) return;
 
-    const app = stageRef.current;
+    const app = stageRef.current.app;
     app.ticker.add(updateCameraLoop);
 
     return () => {
@@ -190,10 +193,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     // Helper to set zoom point to viewport center
     const setZoomPointToCenter = () => {
-      if (stageRef.current) {
+      if (stageRef.current?.app) {
         viewStateRef.current.zoomPoint = {
-          x: stageRef.current.screen.width / 2,
-          y: stageRef.current.screen.height / 2
+          x: stageRef.current.app.screen.width / 2,
+          y: stageRef.current.app.screen.height / 2
         };
       }
     };
@@ -233,9 +236,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
 
-      if (!stageRef.current?.canvas) return;
+      if (!stageRef.current?.app?.canvas) return;
 
-      const rect = stageRef.current.canvas.getBoundingClientRect();
+      const rect = stageRef.current.app.canvas.getBoundingClientRect();
       viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
@@ -245,7 +248,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     window.addEventListener('keyup', handleKeyUp);
 
     // Add wheel listener - we need to find the canvas element
-    const canvasElement = stageRef.current?.canvas;
+    const canvasElement = stageRef.current?.app?.canvas;
     if (canvasElement) {
       canvasElement.addEventListener('wheel', handleWheel, { passive: false });
     }
