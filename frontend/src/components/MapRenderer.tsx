@@ -3,8 +3,8 @@
  * with WASD movement, smooth scrolling, and viewport culling
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Application, extend } from '@pixi/react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import type { WorldMap, Parcel } from '@civilization/shared';
 import { TerrainType } from '../types/map';
@@ -64,11 +64,13 @@ const TILE_OFFSETS = [
 ] as const;
 
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stageRef = useRef<any>(null);
+  const stageRef = useRef<ApplicationRef>(null);
   const mainContainerRef = useRef<Container | null>(null);
   const highlightContainerRef = useRef<Container | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+
+  // Memoize parcels array to avoid repeated conversions
+  const parcelsArray = useMemo(() => Array.from(worldMap.parcels.values()), [worldMap.parcels]);
 
   // Store worldMap dimensions and onParcelClick in refs to avoid recreating callbacks
   // These refs are intentionally updated during render to keep callbacks stable
@@ -171,9 +173,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Setup ticker for camera updates
   useEffect(() => {
-    if (!stageRef.current?.app) return;
+    const app = stageRef.current?.getApplication();
+    if (!app) return;
 
-    const app = stageRef.current.app;
     app.ticker.add(updateCameraLoop);
 
     return () => {
@@ -193,10 +195,11 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     // Helper to set zoom point to viewport center
     const setZoomPointToCenter = () => {
-      if (stageRef.current?.app) {
+      const app = stageRef.current?.getApplication();
+      if (app) {
         viewStateRef.current.zoomPoint = {
-          x: stageRef.current.app.screen.width / 2,
-          y: stageRef.current.app.screen.height / 2
+          x: app.screen.width / 2,
+          y: app.screen.height / 2
         };
       }
     };
@@ -236,9 +239,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
 
-      if (!stageRef.current?.app?.canvas) return;
+      const canvas = stageRef.current?.getCanvas();
+      if (!canvas) return;
 
-      const rect = stageRef.current.app.canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
@@ -248,7 +252,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     window.addEventListener('keyup', handleKeyUp);
 
     // Add wheel listener - we need to find the canvas element
-    const canvasElement = stageRef.current?.app?.canvas;
+    const canvasElement = stageRef.current?.getCanvas();
     if (canvasElement) {
       canvasElement.addEventListener('wheel', handleWheel, { passive: false });
     }
@@ -288,7 +292,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             x={x * worldMap.width}
             y={y * worldMap.height}
           >
-            {Array.from(worldMap.parcels.values()).map((parcel) => (
+            {parcelsArray.map((parcel) => (
               <pixiGraphics
                 key={`${tileIndex}-${parcel.id}`}
                 draw={(g: Graphics) => {
@@ -309,7 +313,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             x={x * worldMap.width}
             y={y * worldMap.height}
           >
-            {Array.from(worldMap.parcels.values()).map((parcel) => (
+            {parcelsArray.map((parcel) => (
               <pixiGraphics
                 key={`highlight-${tileIndex}-${parcel.id}`}
                 draw={(g: Graphics) => {
