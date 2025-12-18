@@ -23,6 +23,8 @@ interface SidebarProps {
   onUndo: () => void;
   onRedo: () => void;
   onStep: () => void;
+  onUpdateMap: (map: GameMap) => void;
+  onUpdateHistory: (history: EditHistory) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -43,6 +45,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onUndo,
   onRedo,
   onStep,
+  onUpdateMap,
+  onUpdateHistory,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +71,57 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const terrainStats = getTerrainStats();
+
+  const formatNumber = (num: number) => {
+    return num.toFixed(2);
+  };
+
+  const handleTerrainChange = (newTerrainTypeID: string) => {
+    if (!map) return;
+
+    const changes = Array.from(selectedPlots).map((plotID) => {
+      const p = map.plots.find((plot) => plot.plotID === plotID);
+      if (!p) return null;
+      return {
+        plotID,
+        oldTerrain: p.plotAttributes.terrainType,
+        newTerrain: newTerrainTypeID,
+      };
+    }).filter((c): c is { plotID: string; oldTerrain: string; newTerrain: string } => c !== null);
+
+    const newPlots = map.plots.map((p) => {
+      if (selectedPlots.has(p.plotID)) {
+        return {
+          ...p,
+          plotAttributes: {
+            ...p.plotAttributes,
+            terrainType: newTerrainTypeID,
+          },
+        };
+      }
+      return p;
+    });
+
+    const edit = {
+      type: 'terrain' as const,
+      plots: changes,
+    };
+
+    onUpdateMap({ ...map, plots: newPlots });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+  };
+
+  // Get the first selected plot for display in properties
+  const selectedPlot = map && selectedPlots.size > 0 
+    ? map.plots.find((p) => selectedPlots.has(p.plotID))
+    : null;
+
+  const selectedTerr = selectedPlot && map
+    ? map.terrainTypes.find((t) => t.terrainTypeID === selectedPlot.plotAttributes.terrainType)
+    : null;
 
   return (
     <div className={styles.sidebar}>
@@ -148,26 +203,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className={styles.panel}>
-        <h2>TERRAIN TYPES</h2>
-        <div className={styles.terrainGrid}>
-          {map?.terrainTypes.map((terrain) => (
-            <button
-              key={terrain.terrainTypeID}
-              onClick={() => onSelectTerrain(terrain.terrainTypeID)}
-              className={`${styles.terrainButton} ${
-                selectedTerrain === terrain.terrainTypeID ? styles.selected : ''
-              }`}
-              style={{
-                backgroundColor: terrain.color || "#888888",
-              }}
-            >
-              {terrain.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.panel}>
         <h2>HISTORY</h2>
         <div className={styles.historyButtons}>
           <button
@@ -215,6 +250,161 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Plot Properties Section */}
+      <div className={styles.panel}>
+        <h2>
+          PLOT PROPERTIES
+          {selectedPlots.size > 1 && (
+            <span className={styles.badge}> {selectedPlots.size}</span>
+          )}
+        </h2>
+        {!selectedPlot ? (
+          <div className={styles.emptyState}>
+            <p>No plot selected</p>
+          </div>
+        ) : (
+          <>
+            {/* Basic Information */}
+            <div className={styles.subsection}>
+              <h3>Basic Info</h3>
+              <div className={styles.stat}>
+                <span>Area:</span>
+                <span>{formatNumber(selectedPlot.area)}</span>
+              </div>
+              <div className={styles.stat}>
+                <span>Perimeter:</span>
+                <span>{formatNumber(selectedPlot.perimeter)}</span>
+              </div>
+              <div className={styles.stat}>
+                <span>Neighbors:</span>
+                <span>{selectedPlot.plotAttributes.neighborPlots.length}</span>
+              </div>
+            </div>
+
+            {/* Terrain */}
+            <div className={styles.subsection}>
+              <h3>Terrain</h3>
+              <select
+                className={styles.select}
+                value={selectedPlot.plotAttributes.terrainType}
+                onChange={(e) => handleTerrainChange(e.target.value)}
+              >
+                {map?.terrainTypes.map((t) => (
+                  <option key={t.terrainTypeID} value={t.terrainTypeID}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              {selectedTerr && (
+                <div className={styles.terrainPreview}>
+                  <div
+                    className={styles.terrainColor}
+                    style={{ backgroundColor: selectedTerr.color || '#888' }}
+                  />
+                  <span>{selectedTerr.name}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Storage with detailed info */}
+            <div className={styles.subsection}>
+              <h3>Storage</h3>
+              {selectedPlot.plotAttributes.storages.length === 0 ? (
+                <div className={styles.stat}>
+                  <span>No storage</span>
+                </div>
+              ) : (
+                selectedPlot.plotAttributes.storages.map((storage, idx) => {
+                  const resourceType = map?.resourceTypes.find(
+                    (rt) => rt.resourceTypeID === storage.resourceType
+                  );
+                  return (
+                    <div key={idx} className={styles.storageItem}>
+                      <div className={styles.storageName}>
+                        {resourceType?.name || storage.resourceType}
+                      </div>
+                      <div className={styles.storageBar}>
+                        <div
+                          className={styles.storageProgress}
+                          style={{
+                            width: `${Math.min((storage.size / storage.capacity) * 100, 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className={styles.storageStats}>
+                        <span>{formatNumber(storage.size)}</span>
+                        <span>/</span>
+                        <span>{formatNumber(storage.capacity)}</span>
+                      </div>
+                      {resourceType && resourceType.resourceEfficiencies.length > 0 && (
+                        <div className={styles.resourceEfficiency}>
+                          {resourceType.resourceEfficiencies.map((eff, effIdx) => {
+                            const effType = map?.resourceEfficiencyTypes.find(
+                              (ret) => ret.resourceEfficiencyTypeID === eff.resourceEfficiencyTypeID
+                            );
+                            return (
+                              <div key={effIdx} className={styles.effItem}>
+                                <span>{effType?.name || eff.resourceEfficiencyTypeID}:</span>
+                                <span>{eff.rate.toFixed(1)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Buildings */}
+            {selectedPlot.plotAttributes.buildings.length > 0 && (
+              <div className={styles.subsection}>
+                <h3>Buildings</h3>
+                {selectedPlot.plotAttributes.buildings.map((building, idx) => (
+                  <div key={idx} className={styles.stat}>
+                    <span>{building.buildingTypeID}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Species */}
+            {selectedPlot.plotAttributes.species.length > 0 && (
+              <div className={styles.subsection}>
+                <h3>Species</h3>
+                {selectedPlot.plotAttributes.species.map((species, idx) => (
+                  <div key={idx} className={styles.stat}>
+                    <span>{species.speciesTypeID}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Populations */}
+            {selectedPlot.plotAttributes.populations.length > 0 && (
+              <div className={styles.subsection}>
+                <h3>Populations</h3>
+                {selectedPlot.plotAttributes.populations.map((pop, idx) => (
+                  <div key={idx} className={styles.stat}>
+                    <span>{pop.speciesTypeID}:</span>
+                    <span>{pop.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Ownership */}
+            <div className={styles.subsection}>
+              <h3>Ownership</h3>
+              <div className={styles.stat}>
+                <span>{selectedPlot.plotAttributes.ownerPlayerID || 'Unowned'}</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

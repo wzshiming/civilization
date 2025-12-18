@@ -66,34 +66,6 @@
   border-color: #e94560;
 }
 
-.terrainGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
-
-.terrainButton {
-  padding: 8px;
-  border: 2px solid transparent;
-  color: #fff;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 12px;
-  text-align: center;
-  transition: all 0.2s;
-  font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.terrainButton:hover {
-  border-color: #e94560;
-}
-
-.terrainButton.selected {
-  border-color: #e94560;
-  box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-}
-
 .historyButtons {
   display: flex;
   gap: 5px;
@@ -121,6 +93,147 @@
 }
 
 .stat span:last-child {
+  color: #e94560;
+  font-weight: bold;
+}
+
+.badge {
+  background: #e94560;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.emptyState {
+  padding: 10px 0;
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+}
+
+.subsection {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.subsection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.subsection h3 {
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  color: #e94560;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.select {
+  width: 100%;
+  padding: 6px 10px;
+  background: #0f3460;
+  border: 2px solid #533483;
+  color: #eee;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.select:hover {
+  border-color: #e94560;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.terrainPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #0f3460;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.terrainColor {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: 2px solid #1a1a2e;
+}
+
+.storageItem {
+  background: #0f3460;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.storageItem:last-child {
+  margin-bottom: 0;
+}
+
+.storageName {
+  font-size: 12px;
+  color: #eee;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.storageBar {
+  height: 6px;
+  background: #1a1a2e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.storageProgress {
+  height: 100%;
+  background: linear-gradient(90deg, #e94560, #533483);
+  transition: width 0.3s ease;
+}
+
+.storageStats {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.resourceEfficiency {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #1a1a2e;
+}
+
+.effItem {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+.effItem span:first-child {
+  color: #888;
+}
+
+.effItem span:last-child {
   color: #e94560;
   font-weight: bold;
 }

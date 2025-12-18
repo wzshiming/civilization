@@ -357,12 +357,6 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
         onWheel={handleWheel}
         onContextMenu={(e) => e.preventDefault()}
       />
-      <div className={styles.overlay}>
-        <div>
-          <strong>Current Tool:</strong> {currentTool}
-        </div>
-        {hoveredPlot && <div>{getHoverInfo()}</div>}
-      </div>
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { generateMap } from '../../src/generators';
 import { executeStep, StepResult } from '../../src/simulation';
 import Sidebar from './components/Sidebar';
 import MapCanvas from './components/MapCanvas';
-import StatusBar from './components/StatusBar';
 import styles from './App.module.css';
 
 // Editor-specific types
@@ -188,6 +187,8 @@ function App() {
         onUndo={handleUndo}
         onRedo={handleRedo}
         onStep={handleStep}
+        onUpdateMap={setMap}
+        onUpdateHistory={setEditHistory}
       />
       <div className={styles.main}>
         <MapCanvas
@@ -200,14 +201,6 @@ function App() {
           onUpdateHistory={setEditHistory}
           editHistory={editHistory}
           onZoomChange={setZoom}
-        />
-        <StatusBar
-          zoom={zoom}
-          totalPlots={map?.plots.length ?? 0}
-          selectedCount={selectedPlots.size}
-          map={map}
-          currentTool={currentTool}
-          editHistory={editHistory}
         />
       </div>
     </div>
