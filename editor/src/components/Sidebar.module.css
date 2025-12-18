@@ -1,0 +1,126 @@
+.sidebar {
+  width: 300px;
+  background: #16213e;
+  border-right: 1px solid #0f3460;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.header {
+  padding: 20px;
+  background: #0f3460;
+  border-bottom: 1px solid #533483;
+}
+
+.header h1 {
+  font-size: 20px;
+  margin-bottom: 5px;
+  color: #e94560;
+}
+
+.header p {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.panel {
+  padding: 15px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.panel h2 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #e94560;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  background: #0f3460;
+  border: 2px solid transparent;
+  color: #eee;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.button:hover:not(:disabled) {
+  background: #533483;
+  border-color: #e94560;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button.active {
+  background: #533483;
+  border-color: #e94560;
+}
+
+.terrainGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.terrainButton {
+  padding: 8px;
+  border: 2px solid transparent;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+  text-align: center;
+  transition: all 0.2s;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.terrainButton:hover {
+  border-color: #e94560;
+}
+
+.terrainButton.selected {
+  border-color: #e94560;
+  box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+.historyButtons {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.historyButtons .button {
+  margin: 0;
+}
+
+.stat,
+.stats {
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+}
+
+.stat span:first-child {
+  color: #aaa;
+}
+
+.stat span:last-child {
+  color: #e94560;
+  font-weight: bold;
+}

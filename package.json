@@ -8,15 +8,23 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate-map": "tsx scripts/generate-map.ts"
+    "generate-map": "tsx scripts/generate-map.ts",
+    "editor": "cd editor && vite",
+    "editor:build": "cd editor && vite build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
+    "vite": "^7.3.0",
     "vitest": "^4.0.16"
   }
 }
