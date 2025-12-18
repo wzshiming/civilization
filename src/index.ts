@@ -6,3 +6,6 @@ export * from './utils/index.js';
 
 // Generators
 export * from './generators/index.js';
+
+// Simulation
+export * from './simulation/index.js';

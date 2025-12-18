@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameMap } from '../../src/types';
 import { generateMap } from '../../src/generators';
+import { executeStep, StepResult } from '../../src/simulation';
 import Sidebar from './components/Sidebar';
 import MapCanvas from './components/MapCanvas';
 import StatusBar from './components/StatusBar';
@@ -36,6 +37,8 @@ function App() {
     redoStack: [],
   });
   const [zoom, setZoom] = useState(100);
+  const [stepCount, setStepCount] = useState(0);
+  const [lastStepResult, setLastStepResult] = useState<StepResult | null>(null);
 
   React.useEffect(() => {
     // Generate initial map
@@ -57,6 +60,8 @@ function App() {
     setMap(newMap);
     setSelectedPlots(new Set());
     setEditHistory({ undoStack: [], redoStack: [] });
+    setStepCount(0);
+    setLastStepResult(null);
   };
 
   const handleLoadMap = (file: File) => {
@@ -67,12 +72,22 @@ function App() {
         setMap(loadedMap);
         setSelectedPlots(new Set());
         setEditHistory({ undoStack: [], redoStack: [] });
+        setStepCount(0);
+        setLastStepResult(null);
       } catch (error) {
         console.error('Error loading map:', error);
         alert('Failed to load map file');
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleStep = () => {
+    if (!map) return;
+    const result = executeStep(map);
+    setMap({ ...map }); // Trigger re-render with updated plot storages
+    setStepCount((prev) => prev + 1);
+    setLastStepResult(result);
   };
 
   const handleSaveMap = () => {
@@ -160,6 +175,8 @@ function App() {
         currentTool={currentTool}
         selectedTerrain={selectedTerrain}
         editHistory={editHistory}
+        stepCount={stepCount}
+        lastStepResult={lastStepResult}
         onGenerateMap={handleGenerateMap}
         onLoadMap={handleLoadMap}
         onSaveMap={handleSaveMap}
@@ -169,6 +186,7 @@ function App() {
         onClearSelection={handleClearSelection}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onStep={handleStep}
       />
       <div className={styles.main}>
         <MapCanvas
