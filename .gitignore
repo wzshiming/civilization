@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build output
 dist/
@@ -25,3 +24,7 @@ coverage/
 # Temp files
 *.tmp
 .tmp/
+
+# Generated map files
+map.html
+map.svg
