@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 /**
- * Generate and view a civilization map
+ * Generate a civilization map
  * 
  * Usage:
- *   npx tsx scripts/view-map.ts [options]
+ *   npx tsx scripts/generate-map.ts [options]
  * 
  * Options:
  *   --plots=<number>    Number of plots (default: 500)
  *   --seed=<number>     Random seed (default: 42)
  *   --ocean=<number>    Ocean percentage 0-1 (default: 0.65)
- *   --output=<file>     Output HTML file (default: map.html)
- *   --svg               Output SVG only instead of HTML
+ *   --output=<file>     Output HTML file (default: map.json)
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateMap } from '../src/generators/map-generator.js';
-import { mapToHTML, mapToSVG } from '../src/viewer/map-viewer.js';
 
 // Parse command line arguments
 function parseArgs(): {
@@ -24,15 +22,13 @@ function parseArgs(): {
   randomSeed: number;
   oceanPercentage: number;
   output: string;
-  svgOnly: boolean;
 } {
   const args = process.argv.slice(2);
   const options = {
     plotCount: 500,
     randomSeed: 42,
     oceanPercentage: 0.65,
-    output: 'map.html',
-    svgOnly: false
+    output: 'maps/map.json',
   };
 
   for (const arg of args) {
@@ -44,11 +40,8 @@ function parseArgs(): {
       options.oceanPercentage = parseFloat(arg.split('=')[1]);
     } else if (arg.startsWith('--output=')) {
       options.output = arg.split('=')[1];
-    } else if (arg === '--svg') {
-      options.svgOnly = true;
     }
   }
-
   return options;
 }
 
@@ -78,41 +71,19 @@ async function main() {
   console.log(`   Generated in ${genTime}ms`);
 
   // Generate output
-  let output: string;
   let outputFile = options.output;
 
-  if (options.svgOnly) {
-    output = mapToSVG(map);
-    if (!outputFile.endsWith('.svg')) {
-      outputFile = outputFile.replace(/(\.[^.]+)?$/, '.svg');
-    }
-  } else {
-    output = mapToHTML(map);
-    if (!outputFile.endsWith('.html')) {
-      outputFile = outputFile.replace(/(\.[^.]+)?$/, '.html');
-    }
+  // Ensure the output directory exists
+  const outputDir = path.dirname(outputFile);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
+
+  let jsonOutput = JSON.stringify(map, null, 2);
 
   // Write to file
-  fs.writeFileSync(outputFile, output);
+  fs.writeFileSync(outputFile, jsonOutput);
   console.log(`\n✅ Map saved to: ${path.resolve(outputFile)}`);
-
-  // Print terrain statistics
-  console.log('\n📊 Terrain Statistics:');
-  const terrainCounts: Record<string, number> = {};
-  for (const plot of map.plots) {
-    const terrain = map.terrainTypes.find(t => t.terrainTypeID === plot.plotAttributes.terrainType);
-    if (terrain) {
-      terrainCounts[terrain.name] = (terrainCounts[terrain.name] || 0) + 1;
-    }
-  }
-
-  Object.entries(terrainCounts)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([name, count]) => {
-      const pct = (count / map.plots.length * 100).toFixed(1);
-      console.log(`   ${name.padEnd(10)} ${count.toString().padStart(5)} (${pct}%)`);
-    });
 }
 
 main().catch(console.error);
