@@ -43,6 +43,10 @@ const ZOOM_SPEED = 0.1; // zoom increment/decrement per step
 const ZOOM_SMOOTH_FACTOR = 0.15; // easing factor for smooth zoom
 const ZOOM_CHANGE_THRESHOLD = 0.001; // minimum zoom change to trigger position adjustment
 
+// Constants for tile management
+const TILE_UPDATE_CAMERA_THRESHOLD = 0.25; // Update tiles when camera moves 25% of map size
+const TILE_UPDATE_ZOOM_THRESHOLD = 0.2; // Update tiles when zoom changes by 0.2
+
 // Constants for rendering
 const BORDER_WIDTH = 0.5;
 const BORDER_COLOR = 0x000000;
@@ -70,6 +74,12 @@ function getVisibleTileOffsets(
   mapHeight: number,
   zoom: number
 ): Array<{ x: number; y: number }> {
+  // Validate map dimensions to prevent division by zero
+  if (mapWidth <= 0 || mapHeight <= 0) {
+    console.warn('Invalid map dimensions:', { mapWidth, mapHeight });
+    return [{ x: 0, y: 0 }]; // Return center tile as fallback
+  }
+  
   // Calculate the world coordinates of the viewport bounds
   const viewportWorldWidth = viewportWidth / zoom;
   const viewportWorldHeight = viewportHeight / zoom;
@@ -217,9 +227,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     
     // Update visible tiles when camera or zoom changes significantly
     const lastUpdate = lastTileUpdateRef.current;
-    const cameraMoved = Math.abs(state.camera.x - lastUpdate.camera.x) > mapWidth / 4 ||
-                       Math.abs(state.camera.y - lastUpdate.camera.y) > mapHeight / 4;
-    const zoomChanged = Math.abs(state.zoom - lastUpdate.zoom) > 0.2;
+    const cameraMoved = Math.abs(state.camera.x - lastUpdate.camera.x) > mapWidth * TILE_UPDATE_CAMERA_THRESHOLD ||
+                       Math.abs(state.camera.y - lastUpdate.camera.y) > mapHeight * TILE_UPDATE_CAMERA_THRESHOLD;
+    const zoomChanged = Math.abs(state.zoom - lastUpdate.zoom) > TILE_UPDATE_ZOOM_THRESHOLD;
     
     if (cameraMoved || zoomChanged) {
       if (updateVisibleTilesRef.current) {
@@ -370,7 +380,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         
         // Function to update visible tiles
         const updateVisibleTiles = () => {
-          if (!app.screen) return;
+          if (!app.screen) {
+            console.warn('updateVisibleTiles called but app.screen is not available');
+            return;
+          }
           
           const state = viewStateRef.current;
           const visibleOffsets = getVisibleTileOffsets(
