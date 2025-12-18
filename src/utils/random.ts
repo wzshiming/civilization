@@ -31,7 +31,7 @@ export class SeededRandom {
     this.state1 = s1 >>> 0;
     
     // Convert to 0-1 range
-    return ((this.state0 + this.state1) >>> 0) / 0xFFFFFFFF;
+    return ((this.state0 + this.state1) >>> 0) / 0x100000000;
   }
 
   /**

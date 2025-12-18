@@ -24,5 +24,5 @@ export interface ResourceType {
   resourceTypeID: ResourceTypeID;
   name: string;
   description: string;
-  resourceEfficiencys: ResourceEfficiency[];
+  resourceEfficiencies: ResourceEfficiency[];
 }
