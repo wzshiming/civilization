@@ -1,7 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { GameMap, Plot } from '../../../src/types';
 import { Tool, EditHistory } from '../App';
 import styles from './StatusBar.module.css';
+
+const MAX_DISPLAYED_PLOTS = 3;
+const PLOT_ID_DISPLAY_LENGTH = 8;
 
 interface StatusBarProps {
   zoom: number;
@@ -102,14 +105,14 @@ const StatusBar: React.FC<StatusBarProps> = ({
               <div className={styles.groupTitle}>
                 {selectedPlotDetails.length === 1 ? 'Selected Plot' : `${selectedPlotDetails.length} Plots Selected`}
               </div>
-              {selectedPlotDetails.slice(0, 3).map((plot) => {
+              {selectedPlotDetails.slice(0, MAX_DISPLAYED_PLOTS).map((plot) => {
                 const terrain = map?.terrainTypes.find(
                   t => t.terrainTypeID === plot.plotAttributes.terrainType
                 );
                 return (
                   <div key={plot.plotID} className={styles.plotCard}>
                     <div className={styles.plotHeader}>
-                      <span className={styles.plotID}>ID: {plot.plotID.substring(0, 8)}...</span>
+                      <span className={styles.plotID}>ID: {plot.plotID.substring(0, PLOT_ID_DISPLAY_LENGTH)}...</span>
                     </div>
                     <div className={styles.editableField}>
                       <span className={styles.fieldLabel}>Terrain:</span>
@@ -154,9 +157,9 @@ const StatusBar: React.FC<StatusBarProps> = ({
                   </div>
                 );
               })}
-              {selectedPlotDetails.length > 3 && (
+              {selectedPlotDetails.length > MAX_DISPLAYED_PLOTS && (
                 <div className={styles.moreIndicator}>
-                  + {selectedPlotDetails.length - 3} more plots
+                  + {selectedPlotDetails.length - MAX_DISPLAYED_PLOTS} more plots
                 </div>
               )}
             </div>
