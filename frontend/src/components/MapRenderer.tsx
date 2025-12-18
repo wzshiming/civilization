@@ -185,7 +185,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     };
   }, [updateCameraLoop]);
 
-  // Setup keyboard and mouse event handlers
+  // Setup keyboard event handlers
   useEffect(() => {
     // Helper to adjust zoom level
     const adjustZoom = (delta: number) => {
@@ -235,12 +235,29 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       keysRef.current.delete(e.key);
     };
 
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // Setup mouse wheel handler (separate effect to handle canvas availability)
+  useEffect(() => {
+    const canvas = stageRef.current?.getCanvas();
+    if (!canvas) return;
+
+    // Helper to adjust zoom level
+    const adjustZoom = (delta: number) => {
+      const state = viewStateRef.current;
+      state.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.targetZoom + delta));
+    };
+
     // Mouse wheel event handler for zoom
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-
-      const canvas = stageRef.current?.getCanvas();
-      if (!canvas) return;
 
       const rect = canvas.getBoundingClientRect();
       viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -248,21 +265,26 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    // Add wheel listener - we need to find the canvas element
-    const canvasElement = stageRef.current?.getCanvas();
-    if (canvasElement) {
-      canvasElement.addEventListener('wheel', handleWheel, { passive: false });
-    }
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      if (canvasElement) {
-        canvasElement.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  });
+
+  // Setup window resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      const app = stageRef.current?.getApplication();
+      if (app?.renderer) {
+        app.renderer.resize(window.innerWidth, window.innerHeight);
       }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
