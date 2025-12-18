@@ -77,18 +77,15 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
   // Store worldMap in ref to avoid re-initialization when it changes
   // Since parcels are updated in place, we keep the same reference
   const worldMapRef = useRef(worldMap);
-  // eslint-disable-next-line react-hooks/refs
-  worldMapRef.current = worldMap;
-
-  // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
-  // eslint-disable-next-line react-hooks/refs
-  worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
-
-  // Store onParcelClick in ref to avoid recreating click handlers
   const onParcelClickRef = useRef(onParcelClick);
-  // eslint-disable-next-line react-hooks/refs
-  onParcelClickRef.current = onParcelClick;
+
+  // Keep refs in sync with props
+  useEffect(() => {
+    worldMapRef.current = worldMap;
+    worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
+    onParcelClickRef.current = onParcelClick;
+  });
 
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
@@ -407,11 +404,14 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
 
   // Re-render parcels when they are updated in place (via updateCounter)
   useEffect(() => {
-    if (!worldMap || !updateCounter) return;
+    if (!updateCounter) return;
+    
+    const currentWorldMap = worldMapRef.current;
+    if (!currentWorldMap) return;
     
     // Re-render all parcels with their updated data
     // This is efficient since we only update the graphics, not recreate the entire app
-    worldMap.parcels.forEach((parcel) => {
+    currentWorldMap.parcels.forEach((parcel) => {
       const graphicsArray = parcelGraphicsRef.current.get(parcel.id);
       if (graphicsArray) {
         graphicsArray.forEach(graphics => {
@@ -420,7 +420,7 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
         });
       }
     });
-  }, [updateCounter, worldMap]);
+  }, [updateCounter]);
 
   // Update selected parcel highlighting
   const prevSelectedParcelIdRef = useRef<string | null>(null);

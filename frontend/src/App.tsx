@@ -24,10 +24,11 @@ function AppSSE() {
   });
 
   // Get the current parcel from worldMap based on selectedParcelId
-  // updateCounter ensures this re-computes when worldMap is updated in place
+  // worldMap is for null checks, updateCounter triggers re-computation when parcels are updated in place
   const selectedParcel = useMemo(() => {
     if (!selectedParcelId || !worldMap) return null;
     return worldMap.parcels.get(selectedParcelId) || null;
+    // updateCounter is needed to detect in-place updates to worldMap.parcels
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedParcelId, worldMap, updateCounter]);
 
