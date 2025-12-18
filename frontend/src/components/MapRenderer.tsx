@@ -1,17 +1,16 @@
 /**
- * Map renderer using Pixi.js for high-performance polygon rendering
+ * Map renderer using @pixi/react for high-performance polygon rendering
  * with WASD movement, smooth scrolling, and viewport culling
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Application, Graphics, Container, FederatedPointerEvent } from 'pixi.js';
+import { Application, extend } from '@pixi/react';
+import { Container, Graphics, FederatedPointerEvent } from 'pixi.js';
 import type { WorldMap, Parcel } from '@civilization/shared';
 import { TerrainType } from '../types/map';
 
-// Extended Graphics type to store parcel ID
-interface ParcelGraphics extends Graphics {
-  parcelId?: string;
-}
+// Register PixiJS components with @pixi/react
+extend({ Container, Graphics });
 
 interface MapRendererProps {
   worldMap: WorldMap;
@@ -64,14 +63,57 @@ const TILE_OFFSETS = [
   { x: 1, y: 1 },     // bottom-right
 ] as const;
 
+/**
+ * Component for rendering a single parcel
+ */
+interface ParcelGraphicProps {
+  parcel: Parcel;
+  onClick: (parcelId: string) => void;
+}
+
+function ParcelGraphic({ parcel, onClick }: ParcelGraphicProps) {
+  const handleClick = useCallback((event: FederatedPointerEvent) => {
+    event.stopPropagation();
+    onClick(parcel.id);
+  }, [parcel.id, onClick]);
+
+  const draw = useCallback((g: Graphics) => {
+    g.clear();
+    renderParcel(g, parcel);
+  }, [parcel]);
+
+  return (
+    <pixiGraphics
+      draw={draw}
+      eventMode="static"
+      cursor="pointer"
+      onPointerDown={handleClick}
+    />
+  );
+}
+
+/**
+ * Component for rendering highlight on selected parcel
+ */
+interface HighlightGraphicProps {
+  parcel: Parcel;
+}
+
+function HighlightGraphic({ parcel }: HighlightGraphicProps) {
+  const draw = useCallback((g: Graphics) => {
+    g.clear();
+    renderHighlight(g, parcel);
+  }, [parcel]);
+
+  return <pixiGraphics draw={draw} />;
+}
+
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
-  const parcelGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
+  const appRef = useRef<any>(null);
   const parcelContainerRef = useRef<Container | null>(null);
   const highlightContainerRef = useRef<Container | null>(null);
-  const highlightGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
@@ -92,10 +134,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const keysRef = useRef<Set<string>>(new Set()); // pressed keys
 
   // Helper to update container position and scale
-  const updateContainer = useCallback((container: Container, x: number, y: number, scale: number) => {
-    container.x = x;
-    container.y = y;
-    container.scale.set(scale);
+  const updateContainer = useCallback((container: Container | null, x: number, y: number, scale: number) => {
+    if (container) {
+      container.x = x;
+      container.y = y;
+      container.scale.set(scale);
+    }
   }, []);
 
   // Camera movement update function for Pixi ticker
@@ -166,136 +210,20 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     }
   }, [updateContainer]);
 
+  // Set up camera animation ticker
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!appRef.current) return;
 
-    let cleanup = false;
-    const localParcelGraphics = new Map<string, Graphics[]>();
-    const localHighlightGraphics = new Map<string, Graphics[]>();
+    const app = appRef.current;
+    app.ticker.add(updateCameraLoop);
 
-    // Store reference to container element
-    const container = canvasRef.current;
-
-    // Create Pixi application
-    const app = new Application();
-    appRef.current = app;
-
-    (async () => {
-      try {
-        // Use window dimensions instead of map dimensions for adaptive sizing
-        const containerWidth = container.clientWidth || window.innerWidth;
-        const containerHeight = container.clientHeight || window.innerHeight;
-
-        await app.init({
-          width: containerWidth,
-          height: containerHeight,
-          backgroundColor: 0x1a1a1a,
-          antialias: true,
-          resolution: window.devicePixelRatio || 1,
-          autoDensity: true,
-        });
-
-        if (cleanup) {
-          return;
-        }
-
-        container.appendChild(app.canvas);
-
-        // Create main container for all map tiles (terrain layer)
-        const mainContainer = new Container();
-        app.stage.addChild(mainContainer);
-
-        // Create highlight container on top of terrain (selection layer)
-        const highlightContainer = new Container();
-        app.stage.addChild(highlightContainer);
-
-        // Create tile containers for toroidal wrapping (3x3 grid)
-        const createTileContainers = (offsetX: number, offsetY: number) => {
-          if (!worldMap) {
-            throw new Error('worldMap is null');
-          }
-          const tileContainer = new Container();
-          tileContainer.x = offsetX * worldMap.width;
-          tileContainer.y = offsetY * worldMap.height;
-          mainContainer.addChild(tileContainer);
-
-          const highlightTileContainer = new Container();
-          highlightTileContainer.x = offsetX * worldMap.width;
-          highlightTileContainer.y = offsetY * worldMap.height;
-          highlightContainer.addChild(highlightTileContainer);
-
-          return { tileContainer, highlightTileContainer };
-        };
-
-        // Shared click handler for all parcel graphics
-        const handleParcelClick = (event: FederatedPointerEvent) => {
-          if (!worldMap) return;
-          const graphics = event.currentTarget as ParcelGraphics;
-          const parcelId = graphics.parcelId;
-          if (parcelId !== undefined) {
-            event.stopPropagation();
-            setSelectedParcelId(parcelId);
-            const parcel = worldMap.parcels.get(parcelId);
-            if (parcel) {
-              onParcelClickRef.current?.(parcel);
-            }
-          }
-        };
-
-        TILE_OFFSETS.forEach(({ x, y }) => {
-          if (!worldMap) return;
-          const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
-
-          // Render all parcels in this tile
-          worldMap.parcels.forEach((parcel) => {
-            // Create and configure parcel graphics
-            const graphics = new Graphics() as ParcelGraphics;
-            renderParcel(graphics, parcel);
-            graphics.eventMode = 'static';
-            graphics.cursor = 'pointer';
-            graphics.parcelId = parcel.id; // Store parcel ID on graphics object
-            graphics.on('pointerdown', handleParcelClick);
-
-            // Store and add to container
-            if (!localParcelGraphics.has(parcel.id)) {
-              localParcelGraphics.set(parcel.id, []);
-            }
-            localParcelGraphics.get(parcel.id)!.push(graphics);
-            tileContainer.addChild(graphics);
-
-            // Create highlight graphics
-            const highlightGraphics = new Graphics();
-            if (!localHighlightGraphics.has(parcel.id)) {
-              localHighlightGraphics.set(parcel.id, []);
-            }
-            localHighlightGraphics.get(parcel.id)!.push(highlightGraphics);
-            highlightTileContainer.addChild(highlightGraphics);
-          });
-        });
-
-        parcelContainerRef.current = mainContainer;
-        highlightContainerRef.current = highlightContainer;
-
-        // Store in ref for use in other effect
-        parcelGraphicsRef.current = localParcelGraphics;
-        highlightGraphicsRef.current = localHighlightGraphics;
-
-        // Use Pixi's ticker for camera updates
-        app.ticker.add(updateCameraLoop);
-      } catch (error) {
-        console.error('Failed to initialize Pixi application:', error);
-      }
-    })();
-
-    // Helper to handle window resize
-    const handleResize = () => {
-      if (appRef.current) {
-        const newWidth = container.clientWidth || window.innerWidth;
-        const newHeight = container.clientHeight || window.innerHeight;
-        appRef.current.renderer.resize(newWidth, newHeight);
-      }
+    return () => {
+      app.ticker.remove(updateCameraLoop);
     };
+  }, [updateCameraLoop]);
 
+  // Set up event handlers for keyboard and wheel
+  useEffect(() => {
     // Helper to adjust zoom level
     const adjustZoom = (delta: number) => {
       const state = viewStateRef.current;
@@ -304,12 +232,10 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
     // Helper to set zoom point to viewport center
     const setZoomPointToCenter = () => {
-      if (appRef.current) {
-        viewStateRef.current.zoomPoint = {
-          x: appRef.current.screen.width / 2,
-          y: appRef.current.screen.height / 2
-        };
-      }
+      viewStateRef.current.zoomPoint = {
+        x: dimensions.width / 2,
+        y: dimensions.height / 2
+      };
     };
 
     // Keyboard event handlers
@@ -347,89 +273,79 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
 
-      if (!appRef.current?.canvas) return;
-
-      const rect = appRef.current.canvas.getBoundingClientRect();
-      viewStateRef.current.zoomPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-
+      viewStateRef.current.zoomPoint = { x: e.clientX, y: e.clientY };
       adjustZoom(e.deltaY > 0 ? -ZOOM_SPEED : ZOOM_SPEED);
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('resize', handleResize);
-
-    // Add wheel listener to container
-    container.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      cleanup = true;
-
-      // Cleanup event listeners
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('resize', handleResize);
-      container.removeEventListener('wheel', handleWheel);
-
-      // Cleanup Pixi application
-      try {
-        if (app?.ticker) {
-          app.ticker.remove(updateCameraLoop);
-        }
-        if (app?.stage) {
-          app.destroy(true, { children: true, texture: true });
-        }
-      } catch {
-        // Silently ignore cleanup errors
-      }
-
-      // Clear all graphics maps
-      localParcelGraphics.clear();
-      localHighlightGraphics.clear();
-      parcelGraphicsRef.current.clear();
-      highlightGraphicsRef.current.clear();
+      window.removeEventListener('wheel', handleWheel);
     };
-  }, [worldMap, updateCameraLoop]);
+  }, [dimensions]);
 
-  // Update selected parcel highlighting
-  const prevSelectedParcelIdRef = useRef<string | null>(null);
-
+  // Handle window resize
   useEffect(() => {
-    if (!worldMap) return;
-    const prevId = prevSelectedParcelIdRef.current;
+    const handleResize = () => {
+      setDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
 
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    // Clear previous selection highlight
-    if (prevId !== null) {
-      const prevHighlightArray = highlightGraphicsRef.current.get(prevId);
-      prevHighlightArray?.forEach(graphics => graphics.clear());
+  // Handle parcel click
+  const handleParcelClick = useCallback((parcelId: string) => {
+    setSelectedParcelId(parcelId);
+    const parcel = worldMap.parcels.get(parcelId);
+    if (parcel) {
+      onParcelClickRef.current?.(parcel);
     }
-
-    // Draw highlight for new selected parcel
-    if (selectedParcelId !== null) {
-      const parcel = worldMap.parcels.get(selectedParcelId);
-      const highlightArray = highlightGraphicsRef.current.get(selectedParcelId);
-
-      if (parcel && highlightArray) {
-        highlightArray.forEach(graphics => renderHighlight(graphics, parcel));
-      }
-    }
-
-    prevSelectedParcelIdRef.current = selectedParcelId;
-  }, [selectedParcelId, worldMap]);
+  }, [worldMap]);
 
   return (
-    <div
-      ref={canvasRef}
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'auto',
-        maxWidth: '100%',
-        maxHeight: '100%',
-      }}
-    />
+    <Application
+      ref={appRef}
+      width={dimensions.width}
+      height={dimensions.height}
+      backgroundColor={0x1a1a1a}
+      antialias={true}
+      resolution={window.devicePixelRatio || 1}
+      autoDensity={true}
+    >
+      {/* Main container for terrain layer */}
+      <pixiContainer ref={parcelContainerRef}>
+        {TILE_OFFSETS.map(({ x, y }, tileIdx) => (
+          <pixiContainer key={`tile-${tileIdx}`} x={x * worldMap.width} y={y * worldMap.height}>
+            {Array.from(worldMap.parcels.values()).map((parcel) => (
+              <ParcelGraphic
+                key={`${tileIdx}-${parcel.id}`}
+                parcel={parcel}
+                onClick={handleParcelClick}
+              />
+            ))}
+          </pixiContainer>
+        ))}
+      </pixiContainer>
+
+      {/* Highlight container on top */}
+      <pixiContainer ref={highlightContainerRef}>
+        {TILE_OFFSETS.map(({ x, y }, tileIdx) => (
+          <pixiContainer key={`highlight-tile-${tileIdx}`} x={x * worldMap.width} y={y * worldMap.height}>
+            {selectedParcelId && worldMap.parcels.get(selectedParcelId) && (
+              <HighlightGraphic
+                key={`highlight-${tileIdx}-${selectedParcelId}`}
+                parcel={worldMap.parcels.get(selectedParcelId)!}
+              />
+            )}
+          </pixiContainer>
+        ))}
+      </pixiContainer>
+    </Application>
   );
 }
 
