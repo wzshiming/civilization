@@ -404,7 +404,8 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
 
   // Re-render parcels when they are updated in place (via updateCounter)
   useEffect(() => {
-    // Skip if updateCounter is undefined (not yet initialized) or 0 (no updates yet)
+    // Skip if updateCounter is undefined (prop not provided) or 0 (no updates have occurred yet)
+    // When updateCounter increments from 0 to 1+, this effect will run to update the graphics
     if (updateCounter === undefined || updateCounter === 0) return;
     
     const currentWorldMap = worldMapRef.current;
