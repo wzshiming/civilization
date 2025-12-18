@@ -16,6 +16,7 @@ interface ParcelGraphics extends Graphics {
 interface MapRendererProps {
   worldMap: WorldMap;
   onParcelClick?: (parcel: Parcel) => void;
+  updateCounter?: number; // Signals when worldMap parcels have been updated in place
 }
 
 // Color scheme for different terrain types
@@ -64,7 +65,7 @@ const TILE_OFFSETS = [
   { x: 1, y: 1 },     // bottom-right
 ] as const;
 
-export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
+export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const parcelGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
@@ -73,12 +74,20 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const highlightGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
+  // Store worldMap in ref to avoid re-initialization when it changes
+  // Since parcels are updated in place, we keep the same reference
+  const worldMapRef = useRef(worldMap);
+  // eslint-disable-next-line react-hooks/refs
+  worldMapRef.current = worldMap;
+
   // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
+  // eslint-disable-next-line react-hooks/refs
   worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
 
   // Store onParcelClick in ref to avoid recreating click handlers
   const onParcelClickRef = useRef(onParcelClick);
+  // eslint-disable-next-line react-hooks/refs
   onParcelClickRef.current = onParcelClick;
 
   // Consolidated camera and zoom state
@@ -211,17 +220,18 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
         // Create tile containers for toroidal wrapping (3x3 grid)
         const createTileContainers = (offsetX: number, offsetY: number) => {
-          if (!worldMap) {
+          const currentWorldMap = worldMapRef.current;
+          if (!currentWorldMap) {
             throw new Error('worldMap is null');
           }
           const tileContainer = new Container();
-          tileContainer.x = offsetX * worldMap.width;
-          tileContainer.y = offsetY * worldMap.height;
+          tileContainer.x = offsetX * currentWorldMap.width;
+          tileContainer.y = offsetY * currentWorldMap.height;
           mainContainer.addChild(tileContainer);
 
           const highlightTileContainer = new Container();
-          highlightTileContainer.x = offsetX * worldMap.width;
-          highlightTileContainer.y = offsetY * worldMap.height;
+          highlightTileContainer.x = offsetX * currentWorldMap.width;
+          highlightTileContainer.y = offsetY * currentWorldMap.height;
           highlightContainer.addChild(highlightTileContainer);
 
           return { tileContainer, highlightTileContainer };
@@ -229,13 +239,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
         // Shared click handler for all parcel graphics
         const handleParcelClick = (event: FederatedPointerEvent) => {
-          if (!worldMap) return;
+          const currentWorldMap = worldMapRef.current;
+          if (!currentWorldMap) return;
           const graphics = event.currentTarget as ParcelGraphics;
           const parcelId = graphics.parcelId;
           if (parcelId !== undefined) {
             event.stopPropagation();
             setSelectedParcelId(parcelId);
-            const parcel = worldMap.parcels.get(parcelId);
+            const parcel = currentWorldMap.parcels.get(parcelId);
             if (parcel) {
               onParcelClickRef.current?.(parcel);
             }
@@ -243,11 +254,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
         };
 
         TILE_OFFSETS.forEach(({ x, y }) => {
-          if (!worldMap) return;
+          const currentWorldMap = worldMapRef.current;
+          if (!currentWorldMap) return;
           const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
 
           // Render all parcels in this tile
-          worldMap.parcels.forEach((parcel) => {
+          currentWorldMap.parcels.forEach((parcel) => {
             // Create and configure parcel graphics
             const graphics = new Graphics() as ParcelGraphics;
             renderParcel(graphics, parcel);
@@ -389,7 +401,26 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       parcelGraphicsRef.current.clear();
       highlightGraphicsRef.current.clear();
     };
-  }, [worldMap, updateCameraLoop]);
+  }, [updateCameraLoop]);
+  // Note: worldMap is intentionally NOT in dependencies to avoid re-initialization
+  // We use worldMapRef.current inside the effect to access the latest worldMap
+
+  // Re-render parcels when they are updated in place (via updateCounter)
+  useEffect(() => {
+    if (!worldMap || !updateCounter) return;
+    
+    // Re-render all parcels with their updated data
+    // This is efficient since we only update the graphics, not recreate the entire app
+    worldMap.parcels.forEach((parcel) => {
+      const graphicsArray = parcelGraphicsRef.current.get(parcel.id);
+      if (graphicsArray) {
+        graphicsArray.forEach(graphics => {
+          graphics.clear();
+          renderParcel(graphics, parcel);
+        });
+      }
+    });
+  }, [updateCounter, worldMap]);
 
   // Update selected parcel highlighting
   const prevSelectedParcelIdRef = useRef<string | null>(null);

@@ -28,6 +28,7 @@ function AppSSE() {
   const selectedParcel = useMemo(() => {
     if (!selectedParcelId || !worldMap) return null;
     return worldMap.parcels.get(selectedParcelId) || null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedParcelId, worldMap, updateCounter]);
 
   const handleParcelClick = useCallback((parcel: Parcel) => {
@@ -75,7 +76,7 @@ function AppSSE() {
       ) : (
         <>
           <TabPanel tabs={tabs} />
-          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} />
+          <MapRenderer worldMap={worldMap} onParcelClick={handleParcelClick} updateCounter={updateCounter} />
           <ParcelDetailPanel parcel={selectedParcel} onClose={handleClosePanel} />
         </>
       )}
