@@ -50,19 +50,60 @@ const BORDER_ALPHA = 0.3;
 const HIGHLIGHT_WIDTH = 3;
 const HIGHLIGHT_COLOR = 0xffff00;
 
-// Tile offsets for toroidal wrapping (center + 8 surrounding tiles)
-// Ordered intentionally: center tile first, then cardinal directions, then diagonals
-const TILE_OFFSETS = [
-  { x: 0, y: 0 },     // center
-  { x: -1, y: 0 },    // left
-  { x: 1, y: 0 },     // right
-  { x: 0, y: -1 },    // top
-  { x: 0, y: 1 },     // bottom
-  { x: -1, y: -1 },   // top-left
-  { x: 1, y: -1 },    // top-right
-  { x: -1, y: 1 },    // bottom-left
-  { x: 1, y: 1 },     // bottom-right
-] as const;
+/**
+ * Calculate which tile offsets are visible based on camera position and viewport size
+ * @param cameraX Camera x position
+ * @param cameraY Camera y position
+ * @param viewportWidth Viewport width
+ * @param viewportHeight Viewport height
+ * @param mapWidth Map width
+ * @param mapHeight Map height
+ * @param zoom Current zoom level
+ * @returns Array of tile offsets that are visible
+ */
+function getVisibleTileOffsets(
+  cameraX: number,
+  cameraY: number,
+  viewportWidth: number,
+  viewportHeight: number,
+  mapWidth: number,
+  mapHeight: number,
+  zoom: number
+): Array<{ x: number; y: number }> {
+  // Calculate the world coordinates of the viewport bounds
+  const viewportWorldWidth = viewportWidth / zoom;
+  const viewportWorldHeight = viewportHeight / zoom;
+  
+  // Calculate viewport bounds in world space
+  const viewportLeft = -cameraX / zoom;
+  const viewportRight = viewportLeft + viewportWorldWidth;
+  const viewportTop = -cameraY / zoom;
+  const viewportBottom = viewportTop + viewportWorldHeight;
+  
+  // Determine which tiles are needed
+  const visibleTiles: Array<{ x: number; y: number }> = [];
+  
+  // Calculate tile range
+  const minTileX = Math.floor(viewportLeft / mapWidth);
+  const maxTileX = Math.floor(viewportRight / mapWidth);
+  const minTileY = Math.floor(viewportTop / mapHeight);
+  const maxTileY = Math.floor(viewportBottom / mapHeight);
+  
+  // Add all tiles that intersect with the viewport
+  for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      visibleTiles.push({ x: tileX, y: tileY });
+    }
+  }
+  
+  return visibleTiles;
+}
+
+// Interface for tracking tile containers
+interface TileContainers {
+  tileContainer: Container;
+  highlightTileContainer: Container;
+}
 
 export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -72,6 +113,9 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const highlightContainerRef = useRef<Container | null>(null);
   const highlightGraphicsRef = useRef<Map<string, Graphics[]>>(new Map());
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
+  
+  // Track active tiles by their offset key (e.g., "0,0", "1,0", etc.)
+  const activeTilesRef = useRef<Map<string, TileContainers>>(new Map());
 
   // Store worldMap dimensions to avoid recreating updateCameraLoop when worldMap changes
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
@@ -98,6 +142,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     container.scale.set(scale);
   }, []);
 
+  // Callback to update visible tiles based on current viewport
+  const updateVisibleTilesRef = useRef<(() => void) | null>(null);
+  
+  // Track when tiles were last updated to avoid excessive updates
+  const lastTileUpdateRef = useRef({ camera: { x: 0, y: 0 }, zoom: MIN_ZOOM });
+  
   // Camera movement update function for Pixi ticker
   // Note: worldMapDimensionsRef and onParcelClickRef are intentionally not in dependencies
   // to keep this callback stable and prevent MapRenderer re-initialization on clicks/updates
@@ -163,6 +213,22 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     }
     if (highlightContainerRef.current) {
       updateContainer(highlightContainerRef.current, state.camera.x, state.camera.y, state.zoom);
+    }
+    
+    // Update visible tiles when camera or zoom changes significantly
+    const lastUpdate = lastTileUpdateRef.current;
+    const cameraMoved = Math.abs(state.camera.x - lastUpdate.camera.x) > mapWidth / 4 ||
+                       Math.abs(state.camera.y - lastUpdate.camera.y) > mapHeight / 4;
+    const zoomChanged = Math.abs(state.zoom - lastUpdate.zoom) > 0.2;
+    
+    if (cameraMoved || zoomChanged) {
+      if (updateVisibleTilesRef.current) {
+        updateVisibleTilesRef.current();
+      }
+      lastTileUpdateRef.current = {
+        camera: { x: state.camera.x, y: state.camera.y },
+        zoom: state.zoom
+      };
     }
   }, [updateContainer]);
 
@@ -241,11 +307,18 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             }
           }
         };
-
-        TILE_OFFSETS.forEach(({ x, y }) => {
-          if (!worldMap) return;
-          const { tileContainer, highlightTileContainer } = createTileContainers(x, y);
-
+        
+        // Function to create a tile at a specific offset
+        const createTile = (offsetX: number, offsetY: number) => {
+          const tileKey = `${offsetX},${offsetY}`;
+          
+          // Skip if tile already exists
+          if (activeTilesRef.current.has(tileKey)) {
+            return;
+          }
+          
+          const { tileContainer, highlightTileContainer } = createTileContainers(offsetX, offsetY);
+          
           // Render all parcels in this tile
           worldMap.parcels.forEach((parcel) => {
             // Create and configure parcel graphics
@@ -253,7 +326,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             renderParcel(graphics, parcel);
             graphics.eventMode = 'static';
             graphics.cursor = 'pointer';
-            graphics.parcelId = parcel.id; // Store parcel ID on graphics object
+            graphics.parcelId = parcel.id;
             graphics.on('pointerdown', handleParcelClick);
 
             // Store and add to container
@@ -271,14 +344,80 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
             localHighlightGraphics.get(parcel.id)!.push(highlightGraphics);
             highlightTileContainer.addChild(highlightGraphics);
           });
-        });
-
+          
+          // Store tile containers
+          activeTilesRef.current.set(tileKey, { tileContainer, highlightTileContainer });
+        };
+        
+        // Function to hide a tile at a specific offset
+        const hideTile = (tileKey: string) => {
+          const tile = activeTilesRef.current.get(tileKey);
+          if (!tile) return;
+          
+          // Hide instead of destroy to avoid issues with references
+          tile.tileContainer.visible = false;
+          tile.highlightTileContainer.visible = false;
+        };
+        
+        // Function to show a tile at a specific offset
+        const showTile = (tileKey: string) => {
+          const tile = activeTilesRef.current.get(tileKey);
+          if (!tile) return;
+          
+          tile.tileContainer.visible = true;
+          tile.highlightTileContainer.visible = true;
+        };
+        
+        // Function to update visible tiles
+        const updateVisibleTiles = () => {
+          if (!app.screen) return;
+          
+          const state = viewStateRef.current;
+          const visibleOffsets = getVisibleTileOffsets(
+            state.camera.x,
+            state.camera.y,
+            app.screen.width,
+            app.screen.height,
+            worldMap.width,
+            worldMap.height,
+            state.zoom
+          );
+          
+          // Create set of visible tile keys
+          const visibleKeys = new Set(visibleOffsets.map(({ x, y }) => `${x},${y}`));
+          
+          // Hide tiles that are no longer visible
+          const currentKeys = Array.from(activeTilesRef.current.keys());
+          for (const key of currentKeys) {
+            if (!visibleKeys.has(key)) {
+              hideTile(key);
+            }
+          }
+          
+          // Show or create visible tiles
+          for (const offset of visibleOffsets) {
+            const tileKey = `${offset.x},${offset.y}`;
+            if (activeTilesRef.current.has(tileKey)) {
+              showTile(tileKey);
+            } else {
+              createTile(offset.x, offset.y);
+            }
+          }
+        };
+        
+        // Set container refs before creating tiles
         parcelContainerRef.current = mainContainer;
         highlightContainerRef.current = highlightContainer;
-
-        // Store in ref for use in other effect
+        
+        // Store graphics refs for use in other effects
         parcelGraphicsRef.current = localParcelGraphics;
         highlightGraphicsRef.current = localHighlightGraphics;
+        
+        // Store update function in ref for use in camera loop
+        updateVisibleTilesRef.current = updateVisibleTiles;
+        
+        // Initial tile setup
+        updateVisibleTiles();
 
         // Use Pixi's ticker for camera updates
         app.ticker.add(updateCameraLoop);
