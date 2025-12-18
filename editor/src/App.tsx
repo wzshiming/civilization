@@ -189,6 +189,9 @@ function App() {
           map={map}
           currentTool={currentTool}
           editHistory={editHistory}
+          selectedPlots={selectedPlots}
+          onUpdateMap={setMap}
+          onUpdateHistory={setEditHistory}
         />
       </div>
     </div>

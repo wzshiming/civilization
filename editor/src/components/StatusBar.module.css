@@ -6,13 +6,16 @@
   gap: 20px;
   font-size: 12px;
   min-height: 80px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .leftSection {
-  flex: 2;
+  flex: 0 0 auto;
   display: flex;
   gap: 20px;
   align-items: center;
+  min-width: 200px;
 }
 
 .rightSection {
@@ -20,6 +23,7 @@
   min-width: 33.33%;
   border-left: 1px solid #0f3460;
   padding-left: 15px;
+  overflow-y: auto;
 }
 
 .detailsGrid {
@@ -73,4 +77,71 @@
 .value {
   color: #e94560;
   font-weight: bold;
+}
+
+.plotCard {
+  background: #0f1419;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.plotHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.plotID {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.editableField {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 4px 0;
+}
+
+.fieldLabel {
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.fieldSelect {
+  background: #1a1a2e;
+  color: #fff;
+  border: 1px solid #0f3460;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+}
+
+.fieldSelect:hover {
+  border-color: #e94560;
+}
+
+.fieldSelect:focus {
+  border-color: #e94560;
+  box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.2);
+}
+
+.moreIndicator {
+  text-align: center;
+  color: #aaa;
+  font-size: 11px;
+  font-style: italic;
+  padding: 4px;
+  margin-top: 4px;
 }
