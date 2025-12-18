@@ -85,7 +85,7 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
     worldMapRef.current = worldMap;
     worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
     onParcelClickRef.current = onParcelClick;
-  });
+  }, [worldMap, onParcelClick]);
 
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
@@ -404,7 +404,8 @@ export function MapRenderer({ worldMap, onParcelClick, updateCounter }: MapRende
 
   // Re-render parcels when they are updated in place (via updateCounter)
   useEffect(() => {
-    if (!updateCounter) return;
+    // Skip if updateCounter is undefined (not yet initialized) or 0 (no updates yet)
+    if (updateCounter === undefined || updateCounter === 0) return;
     
     const currentWorldMap = worldMapRef.current;
     if (!currentWorldMap) return;
