@@ -8,11 +8,13 @@ import type {
   TerrainTypeID,
   Point,
   ResourceType,
+  ResourceTypeID,
   SpeciesType,
   BuildingType,
   SkillType,
   Religion,
-  Culture
+  Culture,
+  ProcessType
 } from '../types/index.js';
 import {
   SeededRandom,
@@ -25,64 +27,180 @@ import {
 import { NoiseGenerator } from '../utils/noise.js';
 
 /**
+ * Resource type IDs for simulation
+ */
+interface ResourceTypeIds {
+  food: ResourceTypeID;
+  wood: ResourceTypeID;
+  stone: ResourceTypeID;
+  fish: ResourceTypeID;
+  game: ResourceTypeID;
+  minerals: ResourceTypeID;
+}
+
+/**
+ * Create default resource types for simulation
+ */
+function createDefaultResourceTypes(random: SeededRandom): { resourceTypes: ResourceType[]; ids: ResourceTypeIds } {
+  const foodId = generateId(random);
+  const woodId = generateId(random);
+  const stoneId = generateId(random);
+  const fishId = generateId(random);
+  const gameId = generateId(random);
+  const mineralsId = generateId(random);
+
+  const resourceTypes: ResourceType[] = [
+    {
+      resourceTypeID: foodId,
+      name: 'Food',
+      description: 'Basic sustenance for populations',
+      resourceEfficiencies: []
+    },
+    {
+      resourceTypeID: woodId,
+      name: 'Wood',
+      description: 'Lumber for construction and fuel',
+      resourceEfficiencies: []
+    },
+    {
+      resourceTypeID: stoneId,
+      name: 'Stone',
+      description: 'Raw stone for building',
+      resourceEfficiencies: []
+    },
+    {
+      resourceTypeID: fishId,
+      name: 'Fish',
+      description: 'Seafood from coastal and ocean areas',
+      resourceEfficiencies: []
+    },
+    {
+      resourceTypeID: gameId,
+      name: 'Game',
+      description: 'Wild animals for hunting',
+      resourceEfficiencies: []
+    },
+    {
+      resourceTypeID: mineralsId,
+      name: 'Minerals',
+      description: 'Valuable ores and minerals',
+      resourceEfficiencies: []
+    }
+  ];
+
+  return {
+    resourceTypes,
+    ids: {
+      food: foodId,
+      wood: woodId,
+      stone: stoneId,
+      fish: fishId,
+      game: gameId,
+      minerals: mineralsId
+    }
+  };
+}
+
+/**
+ * Create a terrain process
+ */
+function createProcess(
+  name: string,
+  description: string,
+  outputResourceType: ResourceTypeID,
+  outputSize: number
+): ProcessType {
+  return {
+    name,
+    description,
+    inputResources: [],
+    outputResources: [{ resourceType: outputResourceType, size: outputSize }],
+    processTime: 1
+  };
+}
+
+/**
  * Default terrain types for the map
  */
-function createDefaultTerrainTypes(random: SeededRandom): TerrainType[] {
+function createDefaultTerrainTypes(random: SeededRandom, resourceIds: ResourceTypeIds): TerrainType[] {
   return [
     {
       terrainTypeID: generateId(random),
       name: 'Ocean',
       description: 'Deep ocean water',
-      processes: [],
+      processes: [
+        createProcess('Deep Sea Fishing', 'Fish from the deep ocean', resourceIds.fish, 2)
+      ],
       color: '#0077be'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Coastal',
       description: 'Shallow coastal waters',
-      processes: [],
+      processes: [
+        createProcess('Coastal Fishing', 'Fish from coastal waters', resourceIds.fish, 3)
+      ],
       color: '#4a9eff'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Plains',
       description: 'Flat grasslands suitable for farming',
-      processes: [],
+      processes: [
+        createProcess('Gather Wild Food', 'Gather edible plants and grains', resourceIds.food, 3),
+        createProcess('Hunt Game', 'Hunt wild animals', resourceIds.game, 1)
+      ],
       color: '#7cb342'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Forest',
       description: 'Dense woodland',
-      processes: [],
+      processes: [
+        createProcess('Gather Wood', 'Harvest timber from the forest', resourceIds.wood, 4),
+        createProcess('Forest Foraging', 'Gather berries and nuts', resourceIds.food, 2),
+        createProcess('Hunt Game', 'Hunt forest animals', resourceIds.game, 2)
+      ],
       color: '#2e7d32'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Hills',
       description: 'Rolling hills with varied terrain',
-      processes: [],
+      processes: [
+        createProcess('Quarry Stone', 'Extract stone from hillsides', resourceIds.stone, 3),
+        createProcess('Hill Grazing', 'Gather food from hill pastures', resourceIds.food, 1),
+        createProcess('Prospect Minerals', 'Search for valuable minerals', resourceIds.minerals, 1)
+      ],
       color: '#8d6e63'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Mountains',
       description: 'Tall mountain ranges',
-      processes: [],
+      processes: [
+        createProcess('Mountain Mining', 'Mine stone and minerals', resourceIds.stone, 4),
+        createProcess('Mine Minerals', 'Extract valuable ores', resourceIds.minerals, 3)
+      ],
       color: '#5d4037'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Desert',
       description: 'Arid desert with little vegetation',
-      processes: [],
+      processes: [
+        createProcess('Desert Foraging', 'Scarce desert plants', resourceIds.food, 1)
+      ],
       color: '#fdd835'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Tundra',
       description: 'Cold arctic region',
-      processes: [],
+      processes: [
+        createProcess('Ice Fishing', 'Fish through ice', resourceIds.fish, 1),
+        createProcess('Tundra Hunting', 'Hunt arctic game', resourceIds.game, 2)
+      ],
       color: '#e0e0e0'
     }
   ];
@@ -98,12 +216,17 @@ export class MapGenerator {
   private random: SeededRandom;
   private noise: NoiseGenerator;
   private terrainTypes: TerrainType[];
+  private resourceTypes: ResourceType[];
 
   constructor(config: MapConfig) {
     this.config = config;
     this.random = new SeededRandom(config.randomSeed);
     this.noise = new NoiseGenerator(config.randomSeed);
-    this.terrainTypes = createDefaultTerrainTypes(this.random);
+    
+    // Create resource types first (terrain types depend on them)
+    const { resourceTypes, ids: resourceIds } = createDefaultResourceTypes(this.random);
+    this.resourceTypes = resourceTypes;
+    this.terrainTypes = createDefaultTerrainTypes(this.random, resourceIds);
   }
 
   /**
@@ -123,7 +246,7 @@ export class MapGenerator {
     return {
       plots,
       speciesTypes: [],
-      resourceTypes: [],
+      resourceTypes: this.resourceTypes,
       buildingTypes: [],
       terrainTypes: this.terrainTypes,
       skillTypes: [],

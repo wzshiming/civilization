@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { GameMap } from '../../../src/types';
+import { StepResult } from '../../../src/simulation';
 import { getTerrainColor } from '../../../src/types/terrain';
 import { Tool, EditHistory } from '../App';
 import styles from './Sidebar.module.css';
@@ -10,6 +11,8 @@ interface SidebarProps {
   currentTool: Tool;
   selectedTerrain: string | null;
   editHistory: EditHistory;
+  stepCount: number;
+  lastStepResult: StepResult | null;
   onGenerateMap: () => void;
   onLoadMap: (file: File) => void;
   onSaveMap: () => void;
@@ -19,6 +22,7 @@ interface SidebarProps {
   onClearSelection: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  onStep: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -27,6 +31,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentTool,
   selectedTerrain,
   editHistory,
+  stepCount,
+  lastStepResult,
   onGenerateMap,
   onLoadMap,
   onSaveMap,
@@ -36,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClearSelection,
   onUndo,
   onRedo,
+  onStep,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,6 +116,35 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           🖌️ Paint Tool
         </button>
+      </div>
+
+      <div className={styles.panel}>
+        <h2>SIMULATION</h2>
+        <button onClick={onStep} className={styles.button} disabled={!map}>
+          ⏭️ Step
+        </button>
+        <div className={styles.stat}>
+          <span>Steps:</span>
+          <span>{stepCount}</span>
+        </div>
+        {lastStepResult && (
+          <>
+            <div className={styles.stat}>
+              <span>Processed:</span>
+              <span>{lastStepResult.processedPlots} plots</span>
+            </div>
+            <div className={styles.stat}>
+              <span>Changes:</span>
+              <span>{lastStepResult.resourceChanges.length}</span>
+            </div>
+            {lastStepResult.errors.length > 0 && (
+              <div className={styles.stat}>
+                <span>Errors:</span>
+                <span>{lastStepResult.errors.length}</span>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <div className={styles.panel}>
