@@ -39,10 +39,17 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
   const [lastMousePos, setLastMousePos] = useState<Point>({ x: 0, y: 0 });
   const [hoveredPlot, setHoveredPlot] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<Point>({ x: 0, y: 0 });
+  const initialMapIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (map) {
-      fitToView();
+      // Only fit to view on initial map load or when a completely new map is loaded
+      // Check if this is a new map by comparing the first plot ID
+      const currentMapId = map.plots.length > 0 ? map.plots[0].plotID : null;
+      if (initialMapIdRef.current !== currentMapId) {
+        initialMapIdRef.current = currentMapId;
+        fitToView();
+      }
     }
   }, [map]);
 
