@@ -18,9 +18,6 @@ const Sidecar: React.FC<SidecarProps> = ({
   onUpdateHistory,
   editHistory,
 }) => {
-  const [editingAttribute, setEditingAttribute] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
-
   if (!map || selectedPlots.size === 0) {
     return (
       <div className={styles.sidecar}>
@@ -36,7 +33,6 @@ const Sidecar: React.FC<SidecarProps> = ({
   }
 
   // Get the first selected plot for display
-  const selectedPlotIds = Array.from(selectedPlots);
   const plots = map.plots.filter((p) => selectedPlots.has(p.plotID));
   const plot = plots[0];
 
@@ -60,7 +56,7 @@ const Sidecar: React.FC<SidecarProps> = ({
   const handleTerrainChange = (newTerrainTypeID: string) => {
     if (!map) return;
 
-    const changes = selectedPlotIds.map((plotID) => {
+    const changes = Array.from(selectedPlots).map((plotID) => {
       const p = map.plots.find((plot) => plot.plotID === plotID);
       if (!p) return null;
       return {
@@ -68,7 +64,7 @@ const Sidecar: React.FC<SidecarProps> = ({
         oldTerrain: p.plotAttributes.terrainType,
         newTerrain: newTerrainTypeID,
       };
-    }).filter((c): c is NonNullable<typeof c> => c !== null);
+    }).filter((c): c is { plotID: string; oldTerrain: string; newTerrain: string } => c !== null);
 
     const newPlots = map.plots.map((p) => {
       if (selectedPlots.has(p.plotID)) {
