@@ -18,11 +18,11 @@ function applyResourceChange(
   const previousSize = storage?.size ?? 0;
 
   if (!storage) {
-    // Create new storage if it doesn't exist
+    // Create new storage if it doesn't exist with a default capacity
     storage = {
       resourceType: change.resourceType,
       size: 0,
-      capacity: Infinity,
+      capacity: 1000, // Default capacity for dynamically created storages
     };
     plot.plotAttributes.storages.push(storage);
   }
@@ -198,8 +198,8 @@ export function executeSteps(map: GameMap, count: number): StepResult[] {
     const result = executeStep(map);
     results.push(result);
 
-    // Stop if a step fails critically
-    if (!result.success && result.errors.length > 0) {
+    // Stop if a step fails
+    if (!result.success) {
       break;
     }
   }

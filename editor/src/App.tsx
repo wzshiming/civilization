@@ -85,7 +85,8 @@ function App() {
   const handleStep = () => {
     if (!map) return;
     const result = executeStep(map);
-    setMap({ ...map }); // Trigger re-render with updated plot storages
+    // Force re-render by creating new plots array reference (map is mutated in-place by executeStep)
+    setMap({ ...map, plots: [...map.plots] });
     setStepCount((prev) => prev + 1);
     setLastStepResult(result);
   };
