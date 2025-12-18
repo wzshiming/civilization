@@ -285,9 +285,10 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
 
   // WASD keyboard controls for smooth panning
   useEffect(() => {
-    const keysPressed = new Set<string>();
+    const keysPressedRef = { current: new Set<string>() };
     let animationFrameId: number | null = null;
     const panSpeed = 5; // Speed per frame
+    const keysPressed = keysPressedRef.current;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();

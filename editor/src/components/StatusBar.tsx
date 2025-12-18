@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GameMap } from '../../../src/types';
 import { Tool, EditHistory } from '../App';
 import styles from './StatusBar.module.css';
@@ -20,7 +20,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   currentTool,
   editHistory,
 }) => {
-  const getTerrainStats = () => {
+  const terrainStats = useMemo(() => {
     if (!map) return {};
     const stats: Record<string, number> = {};
     map.plots.forEach((plot) => {
@@ -31,9 +31,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
       stats[name] = (stats[name] || 0) + 1;
     });
     return stats;
-  };
+  }, [map]);
 
-  const terrainStats = getTerrainStats();
   const selectedPercentage = totalPlots > 0 ? ((selectedCount / totalPlots) * 100).toFixed(1) : '0';
 
   return (
