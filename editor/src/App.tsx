@@ -5,6 +5,7 @@ import { executeStep, StepResult } from '../../src/simulation';
 import Sidebar from './components/Sidebar';
 import MapCanvas from './components/MapCanvas';
 import StatusBar from './components/StatusBar';
+import Sidecar from './components/Sidecar';
 import styles from './App.module.css';
 
 // Editor-specific types
@@ -210,6 +211,13 @@ function App() {
           editHistory={editHistory}
         />
       </div>
+      <Sidecar
+        map={map}
+        selectedPlots={selectedPlots}
+        onUpdateMap={setMap}
+        onUpdateHistory={setEditHistory}
+        editHistory={editHistory}
+      />
     </div>
   );
 }
