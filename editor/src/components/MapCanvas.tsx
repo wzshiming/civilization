@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { GameMap, Point } from '../../../src/types';
-import { getTerrainColor } from '../../../src/types/terrain';
 import { isPointInPolygon } from '../utils/geometry';
 import { Tool, Edit, EditHistory } from '../App';
 import styles from './MapCanvas.module.css';
@@ -252,7 +251,7 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
       ctx.closePath();
 
       const terrain = map.terrainTypes.find(t => t.terrainTypeID === plot.plotAttributes.terrainType);
-      ctx.fillStyle = terrain?.color || getTerrainColor(plot.plotAttributes.terrainType);
+      ctx.fillStyle = terrain?.color || "#888888";
       if (isSelected) {
         ctx.globalAlpha = 0.8;
       }

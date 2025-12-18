@@ -122,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 selectedTerrain === terrain.terrainTypeID ? styles.selected : ''
               }`}
               style={{
-                backgroundColor: terrain.color || getTerrainColor(terrain.terrainTypeID),
+                backgroundColor: terrain.color || "#888888",
               }}
             >
               {terrain.name}
