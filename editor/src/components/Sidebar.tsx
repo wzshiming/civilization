@@ -148,26 +148,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className={styles.panel}>
-        <h2>TERRAIN TYPES</h2>
-        <div className={styles.terrainGrid}>
-          {map?.terrainTypes.map((terrain) => (
-            <button
-              key={terrain.terrainTypeID}
-              onClick={() => onSelectTerrain(terrain.terrainTypeID)}
-              className={`${styles.terrainButton} ${
-                selectedTerrain === terrain.terrainTypeID ? styles.selected : ''
-              }`}
-              style={{
-                backgroundColor: terrain.color || "#888888",
-              }}
-            >
-              {terrain.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.panel}>
         <h2>HISTORY</h2>
         <div className={styles.historyButtons}>
           <button

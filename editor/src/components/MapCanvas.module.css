@@ -9,18 +9,3 @@
   height: 100%;
   cursor: crosshair;
 }
-
-.overlay {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(22, 33, 62, 0.9);
-  padding: 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  pointer-events: none;
-}
-
-.overlay div {
-  margin: 5px 0;
-}
