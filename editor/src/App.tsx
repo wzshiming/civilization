@@ -1,10 +1,30 @@
 import React, { useState } from 'react';
-import { GameMap, Tool, EditHistory } from './types';
+import { GameMap } from '../../src/types';
+import { generateMap } from '../../src/generators';
 import Sidebar from './components/Sidebar';
 import MapCanvas from './components/MapCanvas';
 import StatusBar from './components/StatusBar';
-import { generateMap } from './utils/mapGenerator';
 import styles from './App.module.css';
+
+// Editor-specific types
+export enum Tool {
+  SELECT = 'SELECT',
+  PAINT = 'PAINT',
+}
+
+export interface Edit {
+  type: 'terrain';
+  plots: Array<{
+    plotID: string;
+    oldTerrain: string;
+    newTerrain: string;
+  }>;
+}
+
+export interface EditHistory {
+  undoStack: Edit[];
+  redoStack: Edit[];
+}
 
 function App() {
   const [map, setMap] = useState<GameMap | null>(null);
@@ -23,7 +43,17 @@ function App() {
   }, []);
 
   const handleGenerateMap = () => {
-    const newMap = generateMap();
+    const newMap = generateMap({
+      plotCount: 100,
+      randomSeed: Date.now(),
+      terrain: {
+        oceanPercentage: 0.65,
+        continentCount: 2,
+        islandFrequency: 0.15,
+        coastalRoughness: 0.3,
+      },
+      relaxationSteps: 2,
+    });
     setMap(newMap);
     setSelectedPlots(new Set());
     setEditHistory({ undoStack: [], redoStack: [] });

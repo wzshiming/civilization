@@ -1,8 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { GameMap, Tool, Point, Edit, EditHistory, Camera } from '../types';
+import { GameMap, Point } from '../../../src/types';
+import { getTerrainColor } from '../../../src/types/terrain';
 import { isPointInPolygon } from '../utils/geometry';
-import { getTerrainColor } from '../utils/colors';
+import { Tool, Edit, EditHistory } from '../App';
 import styles from './MapCanvas.module.css';
+
+interface Camera {
+  x: number;
+  y: number;
+  zoom: number;
+}
 
 interface MapCanvasProps {
   map: GameMap | null;
@@ -244,7 +251,8 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
       }
       ctx.closePath();
 
-      ctx.fillStyle = getTerrainColor(plot.plotAttributes.terrainType);
+      const terrain = map.terrainTypes.find(t => t.terrainTypeID === plot.plotAttributes.terrainType);
+      ctx.fillStyle = terrain?.color || getTerrainColor(plot.plotAttributes.terrainType);
       if (isSelected) {
         ctx.globalAlpha = 0.8;
       }
@@ -273,6 +281,44 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     return () => window.removeEventListener('resize', resizeCanvas);
+  }, []);
+
+  // WASD keyboard controls for panning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const panSpeed = 20;
+      let dx = 0;
+      let dy = 0;
+
+      switch (e.key.toLowerCase()) {
+        case 'w':
+          dy = panSpeed;
+          break;
+        case 'a':
+          dx = panSpeed;
+          break;
+        case 's':
+          dy = -panSpeed;
+          break;
+        case 'd':
+          dx = -panSpeed;
+          break;
+        default:
+          return;
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        e.preventDefault();
+        setCamera((prev) => ({
+          ...prev,
+          x: prev.x + dx,
+          y: prev.y + dy,
+        }));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const getHoverInfo = (): string => {

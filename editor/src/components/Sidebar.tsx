@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import { GameMap, Tool, EditHistory } from '../types';
-import { getTerrainColor } from '../utils/colors';
+import { GameMap } from '../../../src/types';
+import { getTerrainColor } from '../../../src/types/terrain';
+import { Tool, EditHistory } from '../App';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -121,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 selectedTerrain === terrain.terrainTypeID ? styles.selected : ''
               }`}
               style={{
-                backgroundColor: getTerrainColor(terrain.terrainTypeID),
+                backgroundColor: terrain.color || getTerrainColor(terrain.name),
               }}
             >
               {terrain.name}
