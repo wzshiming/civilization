@@ -33,49 +33,57 @@ function createDefaultTerrainTypes(random: SeededRandom): TerrainType[] {
       terrainTypeID: generateId(random),
       name: 'Ocean',
       description: 'Deep ocean water',
-      processes: []
+      processes: [],
+      color: '#0077be'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Coastal',
       description: 'Shallow coastal waters',
-      processes: []
+      processes: [],
+      color: '#4a9eff'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Plains',
       description: 'Flat grasslands suitable for farming',
-      processes: []
+      processes: [],
+      color: '#7cb342'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Forest',
       description: 'Dense woodland',
-      processes: []
+      processes: [],
+      color: '#2e7d32'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Hills',
       description: 'Rolling hills with varied terrain',
-      processes: []
+      processes: [],
+      color: '#8d6e63'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Mountains',
       description: 'Tall mountain ranges',
-      processes: []
+      processes: [],
+      color: '#5d4037'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Desert',
       description: 'Arid desert with little vegetation',
-      processes: []
+      processes: [],
+      color: '#fdd835'
     },
     {
       terrainTypeID: generateId(random),
       name: 'Tundra',
       description: 'Cold arctic region',
-      processes: []
+      processes: [],
+      color: '#e0e0e0'
     }
   ];
 }

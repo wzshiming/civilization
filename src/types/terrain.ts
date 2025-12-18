@@ -9,4 +9,5 @@ export interface TerrainType {
   name: string;
   description: string;
   processes: ProcessType[];
+  color: string; // Hex color for visualization (e.g., '#0077be')
 }
