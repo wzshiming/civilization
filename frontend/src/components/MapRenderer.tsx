@@ -73,18 +73,14 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
   const parcelsArray = useMemo(() => Array.from(worldMap.parcels.values()), [worldMap.parcels]);
 
   // Store worldMap dimensions and onParcelClick in refs to avoid recreating callbacks
-  // These refs are intentionally updated during render to keep callbacks stable
   const worldMapDimensionsRef = useRef({ width: worldMap.width, height: worldMap.height });
   const onParcelClickRef = useRef(onParcelClick);
   
-  // Update refs during render (intentional for stable callbacks)
+  // Update refs in useLayoutEffect (synchronous, before paint)
   useEffect(() => {
     worldMapDimensionsRef.current = { width: worldMap.width, height: worldMap.height };
-  }, [worldMap.width, worldMap.height]);
-  
-  useEffect(() => {
     onParcelClickRef.current = onParcelClick;
-  }, [onParcelClick]);
+  });
 
   // Consolidated camera and zoom state
   const viewStateRef = useRef({
@@ -101,6 +97,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     container.x = x;
     container.y = y;
     container.scale.set(scale);
+  }, []);
+
+  // Helper to adjust zoom level (shared between keyboard and wheel handlers)
+  const adjustZoom = useCallback((delta: number) => {
+    const state = viewStateRef.current;
+    state.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.targetZoom + delta));
   }, []);
 
   // Camera movement update function for Pixi ticker
@@ -187,12 +189,6 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
 
   // Setup keyboard event handlers
   useEffect(() => {
-    // Helper to adjust zoom level
-    const adjustZoom = (delta: number) => {
-      const state = viewStateRef.current;
-      state.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.targetZoom + delta));
-    };
-
     // Helper to set zoom point to viewport center
     const setZoomPointToCenter = () => {
       const app = stageRef.current?.getApplication();
@@ -242,18 +238,12 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [adjustZoom]);
 
-  // Setup mouse wheel handler (separate effect to handle canvas availability)
+  // Setup mouse wheel handler (runs after every render to ensure canvas is available)
   useEffect(() => {
     const canvas = stageRef.current?.getCanvas();
     if (!canvas) return;
-
-    // Helper to adjust zoom level
-    const adjustZoom = (delta: number) => {
-      const state = viewStateRef.current;
-      state.targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.targetZoom + delta));
-    };
 
     // Mouse wheel event handler for zoom
     const handleWheel = (e: WheelEvent) => {
@@ -270,7 +260,7 @@ export function MapRenderer({ worldMap, onParcelClick }: MapRendererProps) {
     return () => {
       canvas.removeEventListener('wheel', handleWheel);
     };
-  });
+  }, [adjustZoom]);
 
   // Setup window resize handler
   useEffect(() => {
