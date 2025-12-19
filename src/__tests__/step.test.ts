@@ -37,6 +37,8 @@ function createTestMap(
     buildingTypes,
     resourceTypes: [],
     skillTypes: [],
+    organizationTypes: [],
+    organizations: [],
     religions: [],
     cultures: [],
   };

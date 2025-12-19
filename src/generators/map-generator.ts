@@ -250,6 +250,8 @@ export class MapGenerator {
       buildingTypes: [],
       terrainTypes: this.terrainTypes,
       skillTypes: [],
+      organizationTypes: [],
+      organizations: [],
       religions: [],
       cultures: []
     };
