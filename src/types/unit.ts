@@ -1,10 +1,10 @@
-import type { BuildingTypeID, BuildingID, ClusterID, SpeciesTypeID, SpeciesID } from './ids.js';
+import type { UnitTypeID, UnitID, ClusterID, SpeciesTypeID, SpeciesID } from './ids.js';
 import type { ProcessType } from './species.js';
 import type { StorageType } from './storage.js';
 import type { Skill } from './skills.js';
 
 /**
- * Worker requirement for a building
+ * Worker requirement for a unit
  */
 export interface WorkerRequirement {
   speciesTypeID: SpeciesTypeID;
@@ -13,10 +13,10 @@ export interface WorkerRequirement {
 }
 
 /**
- * Building type definition
+ * Unit type definition
  */
-export interface BuildingType {
-  buildingTypeID: BuildingTypeID;
+export interface UnitType {
+  unitTypeID: UnitTypeID;
   name: string;
   description: string;
   processes: ProcessType[];
@@ -25,11 +25,11 @@ export interface BuildingType {
 }
 
 /**
- * Building instance
+ * Unit instance
  */
-export interface Building {
-  buildingID: BuildingID;
-  buildingTypeID: BuildingTypeID;
+export interface Unit {
+  unitID: UnitID;
+  unitTypeID: UnitTypeID;
   ownerClusterID?: ClusterID;
   workers: SpeciesID[];
 }

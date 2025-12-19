@@ -1,7 +1,7 @@
 import type { PlotID, ClusterID, TerrainTypeID } from './ids.js';
 import type { Point } from './geometry.js';
 import type { StorageType } from './storage.js';
-import type { Building } from './building.js';
+import type { Unit } from './unit.js';
 import type { Species, Population } from './species.js';
 
 /**
@@ -12,7 +12,7 @@ export interface PlotAttributes {
   terrainType: TerrainTypeID;
   neighborPlots: PlotID[];
   storages: StorageType[];
-  buildings: Building[];
+  units: Unit[];
   species: Species[];
   populations: Population[];
 }

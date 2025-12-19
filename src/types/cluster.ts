@@ -16,7 +16,6 @@ export interface ClusterType {
 export interface ClusterRelationship {
   targetCluster: ClusterID;
   favorability: number; // -1.0 (hostile) to 1.0 (friendly)
-  attributes: Record<string, number>; // Additional type-specific attributes
 }
 
 /**

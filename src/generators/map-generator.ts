@@ -10,7 +10,7 @@ import type {
   ResourceType,
   ResourceTypeID,
   SpeciesType,
-  BuildingType,
+  UnitType,
   SkillType,
   ProcessType
 } from '../types/index.js';
@@ -245,7 +245,7 @@ export class MapGenerator {
       plots,
       speciesTypes: [],
       resourceTypes: this.resourceTypes,
-      buildingTypes: [],
+      unitTypes: [],
       terrainTypes: this.terrainTypes,
       skillTypes: [],
       clusterTypes: [],
@@ -292,7 +292,7 @@ export class MapGenerator {
           terrainType: this.terrainTypes[0].terrainTypeID, // Default to ocean, will be updated
           neighborPlots: [], // Will be filled in neighbor calculation
           storages: [],
-          buildings: [],
+          units: [],
           species: [],
           populations: []
         }

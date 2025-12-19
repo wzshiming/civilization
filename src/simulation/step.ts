@@ -115,19 +115,19 @@ function executeStepForPlot(
     }
   }
 
-  // 2. Execute building processes
-  for (const building of plot.plotAttributes.buildings) {
-    const buildingType = map.buildingTypes.find(
-      (bt) => bt.buildingTypeID === building.buildingTypeID
+  // 2. Execute unit processes
+  for (const unit of plot.plotAttributes.units) {
+    const unitType = map.unitTypes.find(
+      (bt) => bt.unitTypeID === unit.unitTypeID
     );
-    if (buildingType) {
-      // Only execute if building has workers
-      if (building.workers.length > 0) {
-        for (const process of buildingType.processes) {
+    if (unitType) {
+      // Only execute if unit has workers
+      if (unit.workers.length > 0) {
+        for (const process of unitType.processes) {
           executeProcess(
             plot,
             process,
-            `Building: ${buildingType.name}`,
+            `Unit: ${unitType.name}`,
             resourceChanges,
             errors
           );

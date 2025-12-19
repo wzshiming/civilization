@@ -155,7 +155,7 @@ editor/
 - [ ] Minimap for navigation
 - [ ] Keyboard shortcuts
 - [ ] Attribute editing panel
-- [ ] Building and species placement
+- [ ] Unit and species placement
 - [ ] Multiplayer collaborative editing
 
 ## Performance

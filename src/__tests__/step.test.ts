@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { executeStep, executeSteps } from '../simulation/step.js';
-import type { GameMap, Plot, PlotAttributes, TerrainType, SpeciesType, BuildingType } from '../types/index.js';
+import type { GameMap, Plot, PlotAttributes, TerrainType, SpeciesType, UnitType } from '../types/index.js';
 
 function createTestPlot(
   plotID: string,
@@ -17,7 +17,7 @@ function createTestPlot(
       terrainType: terrainTypeID,
       neighborPlots: [],
       storages,
-      buildings: [],
+      units: [],
       species: [],
       populations: [],
     },
@@ -28,13 +28,13 @@ function createTestMap(
   plots: Plot[],
   terrainTypes: TerrainType[] = [],
   speciesTypes: SpeciesType[] = [],
-  buildingTypes: BuildingType[] = []
+  unitTypes: UnitType[] = []
 ): GameMap {
   return {
     plots,
     terrainTypes,
     speciesTypes,
-    buildingTypes,
+    unitTypes,
     resourceTypes: [],
     skillTypes: [],
     clusterTypes: [],
@@ -205,9 +205,9 @@ describe('executeStep', () => {
     expect(foodStorage?.size).toBe(7); // 10 - 3 = 7
   });
 
-  it('should execute building processes when workers are present', () => {
-    const buildingType: BuildingType = {
-      buildingTypeID: 'mill',
+  it('should execute unit processes when workers are present', () => {
+    const unitType: UnitType = {
+      unitTypeID: 'mill',
       name: 'Mill',
       description: 'Grain mill',
       storages: [],
@@ -226,15 +226,15 @@ describe('executeStep', () => {
     const plot = createTestPlot('plot-1', 'terrain-1', [
       { resourceType: 'grain', size: 20, capacity: 100 },
     ]);
-    plot.plotAttributes.buildings = [
+    plot.plotAttributes.units = [
       {
-        buildingID: 'building-1',
-        buildingTypeID: 'mill',
+        unitID: 'unit-1',
+        unitTypeID: 'mill',
         workers: ['worker-1'],
       },
     ];
 
-    const map = createTestMap([plot], [], [], [buildingType]);
+    const map = createTestMap([plot], [], [], [unitType]);
 
     const result = executeStep(map);
 
@@ -253,9 +253,9 @@ describe('executeStep', () => {
     expect(flourStorage?.size).toBe(10);
   });
 
-  it('should not execute building processes when no workers are present', () => {
-    const buildingType: BuildingType = {
-      buildingTypeID: 'mill',
+  it('should not execute unit processes when no workers are present', () => {
+    const unitType: UnitType = {
+      unitTypeID: 'mill',
       name: 'Mill',
       description: 'Grain mill',
       storages: [],
@@ -274,15 +274,15 @@ describe('executeStep', () => {
     const plot = createTestPlot('plot-1', 'terrain-1', [
       { resourceType: 'grain', size: 20, capacity: 100 },
     ]);
-    plot.plotAttributes.buildings = [
+    plot.plotAttributes.units = [
       {
-        buildingID: 'building-1',
-        buildingTypeID: 'mill',
+        unitID: 'unit-1',
+        unitTypeID: 'mill',
         workers: [], // No workers!
       },
     ];
 
-    const map = createTestMap([plot], [], [], [buildingType]);
+    const map = createTestMap([plot], [], [], [unitType]);
 
     const result = executeStep(map);
 

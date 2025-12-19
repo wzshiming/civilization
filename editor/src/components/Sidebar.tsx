@@ -359,13 +359,13 @@ const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {/* Buildings */}
-            {selectedPlot.plotAttributes.buildings.length > 0 && (
+            {/* Units */}
+            {selectedPlot.plotAttributes.units.length > 0 && (
               <div className={styles.subsection}>
-                <h3>Buildings</h3>
-                {selectedPlot.plotAttributes.buildings.map((building, idx) => (
+                <h3>Units</h3>
+                {selectedPlot.plotAttributes.units.map((unit, idx) => (
                   <div key={idx} className={styles.stat}>
-                    <span>{building.buildingTypeID}</span>
+                    <span>{unit.unitTypeID}</span>
                   </div>
                 ))}
               </div>

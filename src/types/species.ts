@@ -1,4 +1,4 @@
-import type { SpeciesTypeID, SpeciesID, ResourceTypeID, BuildingID, PlotID, ClusterID } from './ids.js';
+import type { SpeciesTypeID, SpeciesID, ResourceTypeID, UnitID, PlotID, ClusterID } from './ids.js';
 import type { Skill } from './skills.js';
 
 /**
@@ -15,7 +15,7 @@ export interface SpeciesRelationship {
  */
 export interface ResourceChange {
   resourceType: ResourceTypeID;
-  buildingID?: BuildingID;
+  unitID?: UnitID;
   plotID?: PlotID;
   size: number;
 }
