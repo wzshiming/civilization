@@ -8,7 +8,7 @@ export * from './geometry.js';
 export * from './species.js';
 export * from './resource.js';
 export * from './unit.js';
-export * from './building.js'; // Deprecated, kept for backward compatibility
+// Note: building.js re-exports types from unit.js, but we don't re-export it here to avoid conflicts
 export * from './storage.js';
 export * from './terrain.js';
 export * from './skills.js';

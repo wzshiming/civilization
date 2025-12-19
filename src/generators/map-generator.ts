@@ -13,8 +13,6 @@ import type {
   UnitType,
   UnitCategory,
   SkillType,
-  Religion,
-  Culture,
   ProcessType
 } from '../types/index.js';
 import {
