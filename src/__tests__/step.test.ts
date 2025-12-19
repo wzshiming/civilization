@@ -39,8 +39,6 @@ function createTestMap(
     skillTypes: [],
     organizationTypes: [],
     organizations: [],
-    religions: [],
-    cultures: [],
   };
 }
 

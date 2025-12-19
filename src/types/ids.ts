@@ -14,6 +14,4 @@ export type TerrainTypeID = string;
 export type SkillTypeID = string;
 export type OrganizationTypeID = string;
 export type OrganizationID = string;
-export type ReligionID = string;
-export type CultureID = string;
 export type PlayerID = string;
