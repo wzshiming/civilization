@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { GameMap } from '../../../src/types';
+import { GameMap, UnitCategory, ClusterCategory } from '../../../src/types';
 import { StepResult } from '../../../src/simulation';
 import { Tool, EditHistory } from '../App';
 import styles from './Sidebar.module.css';
@@ -9,6 +9,8 @@ interface SidebarProps {
   selectedPlots: Set<string>;
   currentTool: Tool;
   selectedTerrain: string | null;
+  selectedUnitType: string | null;
+  selectedClusterType: string | null;
   editHistory: EditHistory;
   stepCount: number;
   lastStepResult: StepResult | null;
@@ -17,6 +19,8 @@ interface SidebarProps {
   onSaveMap: () => void;
   onSelectTool: (tool: Tool) => void;
   onSelectTerrain: (terrain: string) => void;
+  onSelectUnitType: (unitType: string | null) => void;
+  onSelectClusterType: (clusterType: string | null) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onUndo: () => void;
@@ -31,6 +35,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedPlots,
   currentTool,
   selectedTerrain,
+  selectedUnitType,
+  selectedClusterType,
   editHistory,
   stepCount,
   lastStepResult,
@@ -39,6 +45,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSaveMap,
   onSelectTool,
   onSelectTerrain,
+  onSelectUnitType,
+  onSelectClusterType,
   onSelectAll,
   onClearSelection,
   onUndo,
@@ -113,6 +121,174 @@ const Sidebar: React.FC<SidebarProps> = ({
     });
   };
 
+  // Generate unique ID
+  const generateId = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  // Add unit to selected plot
+  const handleAddUnit = (unitTypeID: string) => {
+    if (!map || selectedPlots.size === 0) return;
+    
+    const plotID = Array.from(selectedPlots)[0];
+    const unitID = generateId();
+    
+    const newPlots = map.plots.map((p) => {
+      if (p.plotID === plotID) {
+        return {
+          ...p,
+          plotAttributes: {
+            ...p.plotAttributes,
+            units: [...p.plotAttributes.units, { unitID, unitTypeID, workerClusterIDs: [] }],
+          },
+        };
+      }
+      return p;
+    });
+
+    const edit = {
+      type: 'unit' as const,
+      action: 'add' as const,
+      plotID,
+      unitID,
+      unitTypeID,
+    };
+
+    onUpdateMap({ ...map, plots: newPlots });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+  };
+
+  // Remove unit from selected plot
+  const handleRemoveUnit = (unitID: string, unitTypeID: string) => {
+    if (!map || selectedPlots.size === 0) return;
+    
+    const plotID = Array.from(selectedPlots)[0];
+    
+    const newPlots = map.plots.map((p) => {
+      if (p.plotID === plotID) {
+        return {
+          ...p,
+          plotAttributes: {
+            ...p.plotAttributes,
+            units: p.plotAttributes.units.filter(u => u.unitID !== unitID),
+          },
+        };
+      }
+      return p;
+    });
+
+    const edit = {
+      type: 'unit' as const,
+      action: 'remove' as const,
+      plotID,
+      unitID,
+      unitTypeID,
+    };
+
+    onUpdateMap({ ...map, plots: newPlots });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+  };
+
+  // Add cluster to selected plot
+  const handleAddCluster = (clusterTypeID: string) => {
+    if (!map || selectedPlots.size === 0) return;
+    
+    const plotID = Array.from(selectedPlots)[0];
+    const clusterID = generateId();
+    const clusterType = map.clusterTypes.find(ct => ct.clusterTypeID === clusterTypeID);
+    const clusterName = `${clusterType?.name || 'Unknown'} Group`;
+    const initialSize = 10;
+    
+    const cluster = {
+      clusterID,
+      clusterTypeID,
+      name: clusterName,
+      description: '',
+      skills: [],
+      size: initialSize,
+      relationships: [],
+    };
+    
+    const newPlots = map.plots.map((p) => {
+      if (p.plotID === plotID) {
+        return {
+          ...p,
+          plotAttributes: {
+            ...p.plotAttributes,
+            clusters: [...p.plotAttributes.clusters, cluster],
+          },
+        };
+      }
+      return p;
+    });
+
+    const edit = {
+      type: 'cluster' as const,
+      action: 'add' as const,
+      plotID,
+      clusterID,
+      clusterTypeID,
+      clusterData: {
+        name: clusterName,
+        size: initialSize,
+      },
+    };
+
+    onUpdateMap({ ...map, plots: newPlots, clusters: [...map.clusters, cluster] });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+  };
+
+  // Remove cluster from selected plot
+  const handleRemoveCluster = (clusterID: string, clusterTypeID: string, name: string, size: number) => {
+    if (!map || selectedPlots.size === 0) return;
+    
+    const plotID = Array.from(selectedPlots)[0];
+    
+    const newPlots = map.plots.map((p) => {
+      if (p.plotID === plotID) {
+        return {
+          ...p,
+          plotAttributes: {
+            ...p.plotAttributes,
+            clusters: p.plotAttributes.clusters.filter(c => c.clusterID !== clusterID),
+          },
+        };
+      }
+      return p;
+    });
+
+    const edit = {
+      type: 'cluster' as const,
+      action: 'remove' as const,
+      plotID,
+      clusterID,
+      clusterTypeID,
+      clusterData: {
+        name,
+        size,
+      },
+    };
+
+    onUpdateMap({ ...map, plots: newPlots, clusters: map.clusters.filter(c => c.clusterID !== clusterID) });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+  };
+
   // Get the first selected plot for display in properties
   const selectedPlot = map && selectedPlots.size > 0 
     ? map.plots.find((p) => selectedPlots.has(p.plotID))
@@ -170,7 +346,93 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           🖌️ Paint Tool
         </button>
+        <button
+          onClick={() => onSelectTool(Tool.UNIT)}
+          className={`${styles.button} ${
+            currentTool === Tool.UNIT ? styles.active : ''
+          }`}
+        >
+          🏠 Unit Tool
+        </button>
+        <button
+          onClick={() => onSelectTool(Tool.CLUSTER)}
+          className={`${styles.button} ${
+            currentTool === Tool.CLUSTER ? styles.active : ''
+          }`}
+        >
+          👥 Cluster Tool
+        </button>
       </div>
+
+      {/* Unit Type Selection (shown when Unit tool is active) */}
+      {currentTool === Tool.UNIT && map && (
+        <div className={styles.panel}>
+          <h2>UNIT TYPES</h2>
+          <div className={styles.subsection}>
+            <h3>Building Units</h3>
+            {map.unitTypes.filter(u => u.category === UnitCategory.BUILDING).map((unitType) => (
+              <button
+                key={unitType.unitTypeID}
+                onClick={() => onSelectUnitType(unitType.unitTypeID)}
+                className={`${styles.button} ${styles.small} ${
+                  selectedUnitType === unitType.unitTypeID ? styles.active : ''
+                }`}
+              >
+                {unitType.name}
+              </button>
+            ))}
+          </div>
+          <div className={styles.subsection}>
+            <h3>Movable Units</h3>
+            {map.unitTypes.filter(u => u.category === UnitCategory.MOVABLE).map((unitType) => (
+              <button
+                key={unitType.unitTypeID}
+                onClick={() => onSelectUnitType(unitType.unitTypeID)}
+                className={`${styles.button} ${styles.small} ${
+                  selectedUnitType === unitType.unitTypeID ? styles.active : ''
+                }`}
+              >
+                {unitType.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Cluster Type Selection (shown when Cluster tool is active) */}
+      {currentTool === Tool.CLUSTER && map && (
+        <div className={styles.panel}>
+          <h2>CLUSTER TYPES</h2>
+          <div className={styles.subsection}>
+            <h3>Enlightened</h3>
+            {map.clusterTypes.filter(c => c.category === ClusterCategory.ENLIGHTENED).map((clusterType) => (
+              <button
+                key={clusterType.clusterTypeID}
+                onClick={() => onSelectClusterType(clusterType.clusterTypeID)}
+                className={`${styles.button} ${styles.small} ${
+                  selectedClusterType === clusterType.clusterTypeID ? styles.active : ''
+                }`}
+              >
+                {clusterType.name}
+              </button>
+            ))}
+          </div>
+          <div className={styles.subsection}>
+            <h3>Animals</h3>
+            {map.clusterTypes.filter(c => c.category === ClusterCategory.ANIMAL).map((clusterType) => (
+              <button
+                key={clusterType.clusterTypeID}
+                onClick={() => onSelectClusterType(clusterType.clusterTypeID)}
+                className={`${styles.button} ${styles.small} ${
+                  selectedClusterType === clusterType.clusterTypeID ? styles.active : ''
+                }`}
+              >
+                {clusterType.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={styles.panel}>
         <h2>SIMULATION</h2>
@@ -344,41 +606,75 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Units */}
-            {selectedPlot.plotAttributes.units.length > 0 && (
-              <div className={styles.subsection}>
-                <h3>Units</h3>
-                {selectedPlot.plotAttributes.units.map((unit, idx) => (
-                  <div key={idx} className={styles.stat}>
-                    <span>{unit.unitTypeID}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Cluster */}
-            {selectedPlot.plotAttributes.clusters.length > 0 && (
-              <div className={styles.subsection}>
-                <h3>Clusters</h3>
-                {selectedPlot.plotAttributes.clusters.map((cluster, idx) => (
-                  <div key={idx} className={styles.stat}>
-                    <span>{cluster.clusterTypeID}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className={styles.subsection}>
+              <h3>Units ({selectedPlot.plotAttributes.units.length})</h3>
+              {selectedPlot.plotAttributes.units.length === 0 ? (
+                <div className={styles.stat}>
+                  <span>No units</span>
+                </div>
+              ) : (
+                selectedPlot.plotAttributes.units.map((unit, idx) => {
+                  const unitType = map?.unitTypes.find(ut => ut.unitTypeID === unit.unitTypeID);
+                  return (
+                    <div key={idx} className={styles.entityItem}>
+                      <span className={styles.entityName}>{unitType?.name || unit.unitTypeID}</span>
+                      <button 
+                        className={styles.removeButton}
+                        onClick={() => handleRemoveUnit(unit.unitID, unit.unitTypeID)}
+                        title="Remove unit"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+              {selectedUnitType && (
+                <button 
+                  className={`${styles.button} ${styles.small}`}
+                  onClick={() => handleAddUnit(selectedUnitType)}
+                >
+                  + Add {map?.unitTypes.find(ut => ut.unitTypeID === selectedUnitType)?.name || 'Unit'}
+                </button>
+              )}
+            </div>
 
             {/* Clusters */}
-            {selectedPlot.plotAttributes.clusters.length > 0 && (
-              <div className={styles.subsection}>
-                <h3>Clusters</h3>
-                {selectedPlot.plotAttributes.clusters.map((pop, idx) => (
-                  <div key={idx} className={styles.stat}>
-                    <span>{pop.clusterTypeID}:</span>
-                    <span>{pop.size}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className={styles.subsection}>
+              <h3>Clusters ({selectedPlot.plotAttributes.clusters.length})</h3>
+              {selectedPlot.plotAttributes.clusters.length === 0 ? (
+                <div className={styles.stat}>
+                  <span>No clusters</span>
+                </div>
+              ) : (
+                selectedPlot.plotAttributes.clusters.map((cluster, idx) => {
+                  const clusterType = map?.clusterTypes.find(ct => ct.clusterTypeID === cluster.clusterTypeID);
+                  return (
+                    <div key={idx} className={styles.entityItem}>
+                      <div className={styles.entityInfo}>
+                        <span className={styles.entityName}>{cluster.name || clusterType?.name || cluster.clusterTypeID}</span>
+                        <span className={styles.entitySize}>Size: {cluster.size}</span>
+                      </div>
+                      <button 
+                        className={styles.removeButton}
+                        onClick={() => handleRemoveCluster(cluster.clusterID, cluster.clusterTypeID, cluster.name, cluster.size)}
+                        title="Remove cluster"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+              {selectedClusterType && (
+                <button 
+                  className={`${styles.button} ${styles.small}`}
+                  onClick={() => handleAddCluster(selectedClusterType)}
+                >
+                  + Add {map?.clusterTypes.find(ct => ct.clusterTypeID === selectedClusterType)?.name || 'Cluster'}
+                </button>
+              )}
+            </div>
 
             {/* Ownership */}
             <div className={styles.subsection}>

@@ -237,3 +237,58 @@
   color: #e94560;
   font-weight: bold;
 }
+
+/* Small button variant */
+.button.small {
+  padding: 6px 10px;
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+/* Entity item (units, clusters) */
+.entityItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  background: #0f3460;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.entityItem:last-child {
+  margin-bottom: 0;
+}
+
+.entityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.entityName {
+  font-size: 12px;
+  color: #eee;
+  font-weight: 500;
+}
+
+.entitySize {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.removeButton {
+  background: transparent;
+  border: none;
+  color: #e94560;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  background: #e94560;
+  color: #fff;
+}

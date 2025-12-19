@@ -10,9 +10,11 @@ import styles from './App.module.css';
 export enum Tool {
   SELECT = 'SELECT',
   PAINT = 'PAINT',
+  UNIT = 'UNIT',
+  CLUSTER = 'CLUSTER',
 }
 
-export interface Edit {
+export interface TerrainEdit {
   type: 'terrain';
   plots: Array<{
     plotID: string;
@@ -20,6 +22,28 @@ export interface Edit {
     newTerrain: string;
   }>;
 }
+
+export interface UnitEdit {
+  type: 'unit';
+  action: 'add' | 'remove';
+  plotID: string;
+  unitID: string;
+  unitTypeID: string;
+}
+
+export interface ClusterEdit {
+  type: 'cluster';
+  action: 'add' | 'remove';
+  plotID: string;
+  clusterID: string;
+  clusterTypeID: string;
+  clusterData?: {
+    name: string;
+    size: number;
+  };
+}
+
+export type Edit = TerrainEdit | UnitEdit | ClusterEdit;
 
 export interface EditHistory {
   undoStack: Edit[];
@@ -31,6 +55,8 @@ function App() {
   const [selectedPlots, setSelectedPlots] = useState<Set<string>>(new Set());
   const [currentTool, setCurrentTool] = useState<Tool>(Tool.SELECT);
   const [selectedTerrain, setSelectedTerrain] = useState<string | null>(null);
+  const [selectedUnitType, setSelectedUnitType] = useState<string | null>(null);
+  const [selectedClusterType, setSelectedClusterType] = useState<string | null>(null);
   const [editHistory, setEditHistory] = useState<EditHistory>({
     undoStack: [],
     redoStack: [],
@@ -117,22 +143,101 @@ function App() {
     const edit = editHistory.undoStack[editHistory.undoStack.length - 1];
     const newUndoStack = editHistory.undoStack.slice(0, -1);
 
-    // Revert the edit
-    const newPlots = map.plots.map((plot) => {
-      const change = edit.plots.find((p) => p.plotID === plot.plotID);
-      if (change) {
-        return {
-          ...plot,
-          plotAttributes: {
-            ...plot.plotAttributes,
-            terrainType: change.oldTerrain,
-          },
-        };
-      }
-      return plot;
-    });
+    let newPlots = map.plots;
+    let newClusters = map.clusters;
 
-    setMap({ ...map, plots: newPlots });
+    if (edit.type === 'terrain') {
+      // Revert terrain edit
+      newPlots = map.plots.map((plot) => {
+        const change = edit.plots.find((p) => p.plotID === plot.plotID);
+        if (change) {
+          return {
+            ...plot,
+            plotAttributes: {
+              ...plot.plotAttributes,
+              terrainType: change.oldTerrain,
+            },
+          };
+        }
+        return plot;
+      });
+    } else if (edit.type === 'unit') {
+      // Revert unit edit
+      newPlots = map.plots.map((plot) => {
+        if (plot.plotID === edit.plotID) {
+          if (edit.action === 'add') {
+            // Remove the unit that was added
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                units: plot.plotAttributes.units.filter(u => u.unitID !== edit.unitID),
+              },
+            };
+          } else {
+            // Re-add the unit that was removed
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                units: [...plot.plotAttributes.units, { unitID: edit.unitID, unitTypeID: edit.unitTypeID, workerClusterIDs: [] }],
+              },
+            };
+          }
+        }
+        return plot;
+      });
+    } else if (edit.type === 'cluster') {
+      // Revert cluster edit
+      newPlots = map.plots.map((plot) => {
+        if (plot.plotID === edit.plotID) {
+          if (edit.action === 'add') {
+            // Remove the cluster that was added
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                clusters: plot.plotAttributes.clusters.filter(c => c.clusterID !== edit.clusterID),
+              },
+            };
+          } else if (edit.clusterData) {
+            // Re-add the cluster that was removed
+            const cluster = {
+              clusterID: edit.clusterID,
+              clusterTypeID: edit.clusterTypeID,
+              name: edit.clusterData.name,
+              description: '',
+              skills: [],
+              size: edit.clusterData.size,
+              relationships: [],
+            };
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                clusters: [...plot.plotAttributes.clusters, cluster],
+              },
+            };
+          }
+        }
+        return plot;
+      });
+      if (edit.action === 'add') {
+        newClusters = map.clusters.filter(c => c.clusterID !== edit.clusterID);
+      } else if (edit.clusterData) {
+        newClusters = [...map.clusters, {
+          clusterID: edit.clusterID,
+          clusterTypeID: edit.clusterTypeID,
+          name: edit.clusterData.name,
+          description: '',
+          skills: [],
+          size: edit.clusterData.size,
+          relationships: [],
+        }];
+      }
+    }
+
+    setMap({ ...map, plots: newPlots, clusters: newClusters });
     setEditHistory({
       undoStack: newUndoStack,
       redoStack: [...editHistory.redoStack, edit],
@@ -145,22 +250,101 @@ function App() {
     const edit = editHistory.redoStack[editHistory.redoStack.length - 1];
     const newRedoStack = editHistory.redoStack.slice(0, -1);
 
-    // Apply the edit
-    const newPlots = map.plots.map((plot) => {
-      const change = edit.plots.find((p) => p.plotID === plot.plotID);
-      if (change) {
-        return {
-          ...plot,
-          plotAttributes: {
-            ...plot.plotAttributes,
-            terrainType: change.newTerrain,
-          },
-        };
-      }
-      return plot;
-    });
+    let newPlots = map.plots;
+    let newClusters = map.clusters;
 
-    setMap({ ...map, plots: newPlots });
+    if (edit.type === 'terrain') {
+      // Apply terrain edit
+      newPlots = map.plots.map((plot) => {
+        const change = edit.plots.find((p) => p.plotID === plot.plotID);
+        if (change) {
+          return {
+            ...plot,
+            plotAttributes: {
+              ...plot.plotAttributes,
+              terrainType: change.newTerrain,
+            },
+          };
+        }
+        return plot;
+      });
+    } else if (edit.type === 'unit') {
+      // Redo unit edit
+      newPlots = map.plots.map((plot) => {
+        if (plot.plotID === edit.plotID) {
+          if (edit.action === 'add') {
+            // Re-add the unit
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                units: [...plot.plotAttributes.units, { unitID: edit.unitID, unitTypeID: edit.unitTypeID, workerClusterIDs: [] }],
+              },
+            };
+          } else {
+            // Re-remove the unit
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                units: plot.plotAttributes.units.filter(u => u.unitID !== edit.unitID),
+              },
+            };
+          }
+        }
+        return plot;
+      });
+    } else if (edit.type === 'cluster') {
+      // Redo cluster edit
+      newPlots = map.plots.map((plot) => {
+        if (plot.plotID === edit.plotID) {
+          if (edit.action === 'add' && edit.clusterData) {
+            // Re-add the cluster
+            const cluster = {
+              clusterID: edit.clusterID,
+              clusterTypeID: edit.clusterTypeID,
+              name: edit.clusterData.name,
+              description: '',
+              skills: [],
+              size: edit.clusterData.size,
+              relationships: [],
+            };
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                clusters: [...plot.plotAttributes.clusters, cluster],
+              },
+            };
+          } else {
+            // Re-remove the cluster
+            return {
+              ...plot,
+              plotAttributes: {
+                ...plot.plotAttributes,
+                clusters: plot.plotAttributes.clusters.filter(c => c.clusterID !== edit.clusterID),
+              },
+            };
+          }
+        }
+        return plot;
+      });
+      if (edit.action === 'add' && edit.clusterData) {
+        newClusters = [...map.clusters, {
+          clusterID: edit.clusterID,
+          clusterTypeID: edit.clusterTypeID,
+          name: edit.clusterData.name,
+          description: '',
+          skills: [],
+          size: edit.clusterData.size,
+          relationships: [],
+        }];
+      } else {
+        newClusters = map.clusters.filter(c => c.clusterID !== edit.clusterID);
+      }
+    }
+
+    setMap({ ...map, plots: newPlots, clusters: newClusters });
     setEditHistory({
       undoStack: [...editHistory.undoStack, edit],
       redoStack: newRedoStack,
@@ -174,6 +358,8 @@ function App() {
         selectedPlots={selectedPlots}
         currentTool={currentTool}
         selectedTerrain={selectedTerrain}
+        selectedUnitType={selectedUnitType}
+        selectedClusterType={selectedClusterType}
         editHistory={editHistory}
         stepCount={stepCount}
         lastStepResult={lastStepResult}
@@ -182,6 +368,8 @@ function App() {
         onSaveMap={handleSaveMap}
         onSelectTool={setCurrentTool}
         onSelectTerrain={setSelectedTerrain}
+        onSelectUnitType={setSelectedUnitType}
+        onSelectClusterType={setSelectedClusterType}
         onSelectAll={handleSelectAll}
         onClearSelection={handleClearSelection}
         onUndo={handleUndo}
@@ -196,6 +384,8 @@ function App() {
           selectedPlots={selectedPlots}
           currentTool={currentTool}
           selectedTerrain={selectedTerrain}
+          selectedUnitType={selectedUnitType}
+          selectedClusterType={selectedClusterType}
           onUpdateMap={setMap}
           onUpdateSelection={setSelectedPlots}
           onUpdateHistory={setEditHistory}

@@ -15,6 +15,8 @@ interface MapCanvasProps {
   selectedPlots: Set<string>;
   currentTool: Tool;
   selectedTerrain: string | null;
+  selectedUnitType: string | null;
+  selectedClusterType: string | null;
   onUpdateMap: (map: GameMap) => void;
   onUpdateSelection: (selection: Set<string>) => void;
   onUpdateHistory: (history: EditHistory) => void;
@@ -27,6 +29,8 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
   selectedPlots,
   currentTool,
   selectedTerrain,
+  selectedUnitType,
+  selectedClusterType,
   onUpdateMap,
   onUpdateSelection,
   onUpdateHistory,
@@ -146,6 +150,10 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
         }
       } else if (currentTool === Tool.PAINT && plotID && selectedTerrain) {
         paintPlot(plotID);
+      } else if (currentTool === Tool.UNIT && plotID && selectedUnitType) {
+        addUnitToPlot(plotID, selectedUnitType);
+      } else if (currentTool === Tool.CLUSTER && plotID && selectedClusterType) {
+        addClusterToPlot(plotID, selectedClusterType);
       }
     }
   };
@@ -202,6 +210,15 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
     });
   };
 
+  // Generate unique ID
+  const generateId = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const paintPlot = (plotID: string) => {
     if (!map || !selectedTerrain) return;
 
@@ -233,6 +250,93 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
       undoStack: [...editHistory.undoStack, edit],
       redoStack: [],
     });
+  };
+
+  const addUnitToPlot = (plotID: string, unitTypeID: string) => {
+    if (!map) return;
+
+    const unitID = generateId();
+    
+    const newPlots = map.plots.map((p) =>
+      p.plotID === plotID
+        ? {
+            ...p,
+            plotAttributes: {
+              ...p.plotAttributes,
+              units: [...p.plotAttributes.units, { unitID, unitTypeID, workerClusterIDs: [] }],
+            },
+          }
+        : p
+    );
+
+    const edit: Edit = {
+      type: 'unit',
+      action: 'add',
+      plotID,
+      unitID,
+      unitTypeID,
+    };
+
+    onUpdateMap({ ...map, plots: newPlots });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+    
+    // Also select the plot
+    onUpdateSelection(new Set([plotID]));
+  };
+
+  const addClusterToPlot = (plotID: string, clusterTypeID: string) => {
+    if (!map) return;
+
+    const clusterID = generateId();
+    const clusterType = map.clusterTypes.find(ct => ct.clusterTypeID === clusterTypeID);
+    const clusterName = `${clusterType?.name || 'Unknown'} Group`;
+    const initialSize = 10;
+    
+    const cluster = {
+      clusterID,
+      clusterTypeID,
+      name: clusterName,
+      description: '',
+      skills: [],
+      size: initialSize,
+      relationships: [],
+    };
+    
+    const newPlots = map.plots.map((p) =>
+      p.plotID === plotID
+        ? {
+            ...p,
+            plotAttributes: {
+              ...p.plotAttributes,
+              clusters: [...p.plotAttributes.clusters, cluster],
+            },
+          }
+        : p
+    );
+
+    const edit: Edit = {
+      type: 'cluster',
+      action: 'add',
+      plotID,
+      clusterID,
+      clusterTypeID,
+      clusterData: {
+        name: clusterName,
+        size: initialSize,
+      },
+    };
+
+    onUpdateMap({ ...map, plots: newPlots, clusters: [...map.clusters, cluster] });
+    onUpdateHistory({
+      undoStack: [...editHistory.undoStack, edit],
+      redoStack: [],
+    });
+    
+    // Also select the plot
+    onUpdateSelection(new Set([plotID]));
   };
 
   const render = () => {
