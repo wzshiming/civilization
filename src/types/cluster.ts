@@ -1,6 +1,14 @@
-import type { ClusterID, ClusterTypeID } from './ids.js';
+import type { ClusterID, ClusterTypeID, TerrainTypeID } from './ids.js';
 import type { Skill } from './skills.js';
 import type { SpeciesID } from './ids.js';
+
+/**
+ * Cluster category enum
+ */
+export enum ClusterCategory {
+  ENLIGHTENED = 'ENLIGHTENED',
+  ANIMAL = 'ANIMAL'
+}
 
 /**
  * Cluster type defining categories of clusters
@@ -10,6 +18,9 @@ export interface ClusterType {
   clusterTypeID: ClusterTypeID;
   name: string;
   description: string;
+  category: ClusterCategory;
+  terrainPreference: TerrainTypeID[];
+  domesticable: boolean;
 }
 
 /**

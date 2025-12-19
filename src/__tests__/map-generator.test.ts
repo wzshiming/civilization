@@ -233,4 +233,185 @@ describe('MapGenerator', () => {
 
     expect(map.plots.length).toBe(50);
   });
+
+  it('should generate unit types including building and movable units', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    expect(map.unitTypes.length).toBeGreaterThan(0);
+
+    // Check for building units
+    const buildingUnits = map.unitTypes.filter(u => u.category === 'BUILDING');
+    expect(buildingUnits.length).toBeGreaterThan(0);
+
+    // Check for movable units  
+    const movableUnits = map.unitTypes.filter(u => u.category === 'MOVABLE');
+    expect(movableUnits.length).toBeGreaterThan(0);
+
+    // Check unit structure
+    for (const unitType of map.unitTypes) {
+      expect(unitType.unitTypeID).toBeTruthy();
+      expect(unitType.name).toBeTruthy();
+      expect(unitType.category).toMatch(/^(BUILDING|MOVABLE)$/);
+      expect(Array.isArray(unitType.terrainCompatibility)).toBe(true);
+    }
+  });
+
+  it('should generate cluster types including enlightened and animal clusters', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    expect(map.clusterTypes.length).toBeGreaterThan(0);
+
+    // Check for enlightened clusters
+    const enlightenedClusters = map.clusterTypes.filter(c => c.category === 'ENLIGHTENED');
+    expect(enlightenedClusters.length).toBeGreaterThan(0);
+
+    // Check for animal clusters
+    const animalClusters = map.clusterTypes.filter(c => c.category === 'ANIMAL');
+    expect(animalClusters.length).toBeGreaterThan(0);
+
+    // Check cluster type structure
+    for (const clusterType of map.clusterTypes) {
+      expect(clusterType.clusterTypeID).toBeTruthy();
+      expect(clusterType.name).toBeTruthy();
+      expect(clusterType.category).toMatch(/^(ENLIGHTENED|ANIMAL)$/);
+      expect(Array.isArray(clusterType.terrainPreference)).toBe(true);
+      expect(typeof clusterType.domesticable).toBe('boolean');
+    }
+  });
+
+  it('should spawn units on plots based on terrain compatibility', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 200,
+      randomSeed: 42,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    // At least some plots should have units
+    const plotsWithUnits = map.plots.filter(p => p.plotAttributes.units.length > 0);
+    expect(plotsWithUnits.length).toBeGreaterThan(0);
+
+    // Verify unit structure on plots
+    for (const plot of plotsWithUnits) {
+      for (const unit of plot.plotAttributes.units) {
+        expect(unit.unitID).toBeTruthy();
+        expect(unit.unitTypeID).toBeTruthy();
+        expect(Array.isArray(unit.workerClusterIDs)).toBe(true);
+      }
+    }
+  });
+
+  it('should spawn clusters on plots based on terrain preference', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 200,
+      randomSeed: 42,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    // At least some plots should have clusters
+    const plotsWithClusters = map.plots.filter(p => p.plotAttributes.clusters.length > 0);
+    expect(plotsWithClusters.length).toBeGreaterThan(0);
+
+    // Clusters should also be in the top-level clusters array
+    expect(map.clusters.length).toBeGreaterThan(0);
+
+    // Verify cluster structure
+    for (const cluster of map.clusters) {
+      expect(cluster.clusterID).toBeTruthy();
+      expect(cluster.clusterTypeID).toBeTruthy();
+      expect(cluster.name).toBeTruthy();
+      expect(typeof cluster.size).toBe('number');
+      expect(cluster.size).toBeGreaterThan(0);
+    }
+  });
+
+  it('should include expected building unit types', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    const unitNames = map.unitTypes.map(u => u.name);
+    expect(unitNames).toContain('Cave');
+    expect(unitNames).toContain('Bonfire');
+    expect(unitNames).toContain('Farm Ground');
+    expect(unitNames).toContain('Ranch Ground');
+    expect(unitNames).toContain('Fishing Ground');
+    expect(unitNames).toContain('Picking Ground');
+  });
+
+  it('should include expected movable unit types', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    const unitNames = map.unitTypes.map(u => u.name);
+    expect(unitNames).toContain('Hunting Team');
+    expect(unitNames).toContain('Trade Team');
+    expect(unitNames).toContain('Warriors Team');
+  });
+
+  it('should include expected enlightened cluster types', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    const clusterNames = map.clusterTypes.map(c => c.name);
+    expect(clusterNames).toContain('Human');
+    expect(clusterNames).toContain('Elf');
+    expect(clusterNames).toContain('Orc');
+  });
+
+  it('should include expected animal cluster types', () => {
+    const config: MapConfig = {
+      ...createDefaultMapConfig(),
+      plotCount: 50,
+      relaxationSteps: 1
+    };
+
+    const generator = new MapGenerator(config);
+    const map = generator.generate();
+
+    const clusterNames = map.clusterTypes.map(c => c.name);
+    expect(clusterNames).toContain('Horse');
+    expect(clusterNames).toContain('Cattle');
+    expect(clusterNames).toContain('Chicken');
+    expect(clusterNames).toContain('Goat');
+    expect(clusterNames).toContain('Sheep');
+  });
 });

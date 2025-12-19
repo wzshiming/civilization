@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { executeStep, executeSteps } from '../simulation/step.js';
 import type { GameMap, Plot, PlotAttributes, TerrainType, UnitType } from '../types/index.js';
+import { UnitCategory } from '../types/index.js';
 
 function createTestPlot(
   plotID: string,
@@ -171,8 +172,10 @@ describe('executeStep', () => {
       unitTypeID: 'mill',
       name: 'Mill',
       description: 'Grain mill',
+      category: UnitCategory.BUILDING,
       storages: [],
       workerRequirement: [],
+      terrainCompatibility: [],
       processes: [
         {
           name: 'Grind Grain',
@@ -219,8 +222,10 @@ describe('executeStep', () => {
       unitTypeID: 'mill',
       name: 'Mill',
       description: 'Grain mill',
+      category: UnitCategory.BUILDING,
       storages: [],
       workerRequirement: [],
+      terrainCompatibility: [],
       processes: [
         {
           name: 'Grind Grain',
