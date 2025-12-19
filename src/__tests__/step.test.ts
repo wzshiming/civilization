@@ -37,8 +37,8 @@ function createTestMap(
     buildingTypes,
     resourceTypes: [],
     skillTypes: [],
-    organizationTypes: [],
-    organizations: [],
+    clusterTypes: [],
+    clusters: [],
   };
 }
 

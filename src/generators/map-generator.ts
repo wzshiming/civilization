@@ -12,8 +12,6 @@ import type {
   SpeciesType,
   BuildingType,
   SkillType,
-  Religion,
-  Culture,
   ProcessType
 } from '../types/index.js';
 import {
@@ -250,8 +248,8 @@ export class MapGenerator {
       buildingTypes: [],
       terrainTypes: this.terrainTypes,
       skillTypes: [],
-      organizationTypes: [],
-      organizations: []
+      clusterTypes: [],
+      clusters: []
     };
   }
 

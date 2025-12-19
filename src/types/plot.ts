@@ -1,4 +1,4 @@
-import type { PlotID, OrganizationID, TerrainTypeID } from './ids.js';
+import type { PlotID, ClusterID, TerrainTypeID } from './ids.js';
 import type { Point } from './geometry.js';
 import type { StorageType } from './storage.js';
 import type { Building } from './building.js';
@@ -8,7 +8,7 @@ import type { Species, Population } from './species.js';
  * Plot attributes containing ownership, terrain, and contents
  */
 export interface PlotAttributes {
-  ownerOrganizationID?: OrganizationID;
+  ownerClusterID?: ClusterID;
   terrainType: TerrainTypeID;
   neighborPlots: PlotID[];
   storages: StorageType[];

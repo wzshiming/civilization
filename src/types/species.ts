@@ -1,4 +1,4 @@
-import type { SpeciesTypeID, SpeciesID, ResourceTypeID, BuildingID, PlotID, OrganizationID } from './ids.js';
+import type { SpeciesTypeID, SpeciesID, ResourceTypeID, BuildingID, PlotID, ClusterID } from './ids.js';
 import type { Skill } from './skills.js';
 
 /**
@@ -53,11 +53,11 @@ export interface Species {
 }
 
 /**
- * Population with organizational affiliations
+ * Population with clusteral affiliations
  */
 export interface Population {
   speciesID: SpeciesID;
-  organizationIDs: OrganizationID[];
+  clusterIDs: ClusterID[];
   skills: Skill[];
   size: number;
 }
