@@ -10,8 +10,15 @@ import type {
   ResourceType,
   ResourceTypeID,
   SkillType,
-  ProcessType
+  ProcessType,
+  UnitType,
+  UnitTypeID,
+  Unit,
+  ClusterType,
+  ClusterTypeID,
+  Cluster
 } from '../types/index.js';
+import { UnitCategory, ClusterCategory } from '../types/index.js';
 import {
   SeededRandom,
   generateId,
@@ -203,6 +210,319 @@ function createDefaultTerrainTypes(random: SeededRandom, resourceIds: ResourceTy
 }
 
 /**
+ * Terrain type IDs lookup
+ */
+interface TerrainTypeIds {
+  ocean: TerrainTypeID;
+  coastal: TerrainTypeID;
+  plains: TerrainTypeID;
+  forest: TerrainTypeID;
+  hills: TerrainTypeID;
+  mountains: TerrainTypeID;
+  desert: TerrainTypeID;
+  tundra: TerrainTypeID;
+}
+
+/**
+ * Create default terrain types and return IDs lookup
+ */
+function createDefaultTerrainTypesWithIds(random: SeededRandom, resourceIds: ResourceTypeIds): { terrainTypes: TerrainType[]; ids: TerrainTypeIds } {
+  const oceanId = generateId(random);
+  const coastalId = generateId(random);
+  const plainsId = generateId(random);
+  const forestId = generateId(random);
+  const hillsId = generateId(random);
+  const mountainsId = generateId(random);
+  const desertId = generateId(random);
+  const tundraId = generateId(random);
+
+  const terrainTypes: TerrainType[] = [
+    {
+      terrainTypeID: oceanId,
+      name: 'Ocean',
+      description: 'Deep ocean water',
+      processes: [
+        createProcess('Deep Sea Fishing', 'Fish from the deep ocean', resourceIds.fish, 2)
+      ],
+      color: '#0077be'
+    },
+    {
+      terrainTypeID: coastalId,
+      name: 'Coastal',
+      description: 'Shallow coastal waters',
+      processes: [
+        createProcess('Coastal Fishing', 'Fish from coastal waters', resourceIds.fish, 3)
+      ],
+      color: '#4a9eff'
+    },
+    {
+      terrainTypeID: plainsId,
+      name: 'Plains',
+      description: 'Flat grasslands suitable for farming',
+      processes: [
+        createProcess('Gather Wild Food', 'Gather edible plants and grains', resourceIds.food, 3),
+        createProcess('Hunt Game', 'Hunt wild animals', resourceIds.game, 1)
+      ],
+      color: '#7cb342'
+    },
+    {
+      terrainTypeID: forestId,
+      name: 'Forest',
+      description: 'Dense woodland',
+      processes: [
+        createProcess('Gather Wood', 'Harvest timber from the forest', resourceIds.wood, 4),
+        createProcess('Forest Foraging', 'Gather berries and nuts', resourceIds.food, 2),
+        createProcess('Hunt Game', 'Hunt forest animals', resourceIds.game, 2)
+      ],
+      color: '#2e7d32'
+    },
+    {
+      terrainTypeID: hillsId,
+      name: 'Hills',
+      description: 'Rolling hills with varied terrain',
+      processes: [
+        createProcess('Quarry Stone', 'Extract stone from hillsides', resourceIds.stone, 3),
+        createProcess('Hill Grazing', 'Gather food from hill pastures', resourceIds.food, 1),
+        createProcess('Prospect Minerals', 'Search for valuable minerals', resourceIds.minerals, 1)
+      ],
+      color: '#8d6e63'
+    },
+    {
+      terrainTypeID: mountainsId,
+      name: 'Mountains',
+      description: 'Tall mountain ranges',
+      processes: [
+        createProcess('Mountain Mining', 'Mine stone and minerals', resourceIds.stone, 4),
+        createProcess('Mine Minerals', 'Extract valuable ores', resourceIds.minerals, 3)
+      ],
+      color: '#5d4037'
+    },
+    {
+      terrainTypeID: desertId,
+      name: 'Desert',
+      description: 'Arid desert with little vegetation',
+      processes: [
+        createProcess('Desert Foraging', 'Scarce desert plants', resourceIds.food, 1)
+      ],
+      color: '#fdd835'
+    },
+    {
+      terrainTypeID: tundraId,
+      name: 'Tundra',
+      description: 'Cold arctic region',
+      processes: [
+        createProcess('Ice Fishing', 'Fish through ice', resourceIds.fish, 1),
+        createProcess('Tundra Hunting', 'Hunt arctic game', resourceIds.game, 2)
+      ],
+      color: '#e0e0e0'
+    }
+  ];
+
+  return {
+    terrainTypes,
+    ids: {
+      ocean: oceanId,
+      coastal: coastalId,
+      plains: plainsId,
+      forest: forestId,
+      hills: hillsId,
+      mountains: mountainsId,
+      desert: desertId,
+      tundra: tundraId
+    }
+  };
+}
+
+/**
+ * Create default unit types for map generation
+ */
+function createDefaultUnitTypes(random: SeededRandom, terrainIds: TerrainTypeIds, resourceIds: ResourceTypeIds): UnitType[] {
+  return [
+    // Building Units
+    {
+      unitTypeID: generateId(random),
+      name: 'Cave',
+      description: 'Natural shelter providing protection',
+      category: UnitCategory.BUILDING,
+      processes: [],
+      storages: [{ resourceType: resourceIds.food, size: 0, capacity: 50 }],
+      workerRequirement: [],
+      terrainCompatibility: [terrainIds.mountains, terrainIds.hills]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Bonfire',
+      description: 'Basic gathering point for warmth and cooking',
+      category: UnitCategory.BUILDING,
+      processes: [
+        createProcess('Cook Food', 'Prepare raw food for eating', resourceIds.food, 2)
+      ],
+      storages: [],
+      workerRequirement: [],
+      terrainCompatibility: [terrainIds.plains, terrainIds.forest, terrainIds.hills]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Farm Ground',
+      description: 'Agricultural production area',
+      category: UnitCategory.BUILDING,
+      processes: [
+        createProcess('Farm', 'Grow crops for food', resourceIds.food, 5)
+      ],
+      storages: [{ resourceType: resourceIds.food, size: 0, capacity: 100 }],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 2 }],
+      terrainCompatibility: [terrainIds.plains]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Ranch Ground',
+      description: 'Animal husbandry area',
+      category: UnitCategory.BUILDING,
+      processes: [
+        createProcess('Raise Livestock', 'Raise animals for food', resourceIds.food, 4)
+      ],
+      storages: [{ resourceType: resourceIds.food, size: 0, capacity: 80 }],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 2 }],
+      terrainCompatibility: [terrainIds.plains, terrainIds.hills]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Fishing Ground',
+      description: 'Fishing and aquaculture area',
+      category: UnitCategory.BUILDING,
+      processes: [
+        createProcess('Fish', 'Catch fish from water', resourceIds.fish, 4)
+      ],
+      storages: [{ resourceType: resourceIds.fish, size: 0, capacity: 60 }],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 1 }],
+      terrainCompatibility: [terrainIds.coastal, terrainIds.ocean]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Picking Ground',
+      description: 'Foraging and gathering area',
+      category: UnitCategory.BUILDING,
+      processes: [
+        createProcess('Gather', 'Gather wild food and materials', resourceIds.food, 3)
+      ],
+      storages: [{ resourceType: resourceIds.food, size: 0, capacity: 40 }],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 1 }],
+      terrainCompatibility: [terrainIds.forest, terrainIds.plains]
+    },
+    // Movable Units
+    {
+      unitTypeID: generateId(random),
+      name: 'Hunting Team',
+      description: 'Resource gathering from wildlife',
+      category: UnitCategory.MOVABLE,
+      processes: [
+        createProcess('Hunt', 'Hunt wild game', resourceIds.game, 3)
+      ],
+      storages: [{ resourceType: resourceIds.game, size: 0, capacity: 30 }],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 3 }],
+      terrainCompatibility: [terrainIds.forest, terrainIds.plains, terrainIds.hills, terrainIds.tundra]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Trade Team',
+      description: 'Commerce and resource exchange',
+      category: UnitCategory.MOVABLE,
+      processes: [],
+      storages: [
+        { resourceType: resourceIds.food, size: 0, capacity: 20 },
+        { resourceType: resourceIds.minerals, size: 0, capacity: 20 }
+      ],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 2 }],
+      terrainCompatibility: [terrainIds.plains, terrainIds.coastal, terrainIds.hills]
+    },
+    {
+      unitTypeID: generateId(random),
+      name: 'Warriors Team',
+      description: 'Combat and defense',
+      category: UnitCategory.MOVABLE,
+      processes: [],
+      storages: [],
+      workerRequirement: [{ clusterIDs: [], skills: [], size: 5 }],
+      terrainCompatibility: [terrainIds.plains, terrainIds.forest, terrainIds.hills, terrainIds.mountains]
+    }
+  ];
+}
+
+/**
+ * Create default cluster types for map generation
+ */
+function createDefaultClusterTypes(random: SeededRandom, terrainIds: TerrainTypeIds): ClusterType[] {
+  return [
+    // Enlightened Clusters
+    {
+      clusterTypeID: generateId(random),
+      name: 'Human',
+      description: 'Versatile species adaptable to various environments',
+      category: ClusterCategory.ENLIGHTENED,
+      terrainPreference: [terrainIds.plains, terrainIds.forest, terrainIds.hills, terrainIds.coastal],
+      domesticable: false
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Elf',
+      description: 'Nature-aligned species with affinity for forests',
+      category: ClusterCategory.ENLIGHTENED,
+      terrainPreference: [terrainIds.forest],
+      domesticable: false
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Orc',
+      description: 'Hardy species suited for harsh environments',
+      category: ClusterCategory.ENLIGHTENED,
+      terrainPreference: [terrainIds.mountains, terrainIds.hills, terrainIds.tundra],
+      domesticable: false
+    },
+    // Animal Clusters
+    {
+      clusterTypeID: generateId(random),
+      name: 'Horse',
+      description: 'Fast mount for transportation and warfare',
+      category: ClusterCategory.ANIMAL,
+      terrainPreference: [terrainIds.plains],
+      domesticable: true
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Cattle',
+      description: 'Livestock for food, leather, and labor',
+      category: ClusterCategory.ANIMAL,
+      terrainPreference: [terrainIds.plains, terrainIds.hills],
+      domesticable: true
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Chicken',
+      description: 'Poultry for food and eggs',
+      category: ClusterCategory.ANIMAL,
+      terrainPreference: [terrainIds.plains, terrainIds.forest],
+      domesticable: true
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Goat',
+      description: 'Hardy livestock for food and milk',
+      category: ClusterCategory.ANIMAL,
+      terrainPreference: [terrainIds.hills, terrainIds.mountains],
+      domesticable: true
+    },
+    {
+      clusterTypeID: generateId(random),
+      name: 'Sheep',
+      description: 'Livestock for wool and food',
+      category: ClusterCategory.ANIMAL,
+      terrainPreference: [terrainIds.plains, terrainIds.hills],
+      domesticable: true
+    }
+  ];
+}
+
+/**
  * Map Generator class
  * Responsible for creating game worlds with irregular plot shapes,
  * dynamic attributes, and configurable terrain generation
@@ -212,7 +532,11 @@ export class MapGenerator {
   private random: SeededRandom;
   private noise: NoiseGenerator;
   private terrainTypes: TerrainType[];
+  private terrainIds: TerrainTypeIds;
   private resourceTypes: ResourceType[];
+  private resourceIds: ResourceTypeIds;
+  private unitTypes: UnitType[];
+  private clusterTypes: ClusterType[];
 
   constructor(config: MapConfig) {
     this.config = config;
@@ -222,7 +546,18 @@ export class MapGenerator {
     // Create resource types first (terrain types depend on them)
     const { resourceTypes, ids: resourceIds } = createDefaultResourceTypes(this.random);
     this.resourceTypes = resourceTypes;
-    this.terrainTypes = createDefaultTerrainTypes(this.random, resourceIds);
+    this.resourceIds = resourceIds;
+    
+    // Create terrain types
+    const { terrainTypes, ids: terrainIds } = createDefaultTerrainTypesWithIds(this.random, resourceIds);
+    this.terrainTypes = terrainTypes;
+    this.terrainIds = terrainIds;
+    
+    // Create unit types
+    this.unitTypes = createDefaultUnitTypes(this.random, terrainIds, resourceIds);
+    
+    // Create cluster types
+    this.clusterTypes = createDefaultClusterTypes(this.random, terrainIds);
   }
 
   /**
@@ -238,16 +573,123 @@ export class MapGenerator {
     // Phase 3: Generate terrain
     this.generateTerrain(plots);
 
+    // Phase 4: Generate units on plots
+    this.generateUnits(plots);
+
+    // Phase 5: Generate clusters on plots
+    const clusters = this.generateClusters(plots);
+
     // Return the complete map
     return {
       plots,
       resourceTypes: this.resourceTypes,
-      unitTypes: [],
+      unitTypes: this.unitTypes,
       terrainTypes: this.terrainTypes,
       skillTypes: [],
-      clusterTypes: [],
-      clusters: []
+      clusterTypes: this.clusterTypes,
+      clusters
     };
+  }
+
+  /**
+   * Phase 4: Generate units on appropriate terrain
+   */
+  private generateUnits(plots: Plot[]): void {
+    const buildingSpawnRate = 0.05; // 5% chance per compatible plot
+    const movableSpawnRate = 0.02; // 2% chance per compatible plot
+
+    for (const plot of plots) {
+      const terrainType = plot.plotAttributes.terrainType;
+
+      // Try to spawn building units
+      for (const unitType of this.unitTypes) {
+        if (unitType.category !== UnitCategory.BUILDING) continue;
+        if (!unitType.terrainCompatibility.includes(terrainType)) continue;
+
+        if (this.random.next() < buildingSpawnRate) {
+          const unit: Unit = {
+            unitID: generateId(this.random),
+            unitTypeID: unitType.unitTypeID,
+            workerClusterIDs: []
+          };
+          plot.plotAttributes.units.push(unit);
+          break; // Only one building per plot
+        }
+      }
+
+      // Try to spawn movable units
+      for (const unitType of this.unitTypes) {
+        if (unitType.category !== UnitCategory.MOVABLE) continue;
+        if (!unitType.terrainCompatibility.includes(terrainType)) continue;
+
+        if (this.random.next() < movableSpawnRate) {
+          const unit: Unit = {
+            unitID: generateId(this.random),
+            unitTypeID: unitType.unitTypeID,
+            workerClusterIDs: []
+          };
+          plot.plotAttributes.units.push(unit);
+          break; // Only one movable unit per plot initially
+        }
+      }
+    }
+  }
+
+  /**
+   * Phase 5: Generate clusters on appropriate terrain
+   */
+  private generateClusters(plots: Plot[]): Cluster[] {
+    const enlightenedSpawnRate = 0.03; // 3% chance per compatible plot
+    const animalSpawnRate = 0.05; // 5% chance per compatible plot
+    const clusters: Cluster[] = [];
+
+    for (const plot of plots) {
+      const terrainType = plot.plotAttributes.terrainType;
+
+      // Try to spawn enlightened clusters
+      for (const clusterType of this.clusterTypes) {
+        if (clusterType.category !== ClusterCategory.ENLIGHTENED) continue;
+        if (!clusterType.terrainPreference.includes(terrainType)) continue;
+
+        if (this.random.next() < enlightenedSpawnRate) {
+          const cluster: Cluster = {
+            clusterID: generateId(this.random),
+            clusterTypeID: clusterType.clusterTypeID,
+            name: `${clusterType.name} Tribe`,
+            description: `A group of ${clusterType.name.toLowerCase()}s`,
+            skills: [],
+            size: Math.floor(this.random.next() * 20) + 5, // 5-25 initial size
+            relationships: []
+          };
+          clusters.push(cluster);
+          plot.plotAttributes.clusters.push(cluster);
+          break; // Only one enlightened cluster per plot
+        }
+      }
+
+      // Try to spawn animal clusters
+      for (const clusterType of this.clusterTypes) {
+        if (clusterType.category !== ClusterCategory.ANIMAL) continue;
+        if (!clusterType.terrainPreference.includes(terrainType)) continue;
+
+        if (this.random.next() < animalSpawnRate) {
+          const cluster: Cluster = {
+            clusterID: generateId(this.random),
+            clusterTypeID: clusterType.clusterTypeID,
+            name: `${clusterType.name} Herd`,
+            description: `A herd of ${clusterType.name.toLowerCase()}s`,
+            skills: [],
+            size: Math.floor(this.random.next() * 15) + 3, // 3-18 herd size
+            relationships: []
+          };
+          clusters.push(cluster);
+          plot.plotAttributes.clusters.push(cluster);
+          break; // Only one animal cluster per plot initially
+        }
+      }
+    }
+
+    return clusters;
   }
 
   /**
