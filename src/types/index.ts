@@ -11,8 +11,7 @@ export * from './building.js';
 export * from './storage.js';
 export * from './terrain.js';
 export * from './skills.js';
-export * from './religion.js';
-export * from './culture.js';
+export * from './organization.js';
 
 // Map Types
 export * from './plot.js';

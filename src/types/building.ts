@@ -1,4 +1,4 @@
-import type { BuildingTypeID, BuildingID, PlayerID, SpeciesTypeID, SpeciesID } from './ids.js';
+import type { BuildingTypeID, BuildingID, OrganizationID, SpeciesTypeID, SpeciesID } from './ids.js';
 import type { ProcessType } from './species.js';
 import type { StorageType } from './storage.js';
 import type { Skill } from './skills.js';
@@ -30,6 +30,6 @@ export interface BuildingType {
 export interface Building {
   buildingID: BuildingID;
   buildingTypeID: BuildingTypeID;
-  ownerPlayerID?: PlayerID;
+  ownerOrganizationID?: OrganizationID;
   workers: SpeciesID[];
 }

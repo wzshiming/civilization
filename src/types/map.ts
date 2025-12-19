@@ -4,8 +4,7 @@ import type { ResourceType } from './resource.js';
 import type { BuildingType } from './building.js';
 import type { TerrainType } from './terrain.js';
 import type { SkillType } from './skills.js';
-import type { Religion } from './religion.js';
-import type { Culture } from './culture.js';
+import type { Organization, OrganizationType } from './organization.js';
 import type { Dimensions } from './geometry.js';
 
 /**
@@ -51,6 +50,6 @@ export interface GameMap {
   buildingTypes: BuildingType[];
   terrainTypes: TerrainType[];
   skillTypes: SkillType[];
-  religions: Religion[];
-  cultures: Culture[];
+  organizationTypes: OrganizationType[];
+  organizations: Organization[];
 }
