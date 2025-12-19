@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { GameMap } from '../../../src/types';
 import { StepResult } from '../../../src/simulation';
-import { getTerrainColor } from '../../../src/types/terrain';
 import { Tool, EditHistory } from '../App';
 import styles from './Sidebar.module.css';
 
@@ -338,21 +337,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <span>/</span>
                         <span>{formatNumber(storage.capacity)}</span>
                       </div>
-                      {resourceType && resourceType.resourceEfficiencies.length > 0 && (
-                        <div className={styles.resourceEfficiency}>
-                          {resourceType.resourceEfficiencies.map((eff, effIdx) => {
-                            const effType = map?.resourceEfficiencyTypes.find(
-                              (ret) => ret.resourceEfficiencyTypeID === eff.resourceEfficiencyTypeID
-                            );
-                            return (
-                              <div key={effIdx} className={styles.effItem}>
-                                <span>{effType?.name || eff.resourceEfficiencyTypeID}:</span>
-                                <span>{eff.rate.toFixed(1)}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   );
                 })
@@ -371,26 +355,26 @@ const Sidebar: React.FC<SidebarProps> = ({
               </div>
             )}
 
-            {/* Species */}
-            {selectedPlot.plotAttributes.species.length > 0 && (
+            {/* Cluster */}
+            {selectedPlot.plotAttributes.clusters.length > 0 && (
               <div className={styles.subsection}>
-                <h3>Species</h3>
-                {selectedPlot.plotAttributes.species.map((species, idx) => (
+                <h3>Clusters</h3>
+                {selectedPlot.plotAttributes.clusters.map((cluster, idx) => (
                   <div key={idx} className={styles.stat}>
-                    <span>{species.speciesTypeID}</span>
+                    <span>{cluster.clusterTypeID}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Populations */}
-            {selectedPlot.plotAttributes.populations.length > 0 && (
+            {/* Clusters */}
+            {selectedPlot.plotAttributes.clusters.length > 0 && (
               <div className={styles.subsection}>
-                <h3>Populations</h3>
-                {selectedPlot.plotAttributes.populations.map((pop, idx) => (
+                <h3>Clusters</h3>
+                {selectedPlot.plotAttributes.clusters.map((pop, idx) => (
                   <div key={idx} className={styles.stat}>
-                    <span>{pop.speciesTypeID}:</span>
-                    <span>{pop.count}</span>
+                    <span>{pop.clusterTypeID}:</span>
+                    <span>{pop.size}</span>
                   </div>
                 ))}
               </div>
@@ -400,7 +384,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className={styles.subsection}>
               <h3>Ownership</h3>
               <div className={styles.stat}>
-                <span>{selectedPlot.plotAttributes.ownerPlayerID || 'Unowned'}</span>
+                <span>{selectedPlot.plotAttributes.ownerClusterID || 'Unowned'}</span>
               </div>
             </div>
           </>

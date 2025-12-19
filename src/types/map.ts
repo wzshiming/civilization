@@ -1,5 +1,4 @@
 import type { Plot } from './plot.js';
-import type { SpeciesType } from './species.js';
 import type { ResourceType } from './resource.js';
 import type { UnitType } from './unit.js';
 import type { TerrainType } from './terrain.js';
@@ -45,7 +44,6 @@ export interface MapConfig {
  */
 export interface GameMap {
   plots: Plot[];
-  speciesTypes: SpeciesType[];
   resourceTypes: ResourceType[];
   unitTypes: UnitType[];
   terrainTypes: TerrainType[];

@@ -9,8 +9,6 @@ import type {
   Point,
   ResourceType,
   ResourceTypeID,
-  SpeciesType,
-  UnitType,
   SkillType,
   ProcessType
 } from '../types/index.js';
@@ -51,7 +49,7 @@ function createDefaultResourceTypes(random: SeededRandom): { resourceTypes: Reso
     {
       resourceTypeID: foodId,
       name: 'Food',
-      description: 'Basic sustenance for populations',
+      description: 'Basic sustenance for clusters',
       resourceEfficiencies: []
     },
     {
@@ -243,7 +241,6 @@ export class MapGenerator {
     // Return the complete map
     return {
       plots,
-      speciesTypes: [],
       resourceTypes: this.resourceTypes,
       unitTypes: [],
       terrainTypes: this.terrainTypes,
@@ -293,8 +290,7 @@ export class MapGenerator {
           neighborPlots: [], // Will be filled in neighbor calculation
           storages: [],
           units: [],
-          species: [],
-          populations: []
+          clusters: []
         }
       };
 

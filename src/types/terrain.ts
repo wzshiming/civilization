@@ -1,5 +1,5 @@
 import type { TerrainTypeID } from './ids.js';
-import type { ProcessType } from './species.js';
+import type { ProcessType } from './process.js';
 
 /**
  * Terrain type definition

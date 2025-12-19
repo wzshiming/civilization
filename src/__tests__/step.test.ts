@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { executeStep, executeSteps } from '../simulation/step.js';
-import type { GameMap, Plot, PlotAttributes, TerrainType, SpeciesType, UnitType } from '../types/index.js';
+import type { GameMap, Plot, PlotAttributes, TerrainType, UnitType } from '../types/index.js';
 
 function createTestPlot(
   plotID: string,
@@ -18,8 +18,7 @@ function createTestPlot(
       neighborPlots: [],
       storages,
       units: [],
-      species: [],
-      populations: [],
+      clusters: [],
     },
   };
 }
@@ -27,13 +26,11 @@ function createTestPlot(
 function createTestMap(
   plots: Plot[],
   terrainTypes: TerrainType[] = [],
-  speciesTypes: SpeciesType[] = [],
   unitTypes: UnitType[] = []
 ): GameMap {
   return {
     plots,
     terrainTypes,
-    speciesTypes,
     unitTypes,
     resourceTypes: [],
     skillTypes: [],
@@ -167,43 +164,7 @@ describe('executeStep', () => {
     expect(foodStorage).toBeUndefined();
   });
 
-  it('should execute species processes', () => {
-    const speciesType: SpeciesType = {
-      speciesTypeID: 'human',
-      name: 'Human',
-      description: 'Human species',
-      isEnlightened: true,
-      relationships: [],
-      processes: [
-        {
-          name: 'Eat',
-          description: 'Consume food',
-          inputResources: [{ resourceType: 'food', size: 1 }],
-          outputResources: [],
-          processTime: 1,
-        },
-      ],
-    };
 
-    const plot = createTestPlot('plot-1', 'terrain-1', [
-      { resourceType: 'food', size: 10, capacity: 100 },
-    ]);
-    plot.plotAttributes.species = [
-      { speciesID: 'species-1', speciesTypeID: 'human', quantity: 3 },
-    ];
-
-    const map = createTestMap([plot], [], [speciesType]);
-
-    const result = executeStep(map);
-
-    expect(result.success).toBe(true);
-
-    // Food should be consumed (3 humans * 1 food each = 3 food consumed)
-    const foodStorage = plot.plotAttributes.storages.find(
-      (s) => s.resourceType === 'food'
-    );
-    expect(foodStorage?.size).toBe(7); // 10 - 3 = 7
-  });
 
   it('should execute unit processes when workers are present', () => {
     const unitType: UnitType = {
@@ -230,11 +191,11 @@ describe('executeStep', () => {
       {
         unitID: 'unit-1',
         unitTypeID: 'mill',
-        workers: ['worker-1'],
+        workerClusterIDs: ['cluster-1']
       },
     ];
 
-    const map = createTestMap([plot], [], [], [unitType]);
+    const map = createTestMap([plot], [], []);
 
     const result = executeStep(map);
 
@@ -278,11 +239,11 @@ describe('executeStep', () => {
       {
         unitID: 'unit-1',
         unitTypeID: 'mill',
-        workers: [], // No workers!
+        workerClusterIDs: [] // No workers
       },
     ];
 
-    const map = createTestMap([plot], [], [], [unitType]);
+    const map = createTestMap([plot], [], []);
 
     const result = executeStep(map);
 

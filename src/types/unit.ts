@@ -1,5 +1,5 @@
-import type { UnitTypeID, UnitID, ClusterID, SpeciesTypeID, SpeciesID } from './ids.js';
-import type { ProcessType } from './species.js';
+import type { UnitTypeID, UnitID, ClusterID, SpeciesID } from './ids.js';
+import type { ProcessType } from './process.js';
 import type { StorageType } from './storage.js';
 import type { Skill } from './skills.js';
 
@@ -7,7 +7,7 @@ import type { Skill } from './skills.js';
  * Worker requirement for a unit
  */
 export interface WorkerRequirement {
-  speciesTypeID: SpeciesTypeID;
+  clusterIDs: ClusterID[];
   skills: Skill[];
   size: number;
 }
@@ -31,5 +31,5 @@ export interface Unit {
   unitID: UnitID;
   unitTypeID: UnitTypeID;
   ownerClusterID?: ClusterID;
-  workers: SpeciesID[];
+  workerClusterIDs: ClusterID[];
 }

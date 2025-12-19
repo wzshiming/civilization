@@ -1,4 +1,6 @@
 import type { ClusterID, ClusterTypeID } from './ids.js';
+import type { Skill } from './skills.js';
+import type { SpeciesID } from './ids.js';
 
 /**
  * Cluster type defining categories of clusters
@@ -23,8 +25,11 @@ export interface ClusterRelationship {
  */
 export interface Cluster {
   clusterID: ClusterID;
-  clusterType: ClusterTypeID;
+  clusterTypeID: ClusterTypeID;
   name: string;
   description: string;
+  skills: Skill[];
+  speciesID?: SpeciesID;
+  size: number;
   relationships: ClusterRelationship[];
 }

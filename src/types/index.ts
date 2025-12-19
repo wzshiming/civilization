@@ -5,7 +5,7 @@ export * from './ids.js';
 export * from './geometry.js';
 
 // Entity Types
-export * from './species.js';
+export * from './process.js';
 export * from './resource.js';
 export * from './unit.js';
 export * from './storage.js';

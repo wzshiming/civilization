@@ -122,33 +122,12 @@ function executeStepForPlot(
     );
     if (unitType) {
       // Only execute if unit has workers
-      if (unit.workers.length > 0) {
+      if (unit.workerClusterIDs.length > 0) {
         for (const process of unitType.processes) {
           executeProcess(
             plot,
             process,
             `Unit: ${unitType.name}`,
-            resourceChanges,
-            errors
-          );
-        }
-      }
-    }
-  }
-
-  // 3. Execute species processes
-  for (const species of plot.plotAttributes.species) {
-    const speciesType = map.speciesTypes.find(
-      (st) => st.speciesTypeID === species.speciesTypeID
-    );
-    if (speciesType) {
-      // Execute processes based on quantity
-      for (let i = 0; i < species.quantity; i++) {
-        for (const process of speciesType.processes) {
-          executeProcess(
-            plot,
-            process,
-            `Species: ${speciesType.name}`,
             resourceChanges,
             errors
           );
