@@ -1,7 +1,7 @@
 import type { Plot } from './plot.js';
 import type { SpeciesType } from './species.js';
 import type { ResourceType } from './resource.js';
-import type { BuildingType } from './building.js';
+import type { UnitType } from './unit.js';
 import type { TerrainType } from './terrain.js';
 import type { SkillType } from './skills.js';
 import type { Organization, OrganizationType } from './organization.js';
@@ -47,7 +47,7 @@ export interface GameMap {
   plots: Plot[];
   speciesTypes: SpeciesType[];
   resourceTypes: ResourceType[];
-  buildingTypes: BuildingType[];
+  unitTypes: UnitType[];
   terrainTypes: TerrainType[];
   skillTypes: SkillType[];
   organizationTypes: OrganizationType[];

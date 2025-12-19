@@ -1,35 +1,21 @@
-import type { BuildingTypeID, BuildingID, OrganizationID, SpeciesTypeID, SpeciesID } from './ids.js';
-import type { ProcessType } from './species.js';
-import type { StorageType } from './storage.js';
-import type { Skill } from './skills.js';
+/**
+ * @deprecated This file is deprecated. Use unit.ts instead.
+ * Building types are now generalized as Unit types.
+ */
+
+import type { UnitType, Unit, WorkerRequirement } from './unit.js';
 
 /**
- * Worker requirement for a building
+ * @deprecated Use UnitType instead
  */
-export interface WorkerRequirement {
-  speciesTypeID: SpeciesTypeID;
-  skills: Skill[];
-  size: number;
-}
+export type BuildingType = UnitType;
 
 /**
- * Building type definition
+ * @deprecated Use Unit instead
  */
-export interface BuildingType {
-  buildingTypeID: BuildingTypeID;
-  name: string;
-  description: string;
-  processes: ProcessType[];
-  storages: StorageType[];
-  workerRequirement: WorkerRequirement[];
-}
+export type Building = Unit;
 
 /**
- * Building instance
+ * Re-export WorkerRequirement for backward compatibility
  */
-export interface Building {
-  buildingID: BuildingID;
-  buildingTypeID: BuildingTypeID;
-  ownerOrganizationID?: OrganizationID;
-  workers: SpeciesID[];
-}
+export type { WorkerRequirement };

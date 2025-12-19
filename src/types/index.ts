@@ -7,7 +7,8 @@ export * from './geometry.js';
 // Entity Types
 export * from './species.js';
 export * from './resource.js';
-export * from './building.js';
+export * from './unit.js';
+export * from './building.js'; // Deprecated: For backward compatibility
 export * from './storage.js';
 export * from './terrain.js';
 export * from './skills.js';
